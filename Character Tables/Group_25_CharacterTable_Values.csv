@@ -1,0 +1,8 @@
+{},E,"Subscript[""C"", ""6""]","Subscript[""C"", ""3""]","Subscript[""C"", ""2""]","Subscript[""σ"", ""v""]","Subsuperscript[""σ"", ""d"", ""'""]"
+Conjugacy,1,2,2,1,3,3
+"Subscript[""A"", ""1""]",1,1,1,1,1,1
+"Subscript[""A"", ""2""]",1,1,1,1,-1,-1
+"Subscript[""B"", ""1""]",1,-1,1,-1,1,-1
+"Subscript[""B"", ""2""]",1,-1,1,-1,-1,1
+"Subscript[""E"", ""1""]",2,1,-1,-2,0,0
+"Subscript[""E"", ""2""]",2,-1,-1,2,0,0

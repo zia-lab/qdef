@@ -1,0 +1,13 @@
+{},alpha,beta,gamma,det,phi,n
+E,0,0,0,1,0,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  0 }], } }]"
+"Subsuperscript[""C"", ""2"", ""x""]",Pi,Pi,0,1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - ,  1 }], , ,  0 , , ,  0 }], } }]"
+"Subsuperscript[""C"", ""2"", ""y""]",0,Pi,0,1,Pi,"RowBox[{ {, RowBox[{ 0 , , , RowBox[{ - ,  1 }], , ,  0 }], } }]"
+"Subsuperscript[""C"", ""2"", ""z""]",Pi,0,0,1,Pi,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""C"", ""3a""]",0,Pi/2,Pi/2,1,(2*Pi)/3,"RowBox[{ {, RowBox[{FractionBox[ 1 , SqrtBox[ 3 ]], , , FractionBox[ 1 , SqrtBox[ 3 ]], , , FractionBox[ 1 , SqrtBox[ 3 ]]}], } }]"
+"Subscript[""C"", ""3b""]",Pi,Pi/2,-Pi/2,1,(2*Pi)/3,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , FractionBox[ 1 , SqrtBox[ 3 ]]}], } }]"
+"Subscript[""C"", ""3c""]",0,Pi/2,-Pi/2,1,(2*Pi)/3,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , FractionBox[ 1 , SqrtBox[ 3 ]], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}]}], } }]"
+"Subscript[""C"", ""3d""]",Pi,Pi/2,Pi/2,1,(2*Pi)/3,"RowBox[{ {, RowBox[{FractionBox[ 1 , SqrtBox[ 3 ]], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}]}], } }]"
+"Subsuperscript[""C"", ""3a"", ""2""]",Pi/2,Pi/2,Pi,1,(2*Pi)/3,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}]}], } }]"
+"Subsuperscript[""C"", ""3b"", ""2""]",-Pi/2,Pi/2,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{FractionBox[ 1 , SqrtBox[ 3 ]], , , FractionBox[ 1 , SqrtBox[ 3 ]], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}]}], } }]"
+"Subsuperscript[""C"", ""3c"", ""2""]",-Pi/2,Pi/2,Pi,1,(2*Pi)/3,"RowBox[{ {, RowBox[{FractionBox[ 1 , SqrtBox[ 3 ]], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , FractionBox[ 1 , SqrtBox[ 3 ]]}], } }]"
+"Subsuperscript[""C"", ""3d"", ""2""]",Pi/2,Pi/2,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 3 ]]}], , , FractionBox[ 1 , SqrtBox[ 3 ]], , , FractionBox[ 1 , SqrtBox[ 3 ]]}], } }]"

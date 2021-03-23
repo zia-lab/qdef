@@ -1,0 +1,7 @@
+{},alpha,beta,gamma,det,phi,n
+E,0,0,0,1,0,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  0 }], } }]"
+"Subscript[""C"", ""3""]",(2*Pi)/3,0,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  1 }], } }]"
+"Subsuperscript[""C"", ""3"", ""2""]",(-2*Pi)/3,0,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""σ"", ""h""]",Pi,0,0,-1,Pi,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""S"", ""3""]",-Pi/3,0,0,-1,Pi/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  1 }], } }]"
+"Subsuperscript[""S"", ""3"", ""5""]",Pi/3,0,0,-1,Pi/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"

@@ -1,0 +1,13 @@
+{},alpha,beta,gamma,det,phi,n
+E,0,0,0,1,0,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  0 }], } }]"
+"Subscript[""C"", ""6""]",Pi/3,0,0,1,Pi/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  1 }], } }]"
+"Subsuperscript[""C"", ""6"", ""5""]",-Pi/3,0,0,1,Pi/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""C"", ""3""]",(2*Pi)/3,0,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  1 }], } }]"
+"Subsuperscript[""C"", ""3"", ""2""]",(-2*Pi)/3,0,0,1,(2*Pi)/3,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""C"", ""2""]",Pi,0,0,1,Pi,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
+"Subscript[""σ"", ""va""]",0,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{ 0 , , , RowBox[{ - ,  1 }], , ,  0 }], } }]"
+"Subscript[""σ"", ""vb""]",(-2*Pi)/3,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[SqrtBox[ 3 ],  2 ]}], , , RowBox[{ - , FractionBox[ 1 ,  2 ]}], , ,  0 }], } }]"
+"Subscript[""σ"", ""vc""]",(2*Pi)/3,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[SqrtBox[ 3 ],  2 ]}], , , FractionBox[ 1 ,  2 ], , ,  0 }], } }]"
+"Subsuperscript[""σ"", ""da"", ""'""]",Pi,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - ,  1 }], , ,  0 , , ,  0 }], } }]"
+"Subsuperscript[""σ"", ""db"", ""'""]",Pi/3,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 ,  2 ]}], , , FractionBox[SqrtBox[ 3 ],  2 ], , ,  0 }], } }]"
+"Subsuperscript[""σ"", ""dc"", ""'""]",-Pi/3,Pi,0,-1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 ,  2 ]}], , , RowBox[{ - , FractionBox[SqrtBox[ 3 ],  2 ]}], , ,  0 }], } }]"

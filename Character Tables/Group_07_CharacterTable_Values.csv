@@ -1,0 +1,6 @@
+{},E,"Subscript[""C"", ""2""]","Subsuperscript[""σ"", ""v"", ""y""]","Subsuperscript[""σ"", ""v"", ""x""]"
+Conjugacy,1,1,1,1
+A_g,1,1,1,1
+A_u,1,1,-1,-1
+B_g,1,-1,1,-1
+B_u,1,-1,-1,1
