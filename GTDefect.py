@@ -248,7 +248,7 @@ class Ynm(Function):
 class CrystalGroup(object):
     """Class for group character tables"""
     def __init__(self, grp = '', grpcls  = '', irrrep = '', chartab = '', clssize = ''):
-        
+
         GrpLabel = ['C_1','C_i','C_2','C_s','C_2h','D_2','C_2v','D_2h','C_4',
                     'S_4','C_4h','D_4','C_4v','D_2d','D_4h','C_3','S_6','D_3',
                     'C_3v','D_3d','C_6','C_3h','C_6h','D_6','C_6v','D_3h',
@@ -259,33 +259,33 @@ class CrystalGroup(object):
         self.IrrReps = irrrep # Irreducible representations of group
         self.CharacterTable = chartab # Character table for group
         self.ClassSize = clssize
-    
+
     def addParameterTable(self, elems = '', partab = '', parlab = ''):
         self.Elements = elems
         self.ParameterTable = partab
         self.ParameterLabels = parlab
-        
+
     def printPointGroup(self):
         return self.PointGroup
-        
+
     def printClasses(self):
         return self.Classes
-        
+
     def printIrrReps(self):
         print(self.IrrReps)
-        
+
     def printCharacterTable(self):
         print(self.CharacterTable)
-        
+
     def printchartable(self):
         null = True
-        
+
 class CPGroups(object):
     """Class for all crystallographic point groups"""
     def __init__(self):
-        """This will loop through the various folders to import 
+        """This will loop through the various folders to import
         the character and parameter tables for each point group.
-        Each point group will form a CrystalGroup class object 
+        Each point group will form a CrystalGroup class object
         and these will be joined into a list of class objects."""
         self.Groups = []
         for (dirpath, dirnames, filenames) in os.walk('/'.join([os.getcwd(),'Character Tables'])):
@@ -295,22 +295,22 @@ class CPGroups(object):
         self.GroupNumbers = []
         for gg in np.arange(len(self.Groups)):
             self.GroupNumbers.append(self.Groups[gg].PointGroupNumber)
-            
+
         for (dirpath, dirnames, filenames) in os.walk('/'.join([os.getcwd(),'Parameter Tables'])):
             for file in filenames:
                 if file.endswith('.csv'):
                     GrpIdx = self.GetGroup(int(file.split('_')[1]))
                     Elements, ParameterLabels, ParameterTable = self.ParseParameterTable(file)
-                    self.Groups[GrpIdx].addParameterTable(elems = Elements, 
-                                                         parlab = ParameterLabels, 
+                    self.Groups[GrpIdx].addParameterTable(elems = Elements,
+                                                         parlab = ParameterLabels,
                                                          partab = ParameterTable)
         self.SortGroups()
-        
+
     def ParseCharacterTable(self, file):
-        """This is a function to parse the formatting of the 
-        *CharacterTable_Values.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *CharacterTable_Values.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group character table, 
+        From these files the respective group character table,
         classes, and irreducible representations will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -346,7 +346,7 @@ class CPGroups(object):
                         else:
                             ClassSize.append(int(cls))
                     line_count += 1
-                    
+
                 else:
                     TableRow = []
                     colcnt = 0
@@ -375,12 +375,12 @@ class CPGroups(object):
         return CrystalGroup(grp = Group, grpcls = GroupClasses, \
                             irrrep = IrrRep, chartab = CharacterTable, \
                             clssize = ClassSize)
-    
+
     def ParseParameterTable(self, file):
-        """This is a function to parse the formatting of the 
-        *Parameters.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *Parameters.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group Euler angles, 
+        From these files the respective group Euler angles,
         principal angle, and rotation axis will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -392,7 +392,7 @@ class CPGroups(object):
 
             for row in csv_reader:
                 if line_count == 0:
-                    ParameterLabels = row[1:] 
+                    ParameterLabels = row[1:]
                     line_count += 1
                 else:
                     TableRow = []
@@ -410,7 +410,7 @@ class CPGroups(object):
                                 RowSplit = (RowSplit[1].split(']'))[0].split(',')
                                 RowSplit = ''.join(['_'.join(RowSplit[0:2]),'`'])
                                 RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                            
+
                             tmpSplit = RowSplit[0].split('SqrtBox[')
                             while len(tmpSplit)>1:
                                 tmpSplit = [tmpSplit[0],'SqrtBox['.join(tmpSplit[1:])]
@@ -436,32 +436,32 @@ class CPGroups(object):
                         colcnt += 1
                     ParameterTable.append(TableRow)
                     line_count += 1
-                    
+
         return Elements, ParameterLabels, ParameterTable
 
     def GetGroup(self, grpnum):
         return self.GroupNumbers.index(grpnum)
-    
+
     def SortGroups(self):
         import operator
-        
+
         self.Groups.sort(key=operator.attrgetter('PointGroupNumber'))
-            
+
     def PrintGroupList(self):
         for gg in np.arange(len(self.Groups)):
             print(self.Groups[gg].PointGroupNumber,':',self.Groups[gg].PointGroupLabel)
 
 def RYlm(l, m, alpha, beta, gamma, detRot):
-    '''This would be rotateHarmonic in the Mathematica code. It is used 
+    '''This would be rotateHarmonic in the Mathematica code. It is used
     in the projection of the spherical harmonices to create symmetry
     adapted wavefunctions.
     '''
     from sympy import Symbol
     from sympy import simplify
-    
+
     theta = Symbol("theta", real=True)
     phi = Symbol("phi", real=True)
-    
+
     Rf = 0
     for nn in np.arange(-l,l+0.1):
         nn=int(nn)
@@ -471,24 +471,24 @@ def RYlm(l, m, alpha, beta, gamma, detRot):
 
 def SymmetryAdaptedWF(Group, IrrRep, l, m):
     from sympy import simplify, re, im
-    
-    # Allows for either string or index input of 
+
+    # Allows for either string or index input of
     # the irreducible representation
     if isinstance(IrrRep,str):
         IrrIdx = Group.IrrReps.index(IrrRep)
     else:
         IrrIdx = IrrRep
-    
+
     # Character of the irreducible representation
     chi = Group.CharacterTable[IrrIdx]
-    
-    # Degree of the irreducible representation which is the same as 
+
+    # Degree of the irreducible representation which is the same as
     # the character for the E (identity) element.
     degree = chi[Group.Classes.index('E')]
-    
+
     # Order of the group which is equal to the sum of the elements
     order = len(Group.Elements)
-    
+
     SALC = 0
     EulerCntr = 0
     for sym in np.arange(len(Group.Classes)):
@@ -499,7 +499,7 @@ def SymmetryAdaptedWF(Group, IrrRep, l, m):
             gamma = Group.ParameterTable[EulerCntr][2]
             detRot = Group.ParameterTable[EulerCntr][3]
             #print('alpha = %s, beta = %s, gamma = %s'%(alpha,beta,gamma))
-        
+
             # Will come back to this to either make it more efficient and/or symbolic
             #print('RYlm: %s'%RYlm(l,m,alpha,beta,gamma,detRot))
             #print('chi = ',chi[sym])
@@ -507,55 +507,55 @@ def SymmetryAdaptedWF(Group, IrrRep, l, m):
             SALC = SALC + chi[sym]*RYlm(l,m,alpha,beta,gamma,detRot)
             #print('SALC = %s'%SALC)
             EulerCntr += 1
-    
+
     SALC = simplify(SALC.doit())
     #print('deg = %s, order = %s'%(degree,order))
     #print('chi = ',chi)
-    
+
     CoeffDict = SALC.as_coefficients_dict()
-    
+
     SALC_tmp = 0
     for coeff in CoeffDict.keys():
         if abs(CoeffDict[coeff])<1e-10:
             CoeffDict[coeff] = 0
         SALC_tmp = SALC_tmp + CoeffDict[coeff]*coeff
-        
+
     return degree/order*SALC_tmp
 
 def Wigner_d(j, m1, m2, beta):
     '''
     Inputs :
-    
-    Outputs 
+
+    Outputs
     '''
     from sympy import factorial, Sum, symbols, cos, sin
     from sympy.abc import k
-    
-    # The summation over k extends as long as the factorials are positive. 
+
+    # The summation over k extends as long as the factorials are positive.
     # Since one of the factorials is k! then we know that we must start from
     # k=0 and extend to the limit defined below
     k_lim_min = int(np.max([0,m2-m1]))
     k_lim_max = int(np.min([j+m2,j-m1]))
-    
+
     wig_d = (factorial(j+m1)*factorial(j-m1)*factorial(j+m2)*factorial(j-m2))**(1/2)*Sum((-1)**(m1-m2+k)* \
             cos(beta/2)**(2*j+m2-m1-2*k)*sin(beta/2)**(m1-m2+2*k)/(factorial(j+m2-k)* \
             factorial(k)*factorial(m1-m2+k)*factorial(j-m1-k)),(k,k_lim_min,k_lim_max))
-    
+
     return wig_d.doit()
 
 def Wigner_D(j, m1, m2, alpha, beta, gamma, sign_conv = 'Mathematica' ):
     from sympy import simplify, re, im, E, I
-    
+
     if sign_conv == 'Mathematica':
         # Mathematica sign convention
         m1 = -m1
         m2 = -m2
-    
+
     '''print('j:%s, m1:%s, m2:%s, alpha:%s, beta:%s, gamma:%s'%(j, m1, m2, alpha, beta, gamma))
     print(E**(-1j*m1*alpha))
-    print(Wigner_d(j, m1, m2, beta)) 
+    print(Wigner_d(j, m1, m2, beta))
     print(E**(-1j*m2*gamma))'''
-    
+
     WigD = simplify((E**(-I*m1*alpha)*Wigner_d(j, m1, m2, beta)*E**(-I*m2*gamma)).doit())
 
     if WigD.is_complex:
@@ -580,14 +580,14 @@ def B_CF(ll,mm):
 
 def C_CF(ll,mm):
     '''
-    Function to add the prefactor for the unnormalized spherical 
+    Function to add the prefactor for the unnormalized spherical
     harmonics used in the crystal field potential.
     '''
     return np.sqrt(4*np.pi/(2*ll+1))*Ylm(ll,mm)
 
 def GetSALCs(Group,IrrRep,l_max):
     '''
-    Function to get all of the symmetry adapted functions for a given 
+    Function to get all of the symmetry adapted functions for a given
     representation (IrrRep) of a given group (Group) up to a
     maximum l value (l_max)
     '''
@@ -600,7 +600,7 @@ def GetSALCs(Group,IrrRep,l_max):
 def RealCheck(SALCs, debug = False):
     '''
     Ideally we would require that the B coefficients be real.
-    Thus, if the C terms are imaginary then the corresponding 
+    Thus, if the C terms are imaginary then the corresponding
     B would also be imaginary. However, we can pull the value i
     out from the B, so that it remains real and instead we
     multiply the C by i.
@@ -611,10 +611,10 @@ def RealCheck(SALCs, debug = False):
         ExpSALC = SALCs[salc].rewrite(cos).simplify()
         if debug == True:
             print(ExpSALC, re(ExpSALC))
-        if (re(ExpSALC) == 0): 
+        if (re(ExpSALC) == 0):
             realness[salc] = 1j
         else:
-            
+
             realness[salc] = 1
     return realness
 
@@ -664,10 +664,10 @@ def GenerateBList(PointGroupNumber, l):
     NormList = IdxList/np.expand_dims(IdxList.sum(axis=0),axis=1).dot(np.ones((1,IdxList.shape[1]))).T
     NormList[np.isnan(NormList)] = 0
     NormList[np.isinf(NormList)] = 0
-    
+
     Bcoeff = np.array(Bcoeff)
     Blist = np.array(Blist)
-    
+
     return Bcoeff, Blist, IdxList, NormList
 
 def CFP(Group,l=4, debug=False, as_Ckq=False):
@@ -675,15 +675,15 @@ def CFP(Group,l=4, debug=False, as_Ckq=False):
     Generates the crystal field potential for the group \
     out to angular momentum l=4.
     '''
-    
+
     SALCs = GetSALCs(Group,0,l)
-    
+
     Bcoeff, Blist, IdxList, NormList = GenerateBList(Group.PointGroupNumber, l)
-    
+
     Sym_SALCs = SALC_SymTest(Bcoeff*SALCs).dot(IdxList)
     Real_SALCs = RealCheck((Sym_SALCs).dot(IdxList),debug)
     #Real_SALCs = RealCheck((SALCs).dot(IdxList),debug)
-    
+
     V_CF = (Sym_SALCs*Real_SALCs).dot(Blist.dot(NormList))
     #V_CF = (Sym_SALCs).dot(Blist.dot(NormList))
     CoeffDict = V_CF.as_coefficients_dict()
@@ -692,19 +692,19 @@ def CFP(Group,l=4, debug=False, as_Ckq=False):
         if abs(CoeffDict[coeff])<1e-7:
             CoeffDict[coeff] = 0
         Vcf_tmp = Vcf_tmp + CoeffDict[coeff]*coeff
-    
+
     if debug == True:
         print('SALCs')
         print(SALCs)
-    
+
         print('Realness')
         print(Real_SALCs)
-    
+
         print('Symmetry')
         print(Sym_SALCs)
-    
+
     V_CF = Vcf_tmp.simplify()
-    
+
     if as_Ckq == True:
         V_CF = V_CF.replace(Ynm,Ckq)
     return V_CF
@@ -729,7 +729,7 @@ def fmt_table(data,center_data=False,add_row_nums=False):
 
     buf='''
 \\newcommand\\T{\\Rule{0pt}{1em}{.3em}}
-\\begin{array}{%s}    
+\\begin{array}{%s}
 '''
     max_cols = max(len(r) for r in data)
     column_spec = '|' + '|'.join(['c']*max_cols) + '|'
@@ -772,7 +772,7 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd'):
     ----------------------------
     '''
     from sympy import Symbol, Matrix
-    
+
     if isinstance(orbital,str):
         if orbital == 's':
             orbital = 0
@@ -784,19 +784,19 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd'):
             orbital = 3
         else:
             print('ERROR: Orbital does not exist! Please choose one of s,p,d, or f orbitals')
-    
+
     global l1, m1, l3, m3
-    
+
     l1 = Symbol('l1')
     m1 = Symbol('m1')
     l3 = Symbol('l3')
     m3 = Symbol('m3')
-    
-    
-    
+
+
+
     CFP_Table = []
     THI_func = CFP(Group,l=4).replace(Ynm,Ckq2THI)
-    
+
     for mm1 in np.arange(-orbital,orbital+0.1):
         mm1 = int(mm1)
         col_tmp = []
@@ -804,9 +804,9 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd'):
             mm3 = int(mm3)
             col_tmp.append(THI_func.subs([(l1, orbital), (m1,mm1), (l3, orbital), (m3,mm3)]).simplify())
         CFP_Table.append(col_tmp)
-        
+
     del l1, m1, l3, m3
-    
+
     EigenSys = Matrix(CFP_Table).eigenvects()
     EigenVals = []
     EigenVecs = []
@@ -814,15 +814,15 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd'):
         for deg in np.arange(eRes[1]):
             EigenVals.append(eRes[0])
             EigenVecs.append(list(eRes[2][deg]))
-            
+
     Yarray = []
     for mm in np.arange(-orbital,orbital+0.1):
         Yarray.append(Ynm(2,int(mm),theta,phi))
     Yarray = Matrix(Yarray)
     EigenVecs = Matrix(EigenVecs)
-    
+
     global alpha, beta, gamma, detRot
-    
+
     eVec = list(EigenVecs*Yarray)
     reps = []
     for evc in eVec:
@@ -836,13 +836,15 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd'):
         reps.append(np.array(CPG.Groups[9].CharacterTable).dot(np.array(rotEVecs)).tolist())
         repIdx = []
         for row in reps:
-            repIdx.append([idx for idx, val in enumerate(row) if val != 0][0]) 
-    
+            repIdx.append([idx for idx, val in enumerate(row) if val != 0][0])
+
     srtIdx = np.array(repIdx).argsort().tolist()
     return EigenVals, eVec, repIdx, srtIdx
 
 def Ysym(l,m,theta,phi):
-    return RYlm(l, m, alpha, beta, gamma, detRot)from __future__ import print_function, division
+    return RYlm(l, m, alpha, beta, gamma, detRot)
+
+from __future__ import print_function, division
 
 from sympy import pi, I
 from sympy.core.singleton import S
@@ -1085,7 +1087,7 @@ class Ynm(Function):
 class CrystalGroup(object):
     """Class for group character tables"""
     def __init__(self, grp = '', grpcls  = '', irrrep = '', chartab = '', clssize = ''):
-        
+
         GrpLabel = ['C_1','C_i','C_2','C_s','C_2h','D_2','C_2v','D_2h','C_4',
                     'S_4','C_4h','D_4','C_4v','D_2d','D_4h','C_3','S_6','D_3',
                     'C_3v','D_3d','C_6','C_3h','C_6h','D_6','C_6v','D_3h',
@@ -1097,21 +1099,21 @@ class CrystalGroup(object):
         self.CharacterTable = chartab # Character table for group
         self.RepresentationDegrees = self.addRepDegrees()
         self.ClassSize = clssize
-    
+
     def addParameterTable(self, elems = '', partab = '', parlab = ''):
         self.Elements = elems
         self.ParameterTable = partab
         self.ParameterLabels = parlab
         self.ElementCharacterTable = self.addElementCharacters()
         self.GroupOrderh = len(elems)
-        
+
     def elementPositions(self):
         #return np.cumsum(self.ClassSize).tolist() #Mathematica
         return (np.insert(np.cumsum(self.ClassSize), 0, 0, axis=0)[0:-1]).tolist()
-    
+
     def addRepDegrees(self):
         return np.array(self.CharacterTable)[:,0].astype(int).tolist()
-    
+
     def addElementCharacters(self):
         elemIdx = self.elementPositions()
         clsSize = np.array(self.ClassSize)-1
@@ -1120,32 +1122,32 @@ class CrystalGroup(object):
             for elrpt in np.arange(clsSize[idx]):
                 CharTable = np.insert(CharTable,elemIdx[idx]+1,CharTable[:,elemIdx[idx]],axis=1)
         return CharTable.tolist()
-    
+
     def addSpaceGroupElements(self, matrix = '', elems = ''):
         self.SpaceGroupMatrices = matrix
         self.SpaceGroupElementNames = elems
-        
+
     def printPointGroup(self):
         return self.PointGroup
-        
+
     def printClasses(self):
         return self.Classes
-        
+
     def printIrrReps(self):
         print(self.IrrReps)
-        
+
     def printCharacterTable(self):
         print(self.CharacterTable)
-        
+
     def printchartable(self):
         null = True
-        
+
 class CPGroups(object):
     """Class for all crystallographic point groups"""
     def __init__(self):
-        """This will loop through the various folders to import 
+        """This will loop through the various folders to import
         the character and parameter tables for each point group.
-        Each point group will form a CrystalGroup class object 
+        Each point group will form a CrystalGroup class object
         and these will be joined into a list of class objects."""
         self.Groups = []
         for (dirpath, dirnames, filenames) in os.walk('/'.join([os.getcwd(),'Character Tables'])):
@@ -1155,30 +1157,30 @@ class CPGroups(object):
         self.GroupNumbers = []
         for gg in np.arange(len(self.Groups)):
             self.GroupNumbers.append(self.Groups[gg].PointGroupNumber)
-            
+
         for (dirpath, dirnames, filenames) in os.walk('/'.join([os.getcwd(),'Parameter Tables'])):
             for file in filenames:
                 if file.endswith('.csv'):
                     GrpIdx = self.GetGroup(int(file.split('_')[1]))
                     Elements, ParameterLabels, ParameterTable = self.ParseParameterTable(file)
-                    self.Groups[GrpIdx].addParameterTable(elems = Elements, 
-                                                         parlab = ParameterLabels, 
+                    self.Groups[GrpIdx].addParameterTable(elems = Elements,
+                                                         parlab = ParameterLabels,
                                                          partab = ParameterTable)
-        
+
         for (dirpath, dirnames, filenames) in os.walk('/'.join([os.getcwd(),'Space Group Elements'])):
             for file in filenames:
                 if file.endswith('.csv'):
                     GrpIdx = self.GetGroup(int(file.split('_')[1]))
                     Elements, SpaceGroupTable = self.ParseSpaceGroupTable(file)
-                    self.Groups[GrpIdx].addSpaceGroupElements(elems = Elements, 
+                    self.Groups[GrpIdx].addSpaceGroupElements(elems = Elements,
                                                          matrix = SpaceGroupTable)
         self.SortGroups()
-        
+
     def ParseCharacterTable(self, file):
-        """This is a function to parse the formatting of the 
-        *CharacterTable_Values.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *CharacterTable_Values.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group character table, 
+        From these files the respective group character table,
         classes, and irreducible representations will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -1214,7 +1216,7 @@ class CPGroups(object):
                         else:
                             ClassSize.append(int(cls))
                     line_count += 1
-                    
+
                 else:
                     TableRow = []
                     colcnt = 0
@@ -1243,12 +1245,12 @@ class CPGroups(object):
         return CrystalGroup(grp = Group, grpcls = GroupClasses, \
                             irrrep = IrrRep, chartab = CharacterTable, \
                             clssize = ClassSize)
-    
+
     def ParseParameterTable(self, file):
-        """This is a function to parse the formatting of the 
-        *Parameters.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *Parameters.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group Euler angles, 
+        From these files the respective group Euler angles,
         principal angle, and rotation axis will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -1260,7 +1262,7 @@ class CPGroups(object):
 
             for row in csv_reader:
                 if line_count == 0:
-                    ParameterLabels = row[1:] 
+                    ParameterLabels = row[1:]
                     line_count += 1
                 else:
                     TableRow = []
@@ -1278,7 +1280,7 @@ class CPGroups(object):
                                 RowSplit = (RowSplit[1].split(']'))[0].split(',')
                                 RowSplit = ''.join(['_'.join(RowSplit[0:2]),'`'])
                                 RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                            
+
                             tmpSplit = RowSplit[0].split('SqrtBox[')
                             while len(tmpSplit)>1:
                                 tmpSplit = [tmpSplit[0],'SqrtBox['.join(tmpSplit[1:])]
@@ -1304,14 +1306,14 @@ class CPGroups(object):
                         colcnt += 1
                     ParameterTable.append(TableRow)
                     line_count += 1
-                    
+
         return Elements, ParameterLabels, ParameterTable
-    
+
     def ParseSpaceGroupTable(self, file):
-        """This is a function to parse the formatting of the 
-        *SpaceGroupElements.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *SpaceGroupElements.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group Euler angles, 
+        From these files the respective group Euler angles,
         principal angle, and rotation axis will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -1363,14 +1365,14 @@ class CPGroups(object):
                     colcnt += 1
                     ParameterTable.append(TableRow)
                     line_count += 1
-                    
+
         return Elements, SpaceGroupTable
-    
+
     def ParseSpaceGroupTable(self, file):
-        """This is a function to parse the formatting of the 
-        *SpaceGroupElements.csv files. It will reformat the 
+        """This is a function to parse the formatting of the
+        *SpaceGroupElements.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group Euler angles, 
+        From these files the respective group Euler angles,
         principal angle, and rotation axis will be scraped."""
         Group = int(file.split('_')[1])
 
@@ -1415,27 +1417,27 @@ class CPGroups(object):
 
     def GetGroup(self, grpnum):
         return self.GroupNumbers.index(grpnum)
-    
+
     def SortGroups(self):
         import operator
-        
+
         self.Groups.sort(key=operator.attrgetter('PointGroupNumber'))
-            
+
     def PrintGroupList(self):
         for gg in np.arange(len(self.Groups)):
             print(self.Groups[gg].PointGroupNumber,':',self.Groups[gg].PointGroupLabel)
 
 def RYlm(l, m, alpha, beta, gamma, detRot):
-    '''This would be rotateHarmonic in the Mathematica code. It is used 
+    '''This would be rotateHarmonic in the Mathematica code. It is used
     in the projection of the spherical harmonices to create symmetry
     adapted wavefunctions.
     '''
     from sympy import Symbol
     from sympy import simplify
-    
+
     theta = Symbol("theta", real=True)
     phi = Symbol("phi", real=True)
-    
+
     Rf = 0
     for nn in np.arange(-l,l+0.1):
         nn=int(nn)
@@ -1445,24 +1447,24 @@ def RYlm(l, m, alpha, beta, gamma, detRot):
 
 def SymmetryAdaptedWF(Group, IrrRep, l, m):
     from sympy import simplify, re, im
-    
-    # Allows for either string or index input of 
+
+    # Allows for either string or index input of
     # the irreducible representation
     if isinstance(IrrRep,str):
         IrrIdx = Group.IrrReps.index(IrrRep)
     else:
         IrrIdx = IrrRep
-    
+
     # Character of the irreducible representation
     chi = Group.CharacterTable[IrrIdx]
-    
-    # Degree of the irreducible representation which is the same as 
+
+    # Degree of the irreducible representation which is the same as
     # the character for the E (identity) element.
     degree = chi[Group.Classes.index('E')]
-    
+
     # Order of the group which is equal to the sum of the elements
     order = len(Group.Elements)
-    
+
     SALC = 0
     EulerCntr = 0
     for sym in np.arange(len(Group.Classes)):
@@ -1473,7 +1475,7 @@ def SymmetryAdaptedWF(Group, IrrRep, l, m):
             gamma = Group.ParameterTable[EulerCntr][2]
             detRot = Group.ParameterTable[EulerCntr][3]
             #print('alpha = %s, beta = %s, gamma = %s'%(alpha,beta,gamma))
-        
+
             # Will come back to this to either make it more efficient and/or symbolic
             #print('RYlm: %s'%RYlm(l,m,alpha,beta,gamma,detRot))
             #print('chi = ',chi[sym])
@@ -1481,55 +1483,55 @@ def SymmetryAdaptedWF(Group, IrrRep, l, m):
             SALC = SALC + chi[sym]*RYlm(l,m,alpha,beta,gamma,detRot)
             #print('SALC = %s'%SALC)
             EulerCntr += 1
-    
+
     SALC = simplify(SALC.doit())
     #print('deg = %s, order = %s'%(degree,order))
     #print('chi = ',chi)
-    
+
     CoeffDict = SALC.as_coefficients_dict()
-    
+
     SALC_tmp = 0
     for coeff in CoeffDict.keys():
         if abs(CoeffDict[coeff])<1e-10:
             CoeffDict[coeff] = 0
         SALC_tmp = SALC_tmp + CoeffDict[coeff]*coeff
-        
+
     return degree/order*SALC_tmp
 
 def Wigner_d(j, m1, m2, beta):
     '''
     Inputs :
-    
-    Outputs 
+
+    Outputs
     '''
     from sympy import factorial, Sum, symbols, cos, sin
     from sympy.abc import k
-    
-    # The summation over k extends as long as the factorials are positive. 
+
+    # The summation over k extends as long as the factorials are positive.
     # Since one of the factorials is k! then we know that we must start from
     # k=0 and extend to the limit defined below
     k_lim_min = int(np.max([0,m2-m1]))
     k_lim_max = int(np.min([j+m2,j-m1]))
-    
+
     wig_d = (factorial(j+m1)*factorial(j-m1)*factorial(j+m2)*factorial(j-m2))**(1/2)*Sum((-1)**(m1-m2+k)* \
             cos(beta/2)**(2*j+m2-m1-2*k)*sin(beta/2)**(m1-m2+2*k)/(factorial(j+m2-k)* \
             factorial(k)*factorial(m1-m2+k)*factorial(j-m1-k)),(k,k_lim_min,k_lim_max))
-    
+
     return wig_d.doit()
 
 def Wigner_D(j, m1, m2, alpha, beta, gamma, sign_conv = 'Mathematica' ):
     from sympy import simplify, re, im, E, I
-    
+
     if sign_conv == 'Mathematica':
         # Mathematica sign convention
         m1 = -m1
         m2 = -m2
-    
+
     '''print('j:%s, m1:%s, m2:%s, alpha:%s, beta:%s, gamma:%s'%(j, m1, m2, alpha, beta, gamma))
     print(E**(-1j*m1*alpha))
-    print(Wigner_d(j, m1, m2, beta)) 
+    print(Wigner_d(j, m1, m2, beta))
     print(E**(-1j*m2*gamma))'''
-    
+
     WigD = simplify((E**(-I*m1*alpha)*Wigner_d(j, m1, m2, beta)*E**(-I*m2*gamma)).doit())
 
     if WigD.is_complex:
@@ -1554,14 +1556,14 @@ def B_CF(ll,mm):
 
 def C_CF(ll,mm):
     '''
-    Function to add the prefactor for the unnormalized spherical 
+    Function to add the prefactor for the unnormalized spherical
     harmonics used in the crystal field potential.
     '''
     return np.sqrt(4*np.pi/(2*ll+1))*Ylm(ll,mm)
 
 def GetSALCs(Group,IrrRep,l_max):
     '''
-    Function to get all of the symmetry adapted functions for a given 
+    Function to get all of the symmetry adapted functions for a given
     representation (IrrRep) of a given group (Group) up to a
     maximum l value (l_max)
     '''
@@ -1574,7 +1576,7 @@ def GetSALCs(Group,IrrRep,l_max):
 def RealCheck(SALCs, debug = False):
     '''
     Ideally we would require that the B coefficients be real.
-    Thus, if the C terms are imaginary then the corresponding 
+    Thus, if the C terms are imaginary then the corresponding
     B would also be imaginary. However, we can pull the value i
     out from the B, so that it remains real and instead we
     multiply the C by i.
@@ -1585,10 +1587,10 @@ def RealCheck(SALCs, debug = False):
         ExpSALC = SALCs[salc].rewrite(cos).simplify()
         if debug == True:
             print(ExpSALC, re(ExpSALC))
-        if (re(ExpSALC) == 0): 
+        if (re(ExpSALC) == 0):
             realness[salc] = 1j
         else:
-            
+
             realness[salc] = 1
     return realness
 
@@ -1638,10 +1640,10 @@ def GenerateBList(PointGroupNumber, l):
     NormList = IdxList/np.expand_dims(IdxList.sum(axis=0),axis=1).dot(np.ones((1,IdxList.shape[1]))).T
     NormList[np.isnan(NormList)] = 0
     NormList[np.isinf(NormList)] = 0
-    
+
     Bcoeff = np.array(Bcoeff)
     Blist = np.array(Blist)
-    
+
     return Bcoeff, Blist, IdxList, NormList
 
 def CFP(Group,l=4, debug=False, as_Ckq=False):
@@ -1649,14 +1651,14 @@ def CFP(Group,l=4, debug=False, as_Ckq=False):
     Generates the crystal field potential for the group \
     out to angular momentum l=4.
     '''
-    
+
     SALCs = GetSALCs(Group,0,l)
-    
+
     Bcoeff, Blist, IdxList, NormList = GenerateBList(Group.PointGroupNumber, l)
-    
+
     Sym_SALCs = SALC_SymTest(Bcoeff*SALCs).dot(IdxList)
     Real_SALCs = RealCheck((Sym_SALCs).dot(IdxList),debug)
-    
+
     V_CF = (Sym_SALCs*Real_SALCs).dot(Blist.dot(NormList))
     CoeffDict = V_CF.as_coefficients_dict()
     Vcf_tmp = 0
@@ -1664,19 +1666,19 @@ def CFP(Group,l=4, debug=False, as_Ckq=False):
         if abs(CoeffDict[coeff])<1e-7:
             CoeffDict[coeff] = 0
         Vcf_tmp = Vcf_tmp + CoeffDict[coeff]*coeff
-    
+
     if debug == True:
         print('SALCs')
         print(SALCs)
-    
+
         print('Realness')
         print(Real_SALCs)
-    
+
         print('Symmetry')
         print(Sym_SALCs)
-    
+
     V_CF = Vcf_tmp.simplify()
-    
+
     if as_Ckq == True:
         V_CF = V_CF.replace(Ynm,Ckq)
     return V_CF
@@ -1698,17 +1700,17 @@ def Ckq2THI(l,m,theta,phi):
 
 def ThreeHarmonicIntegrate(l1, m1, l2, m2, l3, m3):
     '''
-    ThreeHarmonicIntegrate(l1,m1,l2,m2,l3,m3) solves the integral of 
+    ThreeHarmonicIntegrate(l1,m1,l2,m2,l3,m3) solves the integral of
     the product of three spherical harmonics (i.e., eqn 1.15 from  STK) where
     one is unnormalized. This is used in the determination of the single
     electron crystal field splitting.
-    
+
     l1 : l quantum number of orbital 1 (Y_l1,m1) [l in STK notation]
     l3 : l quantum number of orbital 2 (Y_l3,m3) [l' in STK notation]
     m1 : m quantum number of l1 [-l1,-l1+1,...,l1-1,l1] [m in STK notation]
     m3 : m quantum number of l3 [-l3,-l3+1,...,l3-1,l3] [m' in STK notation]
-    
-    l2 : k in STK notation [ |l-l'|<=k<=l+l' ] 
+
+    l2 : k in STK notation [ |l-l'|<=k<=l+l' ]
     m2 : q in STK notation [ q = m-m' ]
     '''
     from sympy.physics.quantum.cg import CG
@@ -1723,10 +1725,10 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
     ----------------------------
     |    l     | 0 | 1 | 2 | 3 |
     ----------------------------
-    Note that this is currently only valid for intra-orbital 
+    Note that this is currently only valid for intra-orbital
     '''
     from sympy import Symbol, Matrix, simplify
-    
+
     if isinstance(orbital,str):
         if orbital == 's':
             orbital = 0
@@ -1738,19 +1740,19 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
             orbital = 3
         else:
             print('ERROR: Orbital does not exist! Please choose one of s,p,d, or f orbitals')
-    
+
     global l1, m1, l3, m3
-    
+
     l1 = Symbol('l1')
     m1 = Symbol('m1')
     l3 = Symbol('l3')
     m3 = Symbol('m3')
-    
-    
-    
+
+
+
     CFP_Table = []
     THI_func = CFP(Group,l=4).replace(Ynm,Ckq2THI)
-    
+
     for mm1 in np.arange(-orbital,orbital+0.1):
         mm1 = int(mm1)
         col_tmp = []
@@ -1758,9 +1760,9 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
             mm3 = int(mm3)
             col_tmp.append(THI_func.subs([(l1, orbital), (m1,mm1), (l3, orbital), (m3,mm3)]).simplify())
         CFP_Table.append(col_tmp)
-        
+
     del l1, m1, l3, m3
-    
+
     EigenSys = Matrix(CFP_Table).eigenvects()
     EigenVals = []
     EigenVecs = []
@@ -1768,21 +1770,21 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
         for deg in np.arange(eRes[1]):
             EigenVals.append(eRes[0])
             EigenVecs.append(list(eRes[2][deg]))
-            
+
     Yarray = []
     for mm in np.arange(-orbital,orbital+0.1):
         Yarray.append(Ynm(2,int(mm),theta,phi))
     Yarray = Matrix(Yarray)
     EigenVecs = Matrix(EigenVecs)
-    
+
     global alpha, beta, gamma, detRot
-    
+
     eVec = list(EigenVecs*Yarray)
     reps = []
     ParTable = Group.ParameterTable
     for evc in eVec:
         rotEVecs = []
-        
+
         for rep in np.arange(len(ParTable)):
             alpha = ParTable[rep][0]
             beta = ParTable[rep][1]
@@ -1790,29 +1792,29 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
             detRot = ParTable[rep][3]
             rotEVecs.append(evc.replace(Ynm,Yrot))
         reps.append(np.array(Group.ElementCharacterTable).dot(np.array(rotEVecs)).tolist())
-        
+
     repIdx = []
     for row in reps:
         rowsimp = []
         for col in row:
             colsimp = simplify(col)
             CoeffDict = colsimp.as_coefficients_dict()
-    
+
             col_tmp = 0
             for coeff in CoeffDict.keys():
-                
+
                 if abs(CoeffDict[coeff])<1e-10:
                     CoeffDict[coeff] = 0
                 col_tmp = col_tmp + CoeffDict[coeff]*coeff
             rowsimp.append(col_tmp)
-        
-        repIdx.append([idx for idx, val in enumerate(rowsimp) if val != 0][0]) 
-    
+
+        repIdx.append([idx for idx, val in enumerate(rowsimp) if val != 0][0])
+
     '''if debug == True:
         for row in reps:
             for col in row:
                 print(simplify(col))'''
-                
+
     srtIdx = np.array(repIdx).argsort().tolist()
     return EigenVals, eVec, repIdx, srtIdx
 
@@ -1821,10 +1823,10 @@ def Yrot(l,m,theta,phi):
 
 def GenAList(Group):
     '''
-    
+
     '''
     from sympy import symbols
-    
+
     aList = []
     for idx in np.arange(len(Group.Classes)):
         aList.append(symbols(''.join(['a_',str(int(idx+1))])))
@@ -1837,7 +1839,7 @@ def ContinuousCharacters(l, alpha):
     '''
     from sympy import limit, sin, symbols
     x = symbols('x')
-    
+
     return limit(sin((l+1/2)*x)/sin(1/2*x), x, alpha)
 
 def GroupPhiAngle(Group):
@@ -1850,12 +1852,12 @@ def GroupPhiAngle(Group):
 
 def FindSplittingReps(Group, orbital, PrintString = True):
     '''
-    This function reproduces Table 2.7 in Jon's Thesis. Mathematica has 
+    This function reproduces Table 2.7 in Jon's Thesis. Mathematica has
     changed the order of the class elements and it is no longer self consistent
-    with itself so it gives errors. 
+    with itself so it gives errors.
     '''
     from scipy.linalg import solve
-    
+
     if isinstance(orbital,str):
         if orbital == 's':
             orbital = 0
@@ -1867,20 +1869,20 @@ def FindSplittingReps(Group, orbital, PrintString = True):
             orbital = 3
         else:
             print('ERROR: Orbital does not exist! Please choose one of s,p,d, or f orbitals')
-    
+
     ClsIdx = (np.cumsum(Group.ClassSize)-1).tolist()
     ParTable = np.array(Group.ParameterTable)[ClsIdx,4].tolist()
     Chi_l = np.zeros((len(ParTable),))
     for rpIdx in np.arange(len(ParTable)):
         Chi_l[rpIdx] = ContinuousCharacters(orbital, ParTable[rpIdx])
-    
-    
+
+
     x = solve(np.array(Group.CharacterTable).T, Chi_l)
     x[np.abs(x)<1E-10] = 0
-    
+
     Degen = np.round(np.abs(x)).flatten().astype(int)
     mask = Degen>0
-    
+
     if PrintString == True:
         SplittingString = ''
         for irr in np.arange(len(Group.IrrReps)):
@@ -1890,25 +1892,25 @@ def FindSplittingReps(Group, orbital, PrintString = True):
                 else:
                     tmpStr = ''.join([str(Degen[irr]),Group.IrrReps[irr]])
                 SplittingString = '+'.join([SplittingString,tmpStr])
-        
+
         print(Group.PointGroupLabel,'\t',SplittingString[1:],'\t',np.array(Group.RepresentationDegrees)[mask])
 
     return #np.array(Group.IrrReps).dot()
 
 def c_STK(Group, IrrRep, l):
     h = len(Group.Elements)
-    
+
     ClsIdx = Group.elementPositions()#(np.cumsum(Group.ClassSize)-1).tolist()
     ParTable = np.array(Group.ParameterTable)[ClsIdx,4]
     Chi_l = np.zeros((len(ParTable),))
-    
+
     rpIdx = Group.IrrReps.index(IrrRep)
     Chi_k = np.array(Group.CharacterTable)[rpIdx,:]
-    
+
     for clsIdx in np.arange(len(ParTable)):
         Chi_l[clsIdx] = ContinuousCharacters(l, ParTable[clsIdx])
         print('%s \t alpha: %s \t chi: %s'%(Group.Classes[clsIdx],ParTable[clsIdx],Chi_l[clsIdx]))
-    
+
     print(Group.ClassSize)
     print(Chi_k)
     print(Chi_l)
@@ -1934,7 +1936,7 @@ def SymmetricProduct(Group, Gamma):
     from scipy.linalg import solve
     if isinstance(Gamma,str):
         Gamma = Group.IrrReps.index(Gamma)
-    
+
     x = solve(np.transpose(Group.CharacterTable),1/2*(np.array(Group.CharacterTable[Gamma])**2 + CharactersSquares(Group, Gamma)))
 
     if np.iscomplex(x).any():
@@ -1955,7 +1957,7 @@ def AntiSymmetricProduct(Group, Gamma):
     from scipy.linalg import solve
     if isinstance(Gamma,str):
         Gamma = Group.IrrReps.index(Gamma)
-    
+
     x = solve(np.transpose(Group.CharacterTable),1/2*(np.array(Group.CharacterTable[Gamma])**2 - CharactersSquares(Group, Gamma)))
 
     if np.iscomplex(x).any():
@@ -1969,7 +1971,7 @@ def AntiSymmetricProduct(Group, Gamma):
 
     return np.argwhere(x==1).flatten().tolist()
 
-def ClassesSquared(Group, PrintTable = False): 
+def ClassesSquared(Group, PrintTable = False):
     '''ClassesSquared(G) returns the class that the square of each class \
     belongs to'''
     MatReps = np.array(Group.SpaceGroupMatrices)[Group.elementPositions()]
@@ -1983,7 +1985,7 @@ def ClassesSquared(Group, PrintTable = False):
 
 def ThresholdCoefficients(entry):
     Dict = entry.as_coefficients_dict()
-    
+
     simplified_entry = 0
     for coeff in Dict.keys():
         if abs(Dict[coeff])<1e-10:
@@ -1991,7 +1993,7 @@ def ThresholdCoefficients(entry):
         simplified_entry = simplified_entry + Dict[coeff]*coeff
     return simplified_entry
 
-def GroupSymmetricSquares(Group, ReturnLabels = False): 
+def GroupSymmetricSquares(Group, ReturnLabels = False):
     '''
     GroupSymmetricSquares(G) returns the list of representations in the \
     symmetric squares
@@ -2005,7 +2007,7 @@ def GroupSymmetricSquares(Group, ReturnLabels = False):
             Results.append(SymmetricProduct(Group, Gamma))
     return Results
 
-def GroupAntiSymmetricSquares(Group, ReturnLabels = False): 
+def GroupAntiSymmetricSquares(Group, ReturnLabels = False):
     '''
     GroupSymmetricSquares(G) returns the list of representations in the \
     symmetric squares
@@ -2021,12 +2023,12 @@ def GroupAntiSymmetricSquares(Group, ReturnLabels = False):
 
 def GetComponents(Group):
     '''
-    #GetComponents(Group) returns the names of the components for each 
+    #GetComponents(Group) returns the names of the components for each
     #representation of crystallographc point group Group
     '''
     Chi_0 = np.array(Group.CharacterTable)[:,0]
     Gamma_0 = Group.IrrReps
-    
+
     componentList = []
     for comp in np.arange(len(Chi_0)):
         irrrep = Gamma_0[comp]
@@ -2040,7 +2042,7 @@ def GetComponents(Group):
 
 def ComponentIdx(Group):
     '''
-    #ComponentIdx(Group) returns a list of component indices 
+    #ComponentIdx(Group) returns a list of component indices
     #partitioned by representation
     '''
     CompLen = list(map(np.shape, GetComponents(Group)))
@@ -2050,7 +2052,7 @@ def ComponentIdx(Group):
             CompLen[idx] = 1
         else:
             CompLen[idx] = ent[0]
-            
+
     AccComList = np.cumsum(CompLen)
 
     return [np.arange(x,y+0.1).astype(int).tolist() for x,y in zip((np.insert(AccComList[0:-1]+1,0,1)).astype(int),AccComList)]
@@ -2062,12 +2064,12 @@ def Representation2Components(Group, Gamma):
     '''
     if isinstance(Gamma,str):
         Gamma = Group.IrrReps.index(Gamma)
-        
+
     return ComponentIdx(Group)[Gamma]
 
 def Component2Representation(Group, Component):
     '''
-    Component2Representation(Group, Component) returns the representation 
+    Component2Representation(Group, Component) returns the representation
     to which the component (Component) belongs
     '''
     RepList = []
@@ -2079,7 +2081,7 @@ def Component2Representation(Group, Component):
     # I've chosen to skip this
     return np.where(RepList)[0]
 
-def GetPermutationSign(Group, Gamma): 
+def GetPermutationSign(Group, Gamma):
     '''
     GetPermutationSign(Group, Gamma) returns [1] if the \
     representation Gamma is in the symmetric squares, [-1] if \
@@ -2088,21 +2090,21 @@ def GetPermutationSign(Group, Gamma):
     '''
     if isinstance(Gamma,str):
         Gamma = Group.IrrReps.index(Gamma)
-    
+
     SymList = GroupSymmetricSquares(Group)
     ASymList = GroupAntiSymmetricSquares(Group)
     SymBool = 'Null'
     ASymBool = 'Null'
-    
+
     for idx in np.arange(len(SymList)):
         if np.isin(Gamma,SymList[idx]).flatten()[0]:
             SymBool = True
         if np.isin(Gamma,ASymList[idx]).flatten()[0]:
             ASymBool = True
     PermList = []
-    if SymBool == True: 
+    if SymBool == True:
         PermList.append(1)
-    if ASymBool == True: 
+    if ASymBool == True:
         PermList.append(-1)
     if PermList == []:
         PermList.append(1)
@@ -2117,7 +2119,6 @@ def GetRepresentationEnergy(Group, l=4, orbital = 'd'):
     Results = np.array(EigenVals)[srtIdx]
     return list(dict.fromkeys(Results))
 
-for grp in np.arange(32):
-    #print(CPG.Groups[grp].PointGroupLabel)
-    FindSplittingReps(CPG.Groups[grp], 'd')
-    
+# for grp in np.arange(32):
+#     #print(CPG.Groups[grp].PointGroupLabel)
+#     FindSplittingReps(CPG.Groups[grp], 'd')
