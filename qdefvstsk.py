@@ -1,18 +1,22 @@
-
-from sympy import Function, S, eye, solve
-from sympy import symbols, Matrix, sqrt, sign, latex
+from sympy import Function, S, eye, solve, pi
+from sympy import symbols, Matrix, sqrt, sign, latex, Rational
 from sympy.physics.quantum import TensorProduct
 import pickle
 from itertools import product, combinations
 from collections import OrderedDict
 from sympy.physics.quantum.state import Ket, Bra
 from sympy.physics.wigner import clebsch_gordan as ClebschG
-from IPython.display import Math
+from IPython.display import Math, display
+import matplotlib.pyplot as plt
+import numpy as np
+from sympy.vector import CoordSys3D
 
 u, v, zeta, eta, xi, x, y, z = symbols("u v zeta eta xi x y z")
 e1, e2 = symbols("e1 e2")
 alpha, beta, gamma = symbols("alpha beta gamma")
 Oireps = pickle.load(open('/Users/juan/Google Drive/Zia Lab/Log/Data/Oireps.pkl','rb'))
+xyz = CoordSys3D('N')
+x,y,z,r = symbols('x y z r')
 
 symbols_dictionary = {'E': [u, v],
                      'T1': [alpha, beta, gamma], #[x, y, z],
@@ -55,10 +59,126 @@ protectex = {
     eta: r'{\eta} ',
     xi: r'{\xi} '}
 
+# hard coded ireps and chartable for the generators of O
+# for each irreducible representation one matrix is given
+# for each of the group classes
+
+Ogroup = OrderedDict()
+Ogroup['ireps'] = OrderedDict()
+Ogroup['ireps']['A1'] = OrderedDict(
+  [('E', [[1]]),
+  ('C_{4z}', [[1]]),
+  ('C_{4z}^2', [[1]]),
+  ('C_{3xyz}', [[1]]),
+  ('C_{2xy}', [[1]])]
+)
+Ogroup['ireps']['A2'] = OrderedDict(
+  [('E', [[1]]),
+  ('C_{4z}', [[-1]]),
+  ('C_{4z}^2', [[1]]),
+  ('C_{3xyz}', [[1]]),
+  ('C_{2xy}', [[-1]])]
+)
+Ogroup['ireps']['E'] = OrderedDict(
+  [('E', [[1,0],[0,1]]),
+  ('C_{4z}', [[1,0],[0,-1]]),
+  ('C_{4z}^2', [[1,0],[0,1]]),
+  ('C_{3xyz}', [[-Rational(1,2), -sqrt(3)*Rational(1,2)],
+              [sqrt(3)*Rational(1,2), -Rational(1,2)]]),
+  ('C_{2xy}', [[1,0],[0,-1]])]
+)
+Ogroup['ireps']['T2'] = OrderedDict(
+  [('E', [[1,0,0],[0,1,0],[0,0,1]]),
+  ('C_{4z}', [[0,1,0],[-1,0,0],[0,0,-1]]),
+  ('C_{4z}^2', [[-1,0,0],[0,-1,0],[0,0,1]]),
+  ('C_{3xyz}', [[0,0,1],[1,0,0],[0,1,0]]),
+  ('C_{2xy}', [[0,-1,0],[-1,0,0],[0,0,1]])]
+)
+Ogroup['ireps']['T1'] = OrderedDict(
+  [('E', [[1,0,0],[0,1,0],[0,0,1]]),
+  ('C_{4z}', [[0,-1,0],[1,0,0],[0,0,1]]),
+  ('C_{4z}^2', [[-1,0,0],[0,-1,0],[0,0,1]]),
+  ('C_{3xyz}', [[0,0,1],[1,0,0],[0,1,0]]),
+  ('C_{2xy}', [[0,1,0],[1,0,0],[0,0,-1]])]
+)
+Ogroup['chartable'] = Matrix([[1,1,1,1,1],
+              [1,-1,1,1,-1],
+              [2,0,2,-1,0],
+              [3,1,-1,0,-1],
+              [3,-1,-1,0,1]])
+
+Ogroup['class_sizes'] = {'E': 1,
+               'C_{4z}': 6,
+               'C_{4z}^2': 3,
+               'C_{3xyz}': 8,
+               'C_{2xy}': 6}
+
 Odict = pickle.load(open('/Users/juan/Google Drive/Zia Lab/Log/Data/O_table.pkl','rb'))
-products = Odict['products']
+products = Odict['products'] # what ireps result from a product of two
 Otable = Odict['table']
 
+def rot_matrix(rot_params):
+  '''
+  This returns a matrix  for  a given set  of  rotation
+  parameters.
+  rot_params is a tuple with rot_params[0] the rotation
+  angle, and rot_params[1] a sympy vector for the rotation
+  axis.
+  The rotation axis needs not be a unit vector.
+
+  e.g rot_matrix((pi/2, xyz.x + xyz.y)) returns the rotation matrix
+  for a 90 degree rotation about the diagonal in the x,y plane
+  '''
+  A = xyz.orient_new_axis('A', *rot_params)
+  return xyz.rotation_matrix(A)
+
+def compute_matrix(group_op):
+  full_matrix = []
+  for m in [-2,-1,0,1,2]:
+    subs = (rot_matrix(group_ops[group_op]).inv().dot([x,y,z])) # this determined the coord transform
+    rot_op = YC2m[m].subs([(x,subs[0]),(y,subs[1]), (z,subs[2])], simultaneous=True)
+    rot_op = rot_op.subs(r,1).subs(x, sin(theta)*cos(phi)).subs(y, sin(theta)*sin(phi)).subs(z, cos(theta))
+    proyection = []
+    for m2 in [-2,-1,0,1,2]:
+      integrand = rot_op * (YS2mC[m2]) * sin(theta)
+      integral2 = integrate(integrand, (phi,0,2*pi))
+      integral = simplify(integrate(integral2,(theta,0,pi)))
+      proyection.append(integral)
+    full_matrix.append(proyection)
+  return (group_op,subs,full_matrix)
+
+def direct_product_table(ireps):
+    '''for a given list of ireps
+    return how their direct product
+    separates as a direct sum'''
+    chars = []
+    for gclass in Ogroup['ireps'][ireps[0]]:
+      mats = [Matrix(Ogroup['ireps'][ir][gclass]) for ir in ireps]
+      tprod = TensorProduct(*mats)
+      chars.append(tprod.trace())
+    chars = Matrix(chars)
+    partition = (Ogroup['chartable'].T)**(-1)*chars
+    qet = Qet()
+    for element, ir in zip(partition,['A1','A2','E','T1','T2']):
+        qet = qet + Qet({ir:element})
+    return qet
+
+def direct_product_table_v2(ireps):
+    '''for a given list of ireps
+    return how their direct product
+    separates as a direct sum'''
+    ir_labels = ['A1','A2','E','T1','T2']
+    chars = []
+    for gclass in Ogroup['ireps'][ireps[0]]:
+      chars = [Ogroup['chartable'][ir_labelds.index(ir)] for ir in ireps]
+      tprod = TensorProduct(*mats)
+      chars.append(tprod.trace())
+    chars = Matrix(chars)
+    partition = (Ogroup['chartable'].T)**(-1)*chars
+    qet = Qet()
+    for element, ir in zip(partition,['A1','A2','E','T1','T2']):
+        qet = qet + Qet({ir:element})
+    return qet
 
 def match_spin(key,val):
   '''
@@ -224,19 +344,52 @@ def dirac(p1, p2):
   else:
     return 0
 
+def compute_basis(kets,more_kets=[]):
+  '''
+  returns a sorted list  with elements
+  equal to the quantum numbers of  the
+  provided iterable of qets  (list  or
+  np.array) if the second  argument is
+  provided the iterables of  qets  are
+  concatenated into a single list
+  '''
+  if len(more_kets) > 0:
+    if isinstance(kets, list):
+       kets = kets + more_kets
+    elif isinstance(kets, np.ndarray):
+       kets = list(kets) + list(more_kets)
+  basis = []
+  for ket in kets:
+   basis.extend(ket.basis())
+  basis = list(set(basis))
+  basis = list(sorted(basis))
+  return basis
+
 class Qet():
   '''
-  Scalars may be added to a braket by using
-  the empty type as a key.
-  Up to you to make sure that product of Qets
-  make sense.
+  A Qet is a dictionary of keys and values. Keys
+  correspond to tuples of quantum numbers or symbols
+  and the values correspond to the accompanying
+  coefficients.
+  Scalars may be added by  using  an  empty tuple
+  as a key.
+  A qet may be multiplied by a scalar,  in  which
+  case all the coefficients are multiplied by it,
+  It  may  also  be  multiplied by  another  qet,
+  in which case quantum numbers are  concatenated
+  and coefficients multiplied accordingly.
+
   '''
-  def __init__(self,bits):
-    assert type(bits) == dict, 'Input must be a dictionary.'
-    self.dict = {k: v for k,v in bits.items() if v!=0}
+  def __init__(self, bits=0):
+    if bits == 0:
+        self.dict = {}
+    elif isinstance(bits, dict):
+        self.dict = {k: v for k, v in bits.items() if v!=0}
 
   def __add__(self, other):
     new_dict = dict(self.dict)
+    if other == 0:
+        return self
     for key, coeff in other.dict.items():
       if key in new_dict.keys():
         new_dict[key] += coeff
@@ -244,7 +397,27 @@ class Qet():
         new_dict[key] = coeff
     return Qet(new_dict)
 
+  def vec_in_basis(self, basis):
+    '''given an ordered basis  return   a
+    list with the coefficients of the qet
+    in that basis'''
+    coeffs = [0]*len(basis)
+    for key, val in self.dict.items():
+      coeffs[basis.index(key)] = val
+    return coeffs
+
+  def subs(self, subs_dict):
+    new_dict = dict()
+    for key, val in self.dict.items():
+      new_dict[key] = S(val).subs(subs_dict)
+    return Qet(new_dict)
+
   def __mul__(self, multiplier):
+    '''if multiplier is another
+    qet, then concatenate the dict and
+    multiply coefficients, if multiplier is
+    something else then try to multiply
+    the qet coefficients by the given multiplier'''
     if isinstance(multiplier, Qet):
       new_dict = dict()
       for k1, v1 in self.dict.items():
@@ -261,28 +434,53 @@ class Qet():
       return Qet(new_dict)
 
   def __rmul__(self, multiplier):
-    new_dict = dict(self.dict)
-    for key, coeff in new_dict.items():
+    '''this is required to enable multiplication
+    from the left and from the right'''
+    new_dict = dict()
+    for key, coeff in self.dict.items():
       new_dict[key] = multiplier*(coeff)
-      return Qet(new_dict)
+    return Qet(new_dict)
 
+  def basis(self):
+    '''return a list with all the keys in the qet'''
+    return list(self.dict.keys())
 
   def dual(self):
+    '''conjugate all the coefficients'''
     new_dict = dict(self.dict)
     for key, coeff in new_dict.items():
       new_dict[key] = conjugate(coeff)
     return Qet(new_dict)
 
-  def as_ket(self):
+  def as_operator(self, opfun):
+    OP = S(0)
+    for key, val in self.dict.items():
+        OP += S(val) * opfun(*key)
+    return OP
+
+  def as_ket(self, fold_keys=False, nice_negatives=False):
+    '''give a representation of the qet
+    as a Ket from sympy.physics.quantum
+    fold_keys = True removes unnecessary parentheses
+    and nice_negatives = True assumes all numeric keys
+    and presents negative values with a bar on top'''
     sympyRep = S(0)
     for key, coeff in self.dict.items():
       if key == ():
         sympyRep += coeff
       else:
-        sympyRep += coeff*Ket(key)
+        if fold_keys:
+          if nice_negatives:
+            key = tuple(latex(k) if k>=0 else (r'\bar{%s}' % latex(-k)) for k in key)
+          sympyRep += coeff*Ket(*key)
+        else:
+          sympyRep += coeff*Ket(key)
     return sympyRep
 
+
   def as_bra(self):
+    '''give a representation of the qet
+    as a Bra from sympy.physics.quantum'''
     sympyRep = S(0)
     for key, coeff in self.dict.items():
       if key == ():
@@ -292,6 +490,10 @@ class Qet():
     return sympyRep
 
   def as_braket(self):
+    '''give a representation of the qet
+    as a Bra*Ket the dict of the qet are
+    assumed to split half for the bra, and
+    other half for the ket.'''
     sympyRep = S(0)
     for key, coeff in self.dict.items():
       l = int(len(key)/2)
@@ -301,7 +503,19 @@ class Qet():
         sympyRep += coeff*(Bra(*key[:l])*Ket(*key[l:]))
     return sympyRep
 
+  def as_symbol_sum(self):
+    tot = S(0)
+    for k, v in self.dict.items():
+      tot += v*symbols(k)
+    return tot
+
   def as_c_number_with_fun(self):
+    '''the coefficients of a qet can be tuples
+    and if the first element is a function then
+    this method can be used to apply that function
+    to the dict and multiply that result by the
+    coefficient, which is assumed to be the second
+    element of the tuple'''
     sympyRep = S(0)
     for key, op_and_coeff in self.dict.items():
       ops_and_coeffs = list(zip(op_and_coeff[::2],op_and_coeff[1::2]))
@@ -313,6 +527,10 @@ class Qet():
     return sympyRep
 
   def apply(self,f):
+    '''this method can be used to apply a function to a qet
+    the provided function f must take as arguments a single
+    pair of qnum and coeff and return a dictionary or a
+    (qnum, coeff) tuple'''
     new_dict = dict()
     for key, coeff in self.dict.items():
       appfun = f(key,coeff)
@@ -325,7 +543,7 @@ class Qet():
               new_dict[key2] += coeff2
       else:
         new_key, new_coeff = appfun
-        if new_coeff !=0 :
+        if new_coeff !=0:
           if new_key not in new_dict.keys():
             new_dict[new_key] = (new_coeff)
           else:
@@ -333,12 +551,15 @@ class Qet():
     return Qet(new_dict)
 
   def norm(self):
+    '''compute the norm of the qet'''
     norm2 = 0
     for key, coeff in self.dict.items():
       norm2 += abs(coeff)**2
     return sqrt(norm2)
 
   def symmetrize(self):
+    '''at times a tuple of dict needs to
+    be identified with its inverse'''
     new_dict = dict()
     for key, coeff in self.dict.items():
       rkey = key[::-1]
@@ -351,28 +572,8 @@ class Qet():
           new_dict[key] = coeff
     return Qet(new_dict)
 
-  def asymmetrize(self):
-    new_dict = dict()
-    for key, coeff in self.dict.items():
-      rkey = key[::-1]
-      if rkey in new_dict.keys():
-        if isinstance(coeff,tuple):
-          new_dict[rkey] += (coeff[0],-coeff[1])
-      else:
-        if key in new_dict.keys():
-          new_dict[key] += coeff
-        else:
-          new_dict[key] = coeff
-    return Qet(new_dict)
-
   def __repr__(self):
     return str(self.dict)
-
-def qet_sum(qets):
-  sqet = Qet({})
-  for qet in qets:
-    sqet = sqet + qet
-  return sqet
 
 def two_electron_configs(irep1, irep2, returnthem = False, printem = False):
   '''
@@ -403,6 +604,7 @@ def two_electron_configs(irep1, irep2, returnthem = False, printem = False):
         for one_s3z in {0:[0],1:[1,0,-1]}[s3tot]: # loop through z eigenvalues of s3tot
           product_state = {}
           for m1,m2,gamma1,gamma2 in product((-1,1), (-1,1), R1symbols, R2symbols): # this loop is to create a single state
+            # print(irep1, irep2, irep3, gamma1)
             gCG = (Otable[(irep1, irep2)]
                    [irep3]
                    [gamma1]
@@ -486,12 +688,15 @@ def two_electron_configs(irep1, irep2, returnthem = False, printem = False):
             lhs = latex(Ket((("{%s} \cdot {%s}" % ((e1_symbol), (e2_symbol))),"{}^%s{%s}"%({0:'1',1:'3'}[s3tot],{'E':'E','T1':'T_1','T2':'T_2','A1':'A_1','A2':'A_2'}[irep3]),"M="+latex(one_s3z, symbol_names=protectex),one_gamma)), symbol_names=protectex)
             rhs = latex(rket.as_ket(), symbol_names=protectex).replace(r'\right\rangle',r'\right|').replace(r'\left(','').replace(r'\right)','').replace(r', ','').replace(r'\ ','')
             wowee = "%s = %s" % (lhs, rhs)
-#             printout += wowee + r'\\'
-            # save in results dictionary
             kay = (irep3, s3tot, one_s3z, one_gamma)
             full_results[kay] = rket
             if printem:
               display(Math(wowee))
-#             printouts[kay] = wowee
   if returnthem:
     return full_results
+
+def main():
+    print("qdef")
+
+if __name__ == "__main__":
+    main()

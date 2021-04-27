@@ -1,18 +1,14 @@
-
-
-from __future__ import print_function, division
-import os, csv
+import os, csv, re
 import numpy as np
+from collections import OrderedDict
 
-from sympy import pi, I
-from sympy.core.singleton import S
-from sympy.core import Dummy, sympify
-from sympy.core.function import Function, ArgumentIndexError
-from sympy.functions.elementary.trigonometric import sin, cos, cot
-from sympy.functions.combinatorial.factorials import factorial
-from sympy.functions.elementary.complexes import Abs
-from sympy.functions.elementary.exponential import exp
-from sympy.functions.elementary.miscellaneous import sqrt
+from sympy import pi, I, Matrix, symbols, zeros, latex, simplify, N
+from sympy import S, conjugate, GramSchmidt
+from sympy import Dummy, sympify, Function
+from sympy.physics.quantum import Ket, Bra
+from sympy import Abs, exp, sqrt, factorial, sin, cos, cot, sign
+
+
 from IPython.display import display, HTML, Math
 
 module_dir = os.path.dirname(__file__)
@@ -39,14 +35,271 @@ def new_eval(cls, n, m, theta, phi):
         return exp(-2*I*m*phi) * Ynm(n, m, theta, phi)
 Ynm.eval = new_eval
 
-class CrystalGroup(object):
+class Qet():
+  '''
+  A Qet is a dictionary of keys and values. Keys
+  correspond to tuples of quantum numbers or symbols
+  and the values correspond to the accompanying
+  coefficients.
+  Scalars may be added by  using  an  empty tuple
+  as a key.
+  A qet may be multiplied by a scalar,  in  which
+  case all the coefficients are multiplied by it,
+  It  may  also  be  multiplied by  another  qet,
+  in which case quantum numbers are  concatenated
+  and coefficients multiplied accordingly.
+
+  '''
+  def __init__(self, bits=0):
+    if bits == 0:
+        self.dict = {}
+    elif isinstance(bits, dict):
+        self.dict = {k: v for k, v in bits.items() if v!=0}
+
+  def __add__(self, other):
+    new_dict = dict(self.dict)
+    if other == 0:
+        return self
+    for key, coeff in other.dict.items():
+      if key in new_dict.keys():
+        new_dict[key] += coeff
+      else:
+        new_dict[key] = coeff
+    return Qet(new_dict)
+
+  def vec_in_basis(self, basis):
+    '''given an ordered basis  return   a
+    list with the coefficients of the qet
+    in that basis'''
+    coeffs = [0]*len(basis)
+    for key, val in self.dict.items():
+      coeffs[basis.index(key)] = val
+    return coeffs
+
+  def subs(self, subs_dict):
+    new_dict = dict()
+    for key, val in self.dict.items():
+      new_dict[key] = S(val).subs(subs_dict)
+    return Qet(new_dict)
+
+  def __mul__(self, multiplier):
+    '''if multiplier is another
+    qet, then concatenate the dict and
+    multiply coefficients, if multiplier is
+    something else then try to multiply
+    the qet coefficients by the given multiplier'''
+    if isinstance(multiplier, Qet):
+      new_dict = dict()
+      for k1, v1 in self.dict.items():
+        for k2, v2 in multiplier.dict.items():
+          k3 = k1 + k2
+          v3 = v1 * v2
+          if v3 !=0:
+            new_dict[k3] = v3
+      return Qet(new_dict)
+    else:
+      new_dict = dict(self.dict)
+      for key, coeff in new_dict.items():
+        new_dict[key] = multiplier*(coeff)
+      return Qet(new_dict)
+
+  def __rmul__(self, multiplier):
+    '''this is required to enable multiplication
+    from the left and from the right'''
+    new_dict = dict()
+    for key, coeff in self.dict.items():
+      new_dict[key] = multiplier*(coeff)
+    return Qet(new_dict)
+
+  def basis(self):
+    '''return a list with all the keys in the qet'''
+    return list(self.dict.keys())
+
+  def dual(self):
+    '''conjugate all the coefficients'''
+    new_dict = dict(self.dict)
+    for key, coeff in new_dict.items():
+      new_dict[key] = conjugate(coeff)
+    return Qet(new_dict)
+
+  def as_operator(self, opfun):
+    OP = S(0)
+    for key, val in self.dict.items():
+        OP += S(val) * opfun(*key)
+    return OP
+
+  def as_ket(self, fold_keys=False, nice_negatives=False):
+    '''give a representation of the qet
+    as a Ket from sympy.physics.quantum
+    fold_keys = True removes unnecessary parentheses
+    and nice_negatives = True assumes all numeric keys
+    and presents negative values with a bar on top'''
+    sympyRep = S(0)
+    for key, coeff in self.dict.items():
+      if key == ():
+        sympyRep += coeff
+      else:
+        if fold_keys:
+          if nice_negatives:
+            key = tuple(latex(k) if k>=0 else (r'\bar{%s}' % latex(-k)) for k in key)
+          sympyRep += coeff*Ket(*key)
+        else:
+          sympyRep += coeff*Ket(key)
+    return sympyRep
+
+
+  def as_bra(self):
+    '''give a representation of the qet
+    as a Bra from sympy.physics.quantum'''
+    sympyRep = S(0)
+    for key, coeff in self.dict.items():
+      if key == ():
+        sympyRep += coeff
+      else:
+        sympyRep += coeff*Bra(*key)
+    return sympyRep
+
+  def as_braket(self):
+    '''give a representation of the qet
+    as a Bra*Ket the dict of the qet are
+    assumed to split half for the bra, and
+    other half for the ket.'''
+    sympyRep = S(0)
+    for key, coeff in self.dict.items():
+      l = int(len(key)/2)
+      if key == ():
+        sympyRep += coeff
+      else:
+        sympyRep += coeff*(Bra(*key[:l])*Ket(*key[l:]))
+    return sympyRep
+
+  def as_symbol_sum(self):
+    tot = S(0)
+    for k, v in self.dict.items():
+      tot += v*symbols(k)
+    return tot
+
+  def as_c_number_with_fun(self):
+    '''the coefficients of a qet can be tuples
+    and if the first element is a function then
+    this method can be used to apply that function
+    to the dict and multiply that result by the
+    coefficient, which is assumed to be the second
+    element of the tuple'''
+    sympyRep = S(0)
+    for key, op_and_coeff in self.dict.items():
+      ops_and_coeffs = list(zip(op_and_coeff[::2],op_and_coeff[1::2]))
+      for op, coeff in ops_and_coeffs:
+        if key == ():
+          sympyRep += coeff
+        else:
+          sympyRep += coeff*op(*key)#Function(op)(*key)
+    return sympyRep
+
+  def apply(self,f):
+    '''this method can be used to apply a function to a qet
+    the provided function f must take as arguments a single
+    pair of qnum and coeff and return a dictionary or a
+    (qnum, coeff) tuple'''
+    new_dict = dict()
+    for key, coeff in self.dict.items():
+      appfun = f(key,coeff)
+      if isinstance(appfun, dict):
+        for key2, coeff2 in appfun.items():
+          if coeff2 != 0:
+            if key2 not in new_dict.keys():
+              new_dict[key2] = coeff2
+            else:
+              new_dict[key2] += coeff2
+      else:
+        new_key, new_coeff = appfun
+        if new_coeff !=0:
+          if new_key not in new_dict.keys():
+            new_dict[new_key] = (new_coeff)
+          else:
+            new_dict[new_key] += (new_coeff)
+    return Qet(new_dict)
+
+  def norm(self):
+    '''compute the norm of the qet'''
+    norm2 = 0
+    for key, coeff in self.dict.items():
+      norm2 += abs(coeff)**2
+    return sqrt(norm2)
+
+  def symmetrize(self):
+    '''at times a tuple of dict needs to
+    be identified with its inverse'''
+    new_dict = dict()
+    for key, coeff in self.dict.items():
+      rkey = key[::-1]
+      if rkey in new_dict.keys():
+        new_dict[rkey] += coeff
+      else:
+        if key in new_dict.keys():
+          new_dict[key] += coeff
+        else:
+          new_dict[key] = coeff
+    return Qet(new_dict)
+
+  def __repr__(self):
+    return str(self.dict)
+
+def parse_math_expression(stringo):
+    '''Use to parse output from Mathematica'''
+    if 'Subscript' in stringo:
+      args = re.findall(r'\[(.*)\]',stringo)[0].replace('"','').replace(' ','').split(',')
+      if len(args[0]) > 1:
+        symb = '{%s}_{%s}' % tuple(args)
+      else:
+        symb = '%s_{%s}' % tuple(args)
+    elif 'Subsuperscript' in stringo:
+      args = re.findall(r'\[(.*)\]',stringo)[0].replace('"','').replace(' ','').split(',')
+      if len(args[0]) > 1:
+        symb = '{%s}_{%s}^{%s}' % tuple(args)
+      else:
+        symb = '%s_{%s}^{%s}' % tuple(args)
+    elif '_' in stringo:
+        symb = '{%s}_{%s}' % tuple(stringo.split('_'))
+    else:
+      symb = stringo
+    if '”' in stringo:
+      symb = symb.replace('”',"^{''}")
+    return symb
+
+class ProductTable():
+    def __init__(self, odict, irrep_labels, grp_label):
+        self.odict = odict
+        self.irrep_labels = irrep_labels
+        self.grp_label = grp_label
+    def pretty_parse(self):
+        '''creates a nice latex representation of the table'''
+        irep_symbols = [(symbols(s)) for s in self.irrep_labels]
+        list_o_lists = [[self.odict[(ir0,ir1)] for ir0 in self.irrep_labels] for ir1 in self.irrep_labels]
+        list_o_lists.insert(0,irep_symbols)
+        list_o_lists = list(zip(*list_o_lists))
+        list_o_lists.insert(0,[symbols(self.grp_label)] + irep_symbols)
+        list_o_lists = list(zip(*list_o_lists))
+        return fmt_table(list_o_lists).replace('+',r'{\oplus}')
+    def list_parse(self):
+        '''creates a nice latex representation of the table'''
+        irep_symbols = [(symbols(s)) for s in self.irrep_labels]
+        list_o_lists = [[(self.odict[(ir0,ir1)]) for ir0 in self.irrep_labels] for ir1 in self.irrep_labels]
+        # list_o_lists.insert(0,irep_symbols)
+        # list_o_lists = list(zip(*list_o_lists))
+        # list_o_lists.insert(0,[symbols(self.grp_label)] + irep_symbols)
+        # list_o_lists = list(zip(*list_o_lists))
+        # print(list_o_lists)
+        return list_o_lists
+
+class CrystalGroup():
     """Class for group character tables"""
     def __init__(self, grp='', grpcls='', irrrep='', chartab='', clssize=''):
 
-        GrpLabel = ['C_1',  'C_i', 'C_2', 'C_s', 'C_2h', 'D_2', 'C_2v', 'D_2h',
-            'C_4', 'S_4', 'C_4h', 'D_4', 'C_4v', 'D_2d', 'D_4h', 'C_3', 'S_6',
-            'D_3', 'C_3v', 'D_3d', 'C_6', 'C_3h', 'C_6h', 'D_6', 'C_6v', 'D_3h',
-            'D_6h', 'T', 'T_h', 'O', 'T_d', 'O_h']
+        GrpLabel = ['C_1',  'C_i', 'C_2', 'C_s', 'C_{2h}', 'D_2', 'C_{2v}', 'D_{2h}',
+            'C_4', 'S_4', 'C_{4h}', 'D_4', 'C_{4v}', 'D_2d', 'D_{4h}', 'C_3', 'S_6',
+            'D_3', 'C_{3v}', 'D_{3d}', 'C_6', 'C_{3h}', 'C_{6h}', 'D_6', 'C_{6v}', 'D_{3h}',
+            'D_{6h}', 'T', 'T_h', 'O', 'T_d', 'O_h']
         self.PointGroupNumber = grp
         # Pretty label for the group
         self.PointGroupLabel = GrpLabel[grp-1]
@@ -56,6 +309,7 @@ class CrystalGroup(object):
         self.IrrReps = irrrep
         # Character table, a list of lists
         self.CharacterTable = chartab
+        self.iCharacterTable = simplify(Matrix(chartab).T**(-1)) # xxx
         # Determine the degree of the irreps
         self.RepresentationDegrees = self.addRepDegrees()
         self.ClassSize = clssize
@@ -103,18 +357,18 @@ Irreps:  %s''' % (self.PointGroupLabel, ', '.join(self.Classes), ', '.join(self.
     # def _repr_html_(self):
     #     return (Math(self.group_info))
 
-class CPGroups(object):
+class CPGroups():
     """Class for all crystallographic point groups"""
     def __init__(self):
         """This will loop through the various folders to import
         the character and parameter tables for each point group.
         Each point group will form a CrystalGroup class object
-        and these will be joined into a list of class objects."""
+        and these will be joined into a list of class (objects."""
         self.Groups = []
-        self.AllGroupLabels = ['C_1',  'C_i', 'C_2', 'C_s', 'C_2h', 'D_2',
-         'C_2v', 'D_2h', 'C_4', 'S_4', 'C_4h', 'D_4', 'C_4v', 'D_2d',
-         'D_4h', 'C_3', 'S_6', 'D_3', 'C_3v', 'D_3d', 'C_6', 'C_3h',
-         'C_6h', 'D_6', 'C_6v', 'D_3h', 'D_6h', 'T', 'T_h', 'O', 'T_d', 'O_h']
+        self.AllGroupLabels = ['C_1',  'C_i', 'C_2', 'C_s', 'C_{2h}', 'D_2',
+         'C_{2v}', 'D_{2h}', 'C_4', 'S_4', 'C_{4h}', 'D_4', 'C_{4v}', 'D_{2d}',
+         'D_{4h}', 'C_3', 'S_6', 'D_3', 'C_{3v}', 'D_{3d}', 'C_6', 'C_3h',
+         'C_{6h}', 'D_6', 'C_6v', 'D_{3h}', 'D_{6h}', 'T', 'T_h', 'O', 'T_d', 'O_h']
         for (dirpath, dirnames, filenames) in os.walk('/'.join([module_dir,'Character Tables'])):
             for file in filenames:
                 if file.endswith('.csv'):
@@ -150,67 +404,20 @@ class CPGroups(object):
 
         with open('/'.join([module_dir,'Character Tables',file])) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            line_count = 0
-            CharacterTable = []
-            IrrRep = []
-
+            characterTable = []
+            groupClasses = list(map(parse_math_expression,next(csv_reader)[1:]))
+            classSizes = list(map(int,next(csv_reader)[1:]))
+            irrReps = [] # irrReps groupClasses
             for row in csv_reader:
-                if line_count == 0:
-                    GroupClasses = []
-                    for cls in row:
-                        if cls == '{}':
-                            null = True
-                        else:
-                            ClsSplit = cls.split('Subscript[')
-                            if len(ClsSplit)>1:
-                                ClsSplit = '_'.join((ClsSplit[1].split(']'))[0].split(','))
-                                ClsSplit = [ClsSplit.replace('"', '').replace(' ','')]
-                            ClsSplit = ClsSplit[0].split('Subsuperscript[')
-                            if len(ClsSplit)>1:
-                                ClsSplit = (ClsSplit[1].split(']'))[0].split(',')
-                                ClsSplit = ''.join(['_'.join(ClsSplit[0:2]),'`'])
-                                ClsSplit = [ClsSplit.replace('"', '').replace(' ','')]
-                            GroupClasses.append(ClsSplit[0])
-                    line_count += 1
-                elif line_count == 1:
-                    ClassSize = []
-                    for cls in row:
-                        if cls == 'Conjugacy':
-                            null = True
-                        else:
-                            ClassSize.append(int(cls))
-                    line_count += 1
+              irrReps.append(parse_math_expression(row[0]))
+              chars = list(map(lambda x: x.replace('Pi','pi'),row[1:]))
+              chars = list(map(S,chars))
+              chars = list(map(lambda x: x.rewrite(cos), chars))
+              characterTable.append(chars)
 
-                else:
-                    TableRow = []
-                    colcnt = 0
-                    for col in row:
-                        if col == '{}':
-                            null = True
-                        else:
-                            RowSplit = col.split('Subscript[')
-                            if len(RowSplit)>1:
-                                RowSplit = '_'.join((RowSplit[1].split(']'))[0].split(','))
-                                RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                            RowSplit = RowSplit[0].split('Subsuperscript[')
-                            if len(RowSplit)>1:
-                                RowSplit = (RowSplit[1].split(']'))[0].split(',')
-                                RowSplit = ''.join(['_'.join(RowSplit[0:2]),'`'])
-                                RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                        if colcnt == 0:
-                            IrrRep.append(RowSplit[0])
-                        else:
-                            # RowSplit = RowSplit[0].replace('E^','np.exp').replace('I','1j').replace('Pi','np.pi')
-                            # better to use sympy
-                            RowSplit = RowSplit[0].replace('E^','exp').replace('Pi','pi')
-                            TableRow.append(S(eval(RowSplit)).rewrite(cos))
-                        colcnt += 1
-                    CharacterTable.append(TableRow)
-                    line_count += 1
-
-        return CrystalGroup(grp = Group, grpcls = GroupClasses, \
-                            irrrep = IrrRep, chartab = CharacterTable, \
-                            clssize = ClassSize)
+        return CrystalGroup(grp = Group, grpcls = groupClasses, \
+                            irrrep = irrReps, chartab = characterTable, \
+                            clssize = classSizes)
 
     def ParseParameterTable(self, file):
         """This is a function to parse the formatting of the
@@ -219,113 +426,86 @@ class CPGroups(object):
         From these files the respective group Euler angles,
         principal angle, and rotation axis will be scraped."""
         Group = int(file.split('_')[1])
-
         with open('/'.join([module_dir,'Parameter Tables',file])) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
-            ParameterTable = []
-            Elements = []
-
+            parameterTable = []
+            elements = []
+            parameterLabels = next(csv_reader)[1:] # first row simply has the labels for the parameters
             for row in csv_reader:
-                if line_count == 0:
-                    ParameterLabels = row[1:]
-                    line_count += 1
-                else:
-                    TableRow = []
-                    colcnt = 0
-                    for col in row:
-                        if col == '{}':
-                            null = True
-                        else:
-                            RowSplit = col.replace('RowBox[{','').split('Subscript[')
-                            if len(RowSplit)>1:
-                                RowSplit = '_'.join((RowSplit[1].split(']'))[0].split(','))
-                                RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                            RowSplit = RowSplit[0].split('Subsuperscript[')
-                            if len(RowSplit)>1:
-                                RowSplit = (RowSplit[1].split(']'))[0].split(',')
-                                RowSplit = ''.join(['_'.join(RowSplit[0:2]),'`'])
-                                RowSplit = [RowSplit.replace('"', '').replace(' ','')]
+                tableRow = []
+                colcnt = 0
+                opname, angles_and_det, dir_vec = row[0], row[1:6], row[6]
+                angles_and_det = list(map(lambda x: S(x.replace('Pi','pi')), angles_and_det))
+                elements.append(parse_math_expression(opname))
+                parameterTable.append(angles_and_det+[dir_vec])
 
-                            tmpSplit = RowSplit[0].split('SqrtBox[')
-                            while len(tmpSplit)>1:
-                                tmpSplit = [tmpSplit[0],'SqrtBox['.join(tmpSplit[1:])]
-                                ttSplit = tmpSplit[1].split(']')
-                                ttSplit = [ttSplit[0],']'.join(ttSplit[1:])]
-                                tmpSplit = ''.join([tmpSplit[0],'np.sqrt(',ttSplit[0],')',ttSplit[1]])
-                                tmpSplit = tmpSplit.split('SqrtBox[')
-                            tmpSplit = tmpSplit[0].split('FractionBox[')
-                            while len(tmpSplit)>1:
-                                tmpSplit = [tmpSplit[0],'FractionBox['.join(tmpSplit[1:])]
-                                ttSplit = tmpSplit[1].split(']')
-                                ttSplit = ''.join([ttSplit[0].replace(', ','/'),']'.join(ttSplit[1:])])
-                                tmpSplit = ''.join([tmpSplit[0],ttSplit])#.replace(', , , ',',')
-                                tmpSplit = tmpSplit.split('FractionBox[')
-                        if colcnt == 0:
-                            Elements.append(RowSplit[0])
-                        else:
-                            # RowSplit = tmpSplit[0].replace('E^','np.exp').replace('I','1j').replace('Pi','np.pi')
-                            # better keep exp as sympy
-                            RowSplit = tmpSplit[0].replace('E^','exp').replace('Pi','pi')
-                            RowSplit = RowSplit.replace(', , , ',',').replace('{,','[').replace('}','')
-                            RowSplit = RowSplit.replace(' ','').replace(',]','').replace(']]',']')
-                            RowSplit = RowSplit.replace('-,','-').replace('],',',')
-                            TableRow.append(eval(RowSplit))
-                        colcnt += 1
-                    ParameterTable.append(TableRow)
-                    line_count += 1
-
-        return Elements, ParameterLabels, ParameterTable
+        return elements, parameterLabels, parameterTable
 
     def ParseSpaceGroupTable(self, file):
         """This is a function to parse the formatting of the
         *SpaceGroupElements.csv files. It will reformat the
         Mathematica export notation into something a bit simpler.
-        From these files the respective group Euler angles,
-        principal angle, and rotation axis will be scraped."""
+        From these a list of table an group element names are returned"""
         Group = int(file.split('_')[1])
 
         with open('/'.join([module_dir,'Space Group Elements',file])) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            SpaceGroupTable = []
-            Elements = []
-
+            spaceGroupTable = []
+            elements = []
             for row in csv_reader:
-                RowSplit = row[0].replace('RowBox[{','').split('Subscript[')
-                if len(RowSplit)>1:
-                    RowSplit = '_'.join((RowSplit[1].split(']'))[0].split(','))
-                    RowSplit = [RowSplit.replace('"', '').replace(' ','')]
-                RowSplit = RowSplit[0].split('Subsuperscript[')
-                if len(RowSplit)>1:
-                    RowSplit = (RowSplit[1].split(']'))[0].split(',')
-                    RowSplit = ''.join(['_'.join(RowSplit[0:2]),'`'])
-                    RowSplit = [RowSplit.replace('"', '').replace(' ','')]
+              elements.append(parse_math_expression(row[0]))
+              rows = list(map(lambda x: x.replace('[','(').replace(']',')'), row[1:]))
+              rows = list(map(lambda x: x.replace('{','[').replace('}',']'), rows))
+              grpTable = [S(r) for r in rows]
+              spaceGroupTable.append(grpTable)
 
-                tmpSplit = RowSplit[0].split('SqrtBox[')
-                while len(tmpSplit)>1:
-                    tmpSplit = [tmpSplit[0],'SqrtBox['.join(tmpSplit[1:])]
-                    ttSplit = tmpSplit[1].split(']')
-                    ttSplit = [ttSplit[0],']'.join(ttSplit[1:])]
-                    tmpSplit = ''.join([tmpSplit[0],'np.sqrt(',ttSplit[0],')',ttSplit[1]])
-                    tmpSplit = tmpSplit.split('SqrtBox[')
-                tmpSplit = tmpSplit[0].split('FractionBox[')
-                while len(tmpSplit)>1:
-                    tmpSplit = [tmpSplit[0],'FractionBox['.join(tmpSplit[1:])]
-                    ttSplit = tmpSplit[1].split(']')
-                    ttSplit = ''.join([ttSplit[0].replace(', ','/'),']'.join(ttSplit[1:])])
-                    tmpSplit = ''.join([tmpSplit[0],ttSplit])#.replace(', , , ',',')
-                    tmpSplit = tmpSplit.split('FractionBox[')
-                Elements.append(RowSplit[0])
-
-                TableString = ','.join(row[1:]).replace('Sqrt','np.sqrt').replace('[','(').replace(']',')')
-                TableString = ''.join(['[',TableString.replace('{','[').replace('}',']'),']'])
-
-                SpaceGroupTable.append(eval(TableString))
-
-        return Elements, SpaceGroupTable
+        return elements, spaceGroupTable
 
     def GetGroup(self, grpnum):
         return self.GroupNumbers.index(grpnum)
+
+    def direct_product(self, group_label, ir0, ir1):
+        '''
+        Given the label for a cpg and labels for two
+        of its irreducible representations, determine
+        the direct sum decomposition of their product.
+        This product is return as a qet with keys
+        corresponding to the irreps and values equal
+        to the integer coefficients
+        '''
+        # grab group classes, irrep names, and chartable
+        group = self.Groups[self.AllGroupLabels.index(group_label)]
+        group_classes = group.Classes
+        group_IrrReps = group.IrrReps
+        group_chartable = Matrix(group.CharacterTable)
+        assert ir0 in group_IrrReps, 'irrep not in %s' % str(group_IrrReps)
+        assert ir1 in group_IrrReps, 'irrep not in %s' % str(group_IrrReps)
+        chars_0, chars_1 = [group_chartable.row(group_IrrReps.index(ir)) for ir in [ir0, ir1]]
+        chars = Matrix([char0*char1 for char0, char1 in zip(chars_0, chars_1)])
+        # partition = simplify((group_chartable.T)**(-1)*chars)
+        partition = (group.iCharacterTable*chars)
+        qet = Qet()
+        for element, ir in zip(partition, group_IrrReps):
+            el = int(N(element,1,chop=True))
+            qet = qet + Qet({ir:el})
+        return qet
+
+    def direct_product_table(self, group_label):
+        group = self.Groups[self.AllGroupLabels.index(group_label)]
+        if hasattr(group, 'ProductTable'):
+            return group.ProductTable
+        group_classes = group.Classes
+        group_IrrReps = group.IrrReps
+        product_table = OrderedDict()
+        for ir0 in group_IrrReps:
+            for ir1 in group_IrrReps:
+                if (ir1,ir0) in product_table.keys():
+                    product_table[(ir0,ir1)] = product_table[(ir1,ir0)]
+                else:
+                    product_table[(ir0,ir1)] = self.direct_product(group_label, ir0, ir1).as_symbol_sum()
+        group.ProductTable = ProductTable(product_table, group_IrrReps, group_label)
+        return group.ProductTable
 
     def SortGroups(self):
         import operator
@@ -340,268 +520,538 @@ class CPGroups(object):
     def getGroupByLabel(self, lbl):
         return self.Groups[self.AllGroupLabels.index(lbl)]
 
+###########################################################################
+#################### Calculation of Surface Harmonics #####################
+
+def SubSupSymbol(radix,ll,mm):
+    '''
+    Generates a symbol placeholder for the B coefficients in the crystal field potential.
+    '''
+    SubSupSym = symbols(r'{%s}_{%s}^{%s}' % (radix, str(ll), str(mm)))
+    return SubSupSym
+
+def SubSubSymbol(radix,ll,mm):
+    '''
+    Generates a symbol placeholder for the B coefficients in the crystal field potential.
+    '''
+    SubSubSym = symbols(r'{%s}_{{%s}{%s}}' % (radix, str(ll), str(mm)))
+    return SubSubSym
+
+def kronecker(i,j):
+    return 0 if i!=j else 1
+
+def Wigner_d(l, n, m, beta):
+    k_min = max([0,m-n])
+    k_max = min([l-n,l+m])
+    Wig_d_prefact = sqrt((factorial(l+n)
+                          *factorial(l+m)
+                          *factorial(l-n)
+                          *factorial(l-m)))
+    Wig_d_summands = [((-S(1))**(k - m + n)
+                      * cos(beta/2)**(2*l+m-n-2*k)
+                      * sin(beta/2)**(2*k+n-m)
+                      / factorial(l - n -k)
+                      / factorial(l + m - k)
+                      / factorial(k)
+                      / factorial(k-m+n)
+                      )
+                      for k in range(k_min,k_max+1)]
+    Wig_d = (Wig_d_prefact*sum(Wig_d_summands)).doit()
+    return Wig_d
+
+def Wigner_D(l, n, m, alpha, beta, gamma):
+    args = (l, n, m, alpha, beta, gamma)
+    if args in Wigner_D.values.keys():
+      return Wigner_D.values[args]
+    if beta == 0:
+      Wig_D = exp(-I*m*alpha-I*m*gamma) * kronecker(n,m)
+      if n == m:
+        Wig_D = (cos(-m*alpha-m*gamma)+I*sin(-m*alpha-m*gamma))
+      else:
+        Wig_D = 0
+    elif beta == pi:
+      if n == -m:
+        Wig_D = (-1)**l * (cos(-m*alpha + m*gamma)+I*sin(-m*alpha + m*gamma))
+      else:
+        Wig_D = 0
+    else:
+      Wig_D_0 = I**(abs(n)+n-abs(m)-m)
+      Wig_D_1 = (cos(-n*gamma-m*alpha)+I*sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
+      Wig_D = Wig_D_0 * Wig_D_1
+      Wig_D = Wig_D
+    return Wig_D
+Wigner_D.values = {}
+
+def real_or_imagined(qet):
+  '''
+  for a given superposition of
+  spherical harmonics, determine
+  if the total has a pure imaginary (i),
+  pure real (r), or mixed character (m),
+  it assumes that the coefficients in
+  the superposition are all real
+  '''
+  chunks = dict(qet.dict)
+  valences = []
+  for key in list(chunks.keys()):
+    if key not in chunks.keys():
+      continue
+    l, m = key
+    chunk = chunks[key]
+    if (l,-m) in chunks:
+      partner = chunks[(l,-m)]
+      if abs(partner) == abs(chunk):
+        if sign(partner) == sign(chunk):
+          if m%2 == 0:
+            valences.append("r")
+          else:
+            valences.append("i")
+        else:
+          if m%2 == 0:
+            valences.append("i")
+          else:
+            valences.append("r")
+      else:
+        valences.append("m")
+      chunks.pop((l,-m))
+    else:
+      valences.append("m")
+    if m!=0: # if equal to zero this would have been done already
+      chunks.pop(key)
+  valences = list(set(valences))
+  if len(valences) > 1:
+    return "m"
+  else:
+    return valences[0]
+
 def RYlm(l, m, alpha, beta, gamma, detRot):
     '''This would be rotateHarmonic in the Mathematica code. It is used
     in the projection of the spherical harmonics to create symmetry
     adapted wavefunctions.
     '''
-    from sympy import Symbol
-    from sympy import simplify
-
-    theta = Symbol("theta", real=True)
-    phi = Symbol("phi", real=True)
-
-    Rf = 0
-    for nn in np.arange(-l,l+0.1):
-        nn=int(nn)
+    Rf = Qet()
+    for nn in range(-l,l+1):
         wigD = Wigner_D(l, m, nn, alpha, beta, gamma)
-        Rf = Rf + wigD * Ynm(int(l), nn, theta, phi)
-    return S(detRot)**l * Rf
+        if wigD != 0:
+          Rf = Rf + Qet({(l,nn): wigD})
+    return (S(detRot)**l) * Rf
 
-def SymmetryAdaptedWF(Group, IrrRep, l, m):
-    from sympy import simplify, re, im, S
+def SymmetryAdaptedWF(group, l, m):
+  '''
+  This returns the proyection of Y_l^m
+  on the trivial irreducible representation
+  of the given group
+  '''
+  if isinstance(group,str):
+      group = CPG.Groups[CPG.AllGroupLabels.index(group)]
+  degree = 1
+  # Order of the group which  is  equal  to
+  # the number of the elements
+  order = len(group.Elements)
+  SALC = Qet()
+  # This sum is over all elements of the group
+  for group_idx, group_op in enumerate(group.Elements):
+    alpha, beta, gamma, detRot = group.ParameterTable[group_idx][:4]
+    SALC += RYlm(l,m,alpha,beta,gamma,detRot)
+  SALC = (S(1)/order)*SALC
+  SALC = SALC.apply(lambda x,y : (x, simplify(y)))
+  return SALC
 
-    # Allows for either string or index input of
-    # the irreducible representation
-    if isinstance(IrrRep,str):
-        IrrIdx = Group.IrrReps.index(IrrRep)
-    else:
-        IrrIdx = IrrRep
+def linearly_independent(vecs):
+  '''given a list of vectors
+  return the largest subset which
+  of linearly independent ones
+  and the indices that correspond
+  to them in the original list
+  '''
+  matrix = Matrix(vecs).T
+  good_ones = matrix.rref()[-1]
+  return good_ones, [vecs[idx] for idx in good_ones]
 
-    # Character of the irreducible representation
-    chi = Group.CharacterTable[IrrIdx]
+def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True):
+  '''For a given group and a given value of
+  l, this returns a set of linearly independent
+  symmetry adapted functions which are also real-valued.
+  If the set that is found initially contains combinations that are
+  not purely imaginary or pure real, then the assumption
+  is made that this set contains single spherical
+  harmonics, and then sums and differences between
+  m and -m are given by doing this through the values
+  of |m| for the functions with mixed character.'''
 
-    # Degree of the irreducible representation which is the same as
-    # the character for the E (identity) element.
-    degree = chi[Group.Classes.index('E')]
+  # apply the projection operator on the trivial irreducible rep
+  # and collect the resulting basis functions
+  # together with the values of (l,m) included
+  flags = []
+  WFs = []
+  complete_basis = []
+  for m in range(-l,l+1):
+    aWF = SymmetryAdaptedWF(group, l, m)
+    if len(aWF.dict)>0:
+      WFs.append(aWF)
+      complete_basis.extend(aWF.basis())
 
-    # Order of the group which is equal to the sum of the elements
-    order = len(Group.Elements)
+  complete_basis = list(sorted(list(set(complete_basis))))
+  # to see if they are linearly independent
+  # convert the WFs to vectors on the basis collected
+  # above
+  vecs = [WF.vec_in_basis(complete_basis) for WF in WFs]
+  lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
 
-    SALC = 0
-    EulerCntr = 0
-    for sym in np.arange(len(Group.Classes)):
-        for clssze in np.arange(Group.ClassSize[sym]):
-            # Get the Euler angles (Z-Y-Z) for each class in the group
-            alpha = S(Group.ParameterTable[EulerCntr][0])
-            beta = S(Group.ParameterTable[EulerCntr][1])
-            gamma = S(Group.ParameterTable[EulerCntr][2])
-            detRot = S(Group.ParameterTable[EulerCntr][3])
-            #print('alpha = %s, beta = %s, gamma = %s'%(alpha,beta,gamma))
-            #print('RYlm: %s'%RYlm(l,m,alpha,beta,gamma,detRot))
-            #print('Class Name = %s, Size = %s'%(Group.Classes[sym],Group.ClassSize[sym]))
-            SALC = SALC + S(chi[sym])*RYlm(l,m,alpha,beta,gamma,detRot).doit()
-            EulerCntr += 1
+  # reduce the WFs to a linearly independent set
 
-    SALC = simplify(SALC)
-    CoeffDict = SALC.as_coefficients_dict()
+  WFs = [WFs[i] for i in lin_indep_idx]
+  # test to see if the included WFs are real, imaginary, or mixed
+  # if real, keep as is
+  # if purely imaginary, multiply by I
+  # if mixed then collect for further processing
+  realWFs = []
+  mixedWFs = []
+  for WF in WFs:
+    valence = real_or_imagined(WF)
+    if normalize:
+      norm = WF.norm()
+      WF = WF*(S(1)/norm)
+    if valence == 'r':
+      realWFs.append(WF)
+    elif valence == 'i':
+      realWFs.append(I*WF)
+    elif valence == 'm':
+      flags.append('m')
+      mixedWFs.append(WF)
+  # collect the values of |m| included in the mixed combos
+  mixedMs = set()
+  if (len(mixedWFs) != 0) and verbose:
+    print("\nMixtures found, unmixing...")
+  for WF in mixedWFs:
+    # ASSUMPTION: both m and -m are in there and only as singles
+    assert len(WF.dict) == 1
+    for key, val in WF.dict.items():
+      mixedMs.add(abs(key[1]))
+  # for the values of m in mixedMs compute the real sums
+  # and differences
+  for m in mixedMs:
+    if m%2 == 0:
+      qp = Qet({(l,m): 1}) + Qet({(l,-m): 1})
+      qm = Qet({(l,m): I}) + Qet({(l,-m): -I})
+      if normalize:
+        qp = qp*(S(1)/sqrt(2))
+        qm = qm*(S(1)/sqrt(2))
+      realWFs.append(qp)
+      realWFs.append(qm)
+    elif m%2 == 1:
+      qp = Qet({(l,m): I}) + Qet({(l,-m): I})
+      qm = Qet({(l,m): 1}) + Qet({(l,-m): -1})
+      if normalize:
+        qp = qp*(S(1)/sqrt(2))
+        qm = qm*(S(1)/sqrt(2))
+      realWFs.append(qp)
+      realWFs.append(qm)
+  # the resulting list of realWFs must be of equal lenght
+  # than WFs which in turn is equal to the number of linearly
+  # independent projectd basis functions
+  if len(realWFs) != len(WFs):
+    raise Exception("FAILED: there are less real combos than originally")
+  # in addition
+  # must check that the resulting basis is still linearly independent
+  # must run through the same business of collecting all the represented
+  # spherical harmonics, converting that to coefficient vectors
+  # and testing for linear independence
+  complete_basis = []
+  for WF in realWFs:
+    complete_basis.extend(WF.basis())
+  complete_basis = list(sorted(list(set(complete_basis))))
 
-    # SALC_tmp = 0
-    # for coeff in CoeffDict.keys():
-    #     if abs(CoeffDict[coeff])<1e-10:
-    #         CoeffDict[coeff] = 0
-    #     SALC_tmp = SALC_tmp + CoeffDict[coeff]*coeff
+  vecs = [WF.vec_in_basis(complete_basis) for WF in realWFs]
+  lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
+  if len(lin_indep_idx) != len(WFs):
+    raise Excepction("FAILED: +- mixture was not faithful")
+  # make the linearly independent vectors orthonormal
+  lin_indep_vecs = list(map(list,GramSchmidt([Matrix(vec) for vec in lin_indep_vecs], normalize)))
+  finalWFs = []
+  if sympathize:
+    better_vecs = []
+    for vec in lin_indep_vecs:
+      clear_elements = [abs(v) for v in vec if v!=0]
+      if len(list(set(clear_elements))) == 1:
+        better_vec = [0 if vl == 0 else sign(vl) for vl in vec]
+        better_vecs.append(better_vec)
+      else:
+        better_vecs.append(vec)
+    lin_indep_vecs = better_vecs
+  for vec in lin_indep_vecs:
+    qdict = {k:v for k,v in zip(complete_basis, vec)}
+    finalWFs.append(Qet(qdict))
+  return finalWFs
 
-    # return S(degree)/order*SALC_tmp
-    return S(degree)/order*SALC
+#################### Calculation of Surface Harmonics #####################
+###########################################################################
 
-def Wigner_d(j, m1, m2, beta):
-    '''
-    Inputs :
+# def RYlm(l, m, alpha, beta, gamma, detRot):
+#     '''This would be rotateHarmonic in the Mathematica code. It is used
+#     in the projection of the spherical harmonics to create symmetry
+#     adapted wavefunctions.
+#     '''
+#     from sympy import Symbol
+#     from sympy import simplify
+#
+#     theta = Symbol("theta", real=True)
+#     phi = Symbol("phi", real=True)
+#
+#     Rf = 0
+#     for nn in np.arange(-l,l+0.1):
+#         nn=int(nn)
+#         wigD = Wigner_D(l, m, nn, alpha, beta, gamma)
+#         Rf = Rf + wigD * Ynm(int(l), nn, theta, phi)
+#     return S(detRot)**l * Rf
 
-    Outputs
-    '''
-    from sympy import factorial, Sum, symbols, cos, sin, sqrt
-    from sympy.abc import k
+# def SymmetryAdaptedWF(Group, IrrRep, l, m):
+#     from sympy import simplify, re, im, S
+#
+#     # Allows for either string or index input of
+#     # the irreducible representation
+#     if isinstance(IrrRep,str):
+#         IrrIdx = Group.IrrReps.index(IrrRep)
+#     else:
+#         IrrIdx = IrrRep
+#
+#     # Character of the irreducible representation
+#     chi = Group.CharacterTable[IrrIdx]
+#
+#     # Degree of the irreducible representation which is the same as
+#     # the character for the E (identity) element.
+#     degree = chi[Group.Classes.index('E')]
+#
+#     # Order of the group which is equal to the sum of the elements
+#     order = len(Group.Elements)
+#
+#     SALC = 0
+#     EulerCntr = 0
+#     for sym in np.arange(len(Group.Classes)):
+#         for clssze in np.arange(Group.ClassSize[sym]):
+#             # Get the Euler angles (Z-Y-Z) for each class in the group
+#             alpha = S(Group.ParameterTable[EulerCntr][0])
+#             beta = S(Group.ParameterTable[EulerCntr][1])
+#             gamma = S(Group.ParameterTable[EulerCntr][2])
+#             detRot = S(Group.ParameterTable[EulerCntr][3])
+#             #print('alpha = %s, beta = %s, gamma = %s'%(alpha,beta,gamma))
+#             #print('RYlm: %s'%RYlm(l,m,alpha,beta,gamma,detRot))
+#             #print('Class Name = %s, Size = %s'%(Group.Classes[sym],Group.ClassSize[sym]))
+#             aRYlm = RYlm(l,m,alpha,beta,gamma,detRot).doit()
+#             SALC = SALC + S(chi[sym])*aRYlm
+#             EulerCntr += 1
+#
+#     SALC = simplify(SALC)
+#     CoeffDict = SALC.as_coefficients_dict()
+#
+#     # SALC_tmp = 0
+#     # for coeff in CoeffDict.keys():
+#     #     if abs(CoeffDict[coeff])<1e-10:
+#     #         CoeffDict[coeff] = 0
+#     #     SALC_tmp = SALC_tmp + CoeffDict[coeff]*coeff
+#
+#     # return S(degree)/order*SALC_tmp
+#     return S(degree)/order*SALC
+#
+#
 
-    # The summation over k extends as long as the factorials are positive.
-    # Since one of the factorials is k! then we know that we must start from
-    # k=0 and extend to the limit defined below
-    k_lim_min = int(np.max([0,m2-m1]))
-    k_lim_max = int(np.min([j+m2,j-m1]))
+# def Wigner_d(j, m1, m2, beta):
+#     '''
+#     Inputs :
+#
+#     Outputs
+#     '''
+#     from sympy import factorial, Sum, symbols, cos, sin, sqrt
+#     from sympy.abc import k
+#
+#     # The summation over k extends as long as the factorials are positive.
+#     # Since one of the factorials is k! then we know that we must start from
+#     # k=0 and extend to the limit defined below
+#     k_lim_min = int(np.max([0,m2-m1]))
+#     k_lim_max = int(np.min([j+m2,j-m1]))
+#
+#     wig_d = sqrt(factorial(j+m1)*factorial(j-m1)*factorial(j+m2)*factorial(j-m2))*Sum((-1)**(m1-m2+k)* \
+#             cos(beta/2)**(2*j+m2-m1-2*k)*sin(beta/2)**(m1-m2+2*k)/(factorial(j+m2-k)* \
+#             factorial(k)*factorial(m1-m2+k)*factorial(j-m1-k)),(k,k_lim_min,k_lim_max))
+#
+#     return wig_d.doit()
+#
+# def Wigner_D(j, m1, m2, alpha, beta, gamma, sign_conv = 'Mathematica' ):
+#     from sympy import simplify, re, im, E, I
+#
+#     if sign_conv == 'Mathematica':
+#         # Mathematica sign convention
+#         m1 = -m1
+#         m2 = -m2
+#
+#     '''print('j:%s, m1:%s, m2:%s, alpha:%s, beta:%s, gamma:%s'%(j, m1, m2, alpha, beta, gamma))
+#     print(E**(-1j*m1*alpha))
+#     print(Wigner_d(j, m1, m2, beta))
+#     print(E**(-1j*m2*gamma))'''
+#
+#     WigD = simplify((exp(-I*m1*alpha).rewrite(cos)*Wigner_d(j, m1, m2, beta)*exp(-I*m2*gamma).rewrite(cos)).doit())
+#
+#     # if WigD.is_complex:
+#     #     WgD = np.array([re(WigD),im(WigD)])
+#     #     # This is implemented to remove rounding errors.
+#     #     # Should rewrite functions to be symbolic to prevent these errors.
+#     #     WgD[abs(WgD)<1e-10] = 0
+#     #     WigD = WgD[0]+WgD[1]*1j
+#
+#     return WigD
 
-    wig_d = sqrt(factorial(j+m1)*factorial(j-m1)*factorial(j+m2)*factorial(j-m2))*Sum((-1)**(m1-m2+k)* \
-            cos(beta/2)**(2*j+m2-m1-2*k)*sin(beta/2)**(m1-m2+2*k)/(factorial(j+m2-k)* \
-            factorial(k)*factorial(m1-m2+k)*factorial(j-m1-k)),(k,k_lim_min,k_lim_max))
-
-    return wig_d.doit()
-
-def Wigner_D(j, m1, m2, alpha, beta, gamma, sign_conv = 'Mathematica' ):
-    from sympy import simplify, re, im, E, I
-
-    if sign_conv == 'Mathematica':
-        # Mathematica sign convention
-        m1 = -m1
-        m2 = -m2
-
-    '''print('j:%s, m1:%s, m2:%s, alpha:%s, beta:%s, gamma:%s'%(j, m1, m2, alpha, beta, gamma))
-    print(E**(-1j*m1*alpha))
-    print(Wigner_d(j, m1, m2, beta))
-    print(E**(-1j*m2*gamma))'''
-
-    WigD = simplify((exp(-I*m1*alpha).rewrite(cos)*Wigner_d(j, m1, m2, beta)*exp(-I*m2*gamma).rewrite(cos)).doit())
-
-    # if WigD.is_complex:
-    #     WgD = np.array([re(WigD),im(WigD)])
-    #     # This is implemented to remove rounding errors.
-    #     # Should rewrite functions to be symbolic to prevent these errors.
-    #     WgD[abs(WgD)<1e-10] = 0
-    #     WigD = WgD[0]+WgD[1]*1j
-
-    return WigD
-
-def B_CF(ll,mm):
-    '''
-    Generates a symbol placeholder for the B coefficients in the crystal field potential.
-    '''
-    from sympy import symbols
-    if mm<0:
-        Bcf = (-1)**mm*symbols(''.join(['B_',str(ll),str(abs(mm))]))
-    else:
-        Bcf = symbols(''.join(['B_',str(ll),str(mm)]))
-    return Bcf
-
-def C_CF(ll,mm):
-    '''
-    Function to add the prefactor for the unnormalized spherical
-    harmonics used in the crystal field potential.
-    '''
-    return np.sqrt(4*np.pi/(2*ll+1))*Ylm(ll,mm)
-
-def GetSALCs(Group,IrrRep,l_max):
-    '''
-    Function to get all of the symmetry adapted functions for a given
-    representation (IrrRep) of a given group (Group) up to a
-    maximum l value (l_max)
-    '''
-    SALCs = []
-    for ll in np.arange(1,l_max+0.1):
-        for mm in np.arange(-ll,ll+0.1):
-            SALCs.append(SymmetryAdaptedWF(Group,IrrRep,ll,mm))
-    return np.array(SALCs)
-
-def RealCheck(SALCs, debug = False):
-    '''
-    Ideally we would require that the B coefficients be real.
-    Thus, if the C terms are imaginary then the corresponding
-    B would also be imaginary. However, we can pull the value i
-    out from the B, so that it remains real and instead we
-    multiply the C by i.
-    '''
-    from sympy import re, im
-    realness = np.ones((len(SALCs),),dtype=complex)
-    for salc in np.arange(len(SALCs)):
-        ExpSALC = SALCs[salc].rewrite(cos).simplify()
-        if debug == True:
-            print(ExpSALC, re(ExpSALC))
-        if (re(ExpSALC) == 0):
-            realness[salc] = 1j
-        else:
-
-            realness[salc] = 1
-    return realness
-
-def SALC_SymTest(SALCs):
-    '''
-    Function to test for a
-    '''
-    for salc in np.arange(len(SALCs)):
-        mask = SALCs == -SALCs[salc]
-        mask[0:salc] = 0
-        SALCs[mask] = -SALCs[mask]
-    return SALCs
-
-def GenerateBList(PointGroupNumber, l):
-    from sympy import sqrt, S
-    Blist = []
-    Bcoeff = []
-    IdxList = []
-    for ll in np.arange(1,l+0.1):
-        ll = int(ll)
-        for mm in np.arange(-ll,ll+0.1):
-            mm = int(mm)
-            IdxList.append([ll,mm])
-            if PointGroupNumber >= 28:
-                if ll == 4 and (abs(mm) == 4):
-                    Bcoeff.append(sqrt(S(5)/14))
-                    Blist.append(B_CF(ll,0))
-                elif ll == 6 and (abs(mm) == 4):
-                    Bcoeff.append(sqrt(S(7)/2))
-                    Blist.append(B_CF(ll,0))
-                else:
-                    if mm<0:
-                        Bcoeff.append((-1)**mm)
-                    else:
-                        Bcoeff.append(1)
-                    Blist.append(B_CF(ll,abs(mm)))
-            else:
-                if mm<0:
-                    #Bcoeff.append(1) #Jon's Code
-                    Bcoeff.append((-1)**mm)
-                else:
-                    Bcoeff.append(1)
-                Blist.append(B_CF(ll,abs(mm)))
-    IdxList = np.array(IdxList)
-    RepeatIdx = IdxList[:,1]>0
-    IdxList = CompareBlist(IdxList)
-    IdxList[:,RepeatIdx] = 0
-    NormList = IdxList/np.expand_dims(IdxList.sum(axis=0),axis=1).dot(np.ones((1,IdxList.shape[1]))).T
-    NormList[np.isnan(NormList)] = 0
-    NormList[np.isinf(NormList)] = 0
-
-    Bcoeff = np.array(Bcoeff)
-    Blist = np.array(Blist)
-
-    return Bcoeff, Blist, IdxList, NormList
-
-def CFP(Group,l=4, debug=False, as_Ckq=False):
-    '''
-    Generates the crystal field potential for the group \
-    out to angular momentum l=4.
-    '''
-
-    SALCs = GetSALCs(Group,0,l)
-
-    Bcoeff, Blist, IdxList, NormList = GenerateBList(Group.PointGroupNumber, l)
-
-    Sym_SALCs = SALC_SymTest(Bcoeff*SALCs).dot(IdxList)
-    Real_SALCs = RealCheck((Sym_SALCs).dot(IdxList),debug)
-
-    V_CF = (Sym_SALCs*Real_SALCs).dot(Blist.dot(NormList))
-    CoeffDict = V_CF.as_coefficients_dict()
-    Vcf_tmp = 0
-    for coeff in CoeffDict.keys():
-        if abs(CoeffDict[coeff])<1e-7:
-            CoeffDict[coeff] = 0
-        Vcf_tmp = Vcf_tmp + CoeffDict[coeff]*coeff
-
-    if debug == True:
-        print('SALCs')
-        print(SALCs)
-
-        print('Realness')
-        print(Real_SALCs)
-
-        print('Symmetry')
-        print(Sym_SALCs)
-
-    V_CF = Vcf_tmp.simplify()
-
-    if as_Ckq == True:
-        V_CF = V_CF.replace(Ynm,Ckq)
-    return V_CF
-
-def Ckq(k,q,theta,phi):
-    from sympy import Symbol
-    return Symbol(''.join(['C_{',str(k),str(q),'}']))
-
-
-def CompareBlist(Blist):
-    len_Blist = len(Blist)
-    mask = np.zeros((len_Blist,len_Blist))
-    for idx in np.arange(len_Blist):
-        mask[idx,:] = (Blist[idx,0]==abs(Blist[:,0]))*(abs(Blist[idx,1])==abs(Blist[:,1]))
-    return mask
+# def B_CF(ll,mm):
+#     '''
+#     Generates a symbol placeholder for the B coefficients in the crystal field potential.
+#     '''
+#     from sympy import symbols
+#     if mm<0:
+#         Bcf = (-1)**mm*symbols(''.join(['B_',str(ll),str(abs(mm))]))
+#     else:
+#         Bcf = symbols(''.join(['B_',str(ll),str(mm)]))
+#     return Bcf
+#
+# def C_CF(ll,mm):
+#     '''
+#     Function to add the prefactor for the unnormalized spherical
+#     harmonics used in the crystal field potential.
+#     '''
+#     return np.sqrt(4*np.pi/(2*ll+1))*Ylm(ll,mm)
+#
+# def GetSALCs(Group,IrrRep,l_max):
+#     '''
+#     Function to get all of the symmetry adapted functions for a given
+#     representation (IrrRep) of a given group (Group) up to a
+#     maximum l value (l_max)
+#     '''
+#     SALCs = []
+#     for ll in np.arange(1,l_max+0.1):
+#         for mm in np.arange(-ll,ll+0.1):
+#             SALCs.append(SymmetryAdaptedWF(Group,IrrRep,ll,mm))
+#     return np.array(SALCs)
+#
+# def RealCheck(SALCs, debug = False):
+#     '''
+#     Ideally we would require that the B coefficients be real.
+#     Thus, if the C terms are imaginary then the corresponding
+#     B would also be imaginary. However, we can pull the value i
+#     out from the B, so that it remains real and instead we
+#     multiply the C by i.
+#     '''
+#     from sympy import re, im
+#     realness = np.ones((len(SALCs),),dtype=complex)
+#     for salc in np.arange(len(SALCs)):
+#         ExpSALC = SALCs[salc].rewrite(cos).simplify()
+#         if debug == True:
+#             print(ExpSALC, re(ExpSALC))
+#         if (re(ExpSALC) == 0):
+#             realness[salc] = 1j
+#         else:
+#
+#             realness[salc] = 1
+#     return realness
+#
+# def SALC_SymTest(SALCs):
+#     '''
+#     Function to test for a
+#     '''
+#     for salc in np.arange(len(SALCs)):
+#         mask = SALCs == -SALCs[salc]
+#         mask[0:salc] = 0
+#         SALCs[mask] = -SALCs[mask]
+#     return SALCs
+#
+# def GenerateBList(PointGroupNumber, l):
+#     from sympy import sqrt, S
+#     Blist = []
+#     Bcoeff = []
+#     IdxList = []
+#     for ll in np.arange(1,l+0.1):
+#         ll = int(ll)
+#         for mm in np.arange(-ll,ll+0.1):
+#             mm = int(mm)
+#             IdxList.append([ll,mm])
+#             if PointGroupNumber >= 28:
+#                 if ll == 4 and (abs(mm) == 4):
+#                     Bcoeff.append(sqrt(S(5)/14))
+#                     Blist.append(B_CF(ll,0))
+#                 elif ll == 6 and (abs(mm) == 4):
+#                     Bcoeff.append(sqrt(S(7)/2))
+#                     Blist.append(B_CF(ll,0))
+#                 else:
+#                     if mm<0:
+#                         Bcoeff.append((-1)**mm)
+#                     else:
+#                         Bcoeff.append(1)
+#                     Blist.append(B_CF(ll,abs(mm)))
+#             else:
+#                 if mm<0:
+#                     #Bcoeff.append(1) #Jon's Code
+#                     Bcoeff.append((-1)**mm)
+#                 else:
+#                     Bcoeff.append(1)
+#                 Blist.append(B_CF(ll,abs(mm)))
+#     IdxList = np.array(IdxList)
+#     RepeatIdx = IdxList[:,1]>0
+#     IdxList = CompareBlist(IdxList)
+#     IdxList[:,RepeatIdx] = 0
+#     NormList = IdxList/np.expand_dims(IdxList.sum(axis=0),axis=1).dot(np.ones((1,IdxList.shape[1]))).T
+#     NormList[np.isnan(NormList)] = 0
+#     NormList[np.isinf(NormList)] = 0
+#
+#     Bcoeff = np.array(Bcoeff)
+#     Blist = np.array(Blist)
+#
+#     return Bcoeff, Blist, IdxList, NormList
+#
+# def CFP(Group,l=4, debug=False, as_Ckq=False):
+#     '''
+#     Generates the crystal field potential for the group \
+#     out to angular momentum l=4.
+#     '''
+#
+#     SALCs = GetSALCs(Group,0,l)
+#
+#     Bcoeff, Blist, IdxList, NormList = GenerateBList(Group.PointGroupNumber, l)
+#
+#     Sym_SALCs = SALC_SymTest(Bcoeff*SALCs).dot(IdxList)
+#     Real_SALCs = RealCheck((Sym_SALCs).dot(IdxList),debug)
+#
+#     V_CF = (Sym_SALCs*Real_SALCs).dot(Blist.dot(NormList))
+#     CoeffDict = V_CF.as_coefficients_dict()
+#     Vcf_tmp = 0
+#     for coeff in CoeffDict.keys():
+#         if abs(CoeffDict[coeff])<1e-7:
+#             CoeffDict[coeff] = 0
+#         Vcf_tmp = Vcf_tmp + CoeffDict[coeff]*coeff
+#
+#     if debug == True:
+#         print('SALCs')
+#         print(SALCs)
+#
+#         print('Realness')
+#         print(Real_SALCs)
+#
+#         print('Symmetry')
+#         print(Sym_SALCs)
+#
+#     V_CF = Vcf_tmp.simplify()
+#
+#     if as_Ckq == True:
+#         V_CF = V_CF.replace(Ynm,Ckq)
+#     return V_CF
+#
+# def Ckq(k,q,theta,phi):
+#     from sympy import Symbol
+#     return Symbol(''.join(['C_{',str(k),str(q),'}']))
+#
+#
+# def CompareBlist(Blist):
+#     len_Blist = len(Blist)
+#     mask = np.zeros((len_Blist,len_Blist))
+#     for idx in np.arange(len_Blist):
+#         mask[idx,:] = (Blist[idx,0]==abs(Blist[:,0]))*(abs(Blist[idx,1])==abs(Blist[:,1]))
+#     return mask
 
 def fmt_table(data, center_data=False, add_row_nums=False):
     '''Create a LaTeX table from a given list of lists'''
@@ -621,11 +1071,11 @@ def fmt_table(data, center_data=False, add_row_nums=False):
         if center_data and row_idx > 0:
             to_add = ceil( (max_cols - len(row_data))/2 )
             row += ' & '.join([''] * to_add)
-        row += ' & '.join(row_data)
+        row += ' & '.join([latex(thing) for thing in row_data])
         if row_idx == 0:
-            row = '''\\hline''' + row + '''\\\\\hline'''
+            row = '''\\hline ''' + row + '''\\\\\hline '''
         else:
-            row += '''\\\\\hline'''
+            row += '''\\\\\hline '''
         row += "\n"
         buf +=row
         row_idx += 1
@@ -756,3 +1206,5 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
 
 def Yrot(l,m,theta,phi):
     return RYlm(l, m, alpha, beta, gamma, detRot)
+
+CPG = CPGroups()
