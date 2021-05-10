@@ -15,7 +15,7 @@
 #                     ~~                  '~`                  ~~
 
 from flask import Flask
-from dash import Dash
+from dash import Dash, callback_context
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -47,30 +47,37 @@ app.title='Groups ahoy!'
 banner_fname = './images/qdef-banner.png'
 encoded_png = base64.b64encode(open(banner_fname, 'rb').read())
 
-CPG = CPGroups()
+title_fname = './images/title.png'
+encoded_title = base64.b64encode(open(title_fname, 'rb').read())
 
 pretty_group_labels = []
-for label in CPG.AllGroupLabels:
+for label in list(sorted(CPG.AllGroupLabels)):
     clear_label = label
     if '_' in label:
         label_parts = label.split('_')
         label = '%s_{%s}' % tuple(label_parts)
-    pretty_group_labels.append({'label':'\(%s\)' % label,'value': clear_label})
+    pretty_group_labels.append({'label':'\(%s\)' % label,
+    'value': clear_label,
+    'btn_label': 'btn-'+clear_label.replace('{','(').replace('}',')')})
+
+btn_labels = [gl['btn_label'] for gl in pretty_group_labels]
+
+btn_style = {'width':'50px','margin':'1px'}
 
 app.layout = html.Div(id='power',
-    children = [html.Img(src='data:image/png;base64,{}'.format(encoded_png.decode()),style={'width': '400px','marginBottom':'20px','marginTop':'20px'}),
-    dcc.Markdown('# Crystallographic Point Groups',style={'text-align':'center'}),
-
-    # group selector dropdown
-    dcc.Dropdown(
-        id = 'group_label',
-        options = pretty_group_labels,
-        value = 'O',
-        style = {'width':'50%',
-        'justify-content':'center',
-        'display': 'inline-block'}),
+    children = ([html.Img(src='data:image/png;base64,{}'.format(encoded_png.decode()),style={'width': '400px','marginBottom':'5px','marginTop':'20px'}),
+    html.Br(),
+    html.Img(src='data:image/png;base64,{}'.format(encoded_title.decode()),style={'width': '400px','marginBottom':'10px','marginTop':'5px'}),
+    html.Br(),
+    dbc.ButtonGroup([dbc.Button(gl['label'], style=btn_style, id= gl['btn_label']) for gl in pretty_group_labels[:8]]),
+    html.Br(),
+    dbc.ButtonGroup([dbc.Button(gl['label'], style=btn_style, id= gl['btn_label']) for gl in pretty_group_labels[8:16]]),
+    html.Br(),
+    dbc.ButtonGroup([dbc.Button(gl['label'], style=btn_style, id= gl['btn_label']) for gl in pretty_group_labels[16:24]]),
+    html.Br(),
+    dbc.ButtonGroup([dbc.Button(gl['label'], style=btn_style, id= gl['btn_label']) for gl in pretty_group_labels[24:]]),
+    html.Br(),
     dcc.Markdown('-----'),
-
     # character table
     dbc.Button(
             "Character Table",
@@ -125,8 +132,22 @@ app.layout = html.Div(id='power',
             id="collapse-ptable",
         ),
     dcc.Markdown('-----')
-    ],
+    ]
+    ),
     style = {'text-align':'center'})
+
+@app.callback(
+    [Output(gl['btn_label'], "color") for gl in pretty_group_labels],
+    [Input(gl['btn_label'], "n_clicks") for gl in pretty_group_labels]
+)
+def on_button_click(*btns):
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'btn-O'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    colors = ["primary" if gl['btn_label'] == button_id else "secondary" for gl in pretty_group_labels]
+    return colors
 
 @app.callback(
     Output("collapse-ptable", "is_open"),
@@ -176,11 +197,18 @@ def make_dash_table(alist, headers, leaders):
         table.append(html.Tr(html_row))
     return table
 
+
 # update the character table
 @app.callback(
     Output('character-table', 'children'),
-    [Input('group_label', 'value')])
-def update_char_table(value):
+    [Input(gl['btn_label'], "n_clicks") for gl in pretty_group_labels])
+def update_char_table(*btns):
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'btn-O'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    value = pretty_group_labels[btn_labels.index(button_id)]['value']
     grup = CPG.Groups[CPG.AllGroupLabels.index(value)]
     char_table = grup.CharacterTable
     grup_classes = grup.Classes
@@ -194,8 +222,14 @@ def update_char_table(value):
 # update the group operations table
 @app.callback(
     Output('ops-table', 'children'),
-    [Input('group_label', 'value')])
-def update_ops_table(value):
+    [Input(gl['btn_label'], "n_clicks") for gl in pretty_group_labels])
+def update_ops_table(*btns):
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'btn-O'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    value = pretty_group_labels[btn_labels.index(button_id)]['value']
     grup = CPG.Groups[CPG.AllGroupLabels.index(value)]
     char_table = grup.CharacterTable
     grup_classes = grup.Classes
@@ -209,8 +243,14 @@ def update_ops_table(value):
 # update the direct product table
 @app.callback(
     Output('ptable', 'children'),
-    [Input('group_label', 'value')])
-def update_product_table(value):
+    [Input(gl['btn_label'], "n_clicks") for gl in pretty_group_labels])
+def update_product_table(*btns):
+    ctx = callback_context
+    if not ctx.triggered:
+        button_id = 'btn-O'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    value = pretty_group_labels[btn_labels.index(button_id)]['value']
     grup = CPG.Groups[CPG.AllGroupLabels.index(value)]
     grup_irreps =  grup.IrrReps
     ptable = CPG.direct_product_table(value)

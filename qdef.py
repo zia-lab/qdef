@@ -3,11 +3,11 @@ import numpy as np
 from collections import OrderedDict
 
 from sympy import pi, I, Matrix, symbols, zeros, latex, simplify, N
+from sympy import Symbol, linsolve, Eq, eye, solve
 from sympy import S, conjugate, GramSchmidt
 from sympy import Dummy, sympify, Function
 from sympy.physics.quantum import Ket, Bra
 from sympy import Abs, exp, sqrt, factorial, sin, cos, cot, sign
-
 
 from IPython.display import display, HTML, Math
 
@@ -309,7 +309,7 @@ class CrystalGroup():
         self.IrrReps = irrrep
         # Character table, a list of lists
         self.CharacterTable = chartab
-        self.iCharacterTable = simplify(Matrix(chartab).T**(-1)) # xxx
+        self.iCharacterTable = simplify(Matrix(chartab).T**(-1))
         # Determine the degree of the irreps
         self.RepresentationDegrees = self.addRepDegrees()
         self.ClassSize = clssize
@@ -348,6 +348,9 @@ Irreps:  %s''' % (self.PointGroupLabel, ', '.join(self.Classes), ', '.join(self.
     def printCharacterTable(self):
         print(self.CharacterTable)
 
+    def addGenList(self, GenList=''):
+        self.Generators = GenList
+
     def __str__(self):
         return self.group_info
 
@@ -385,7 +388,7 @@ class CPGroups():
                     self.Groups[GrpIdx].addParameterTable(elems=Elements,
                                                          parlab=ParameterLabels,
                                                          partab=ParameterTable)
-
+        # load space reps
         for (dirpath, dirnames, filenames) in os.walk('/'.join([module_dir,'Space Group Elements'])):
             for file in filenames:
                 if file.endswith('.csv'):
@@ -393,6 +396,51 @@ class CPGroups():
                     Elements, SpaceGroupTable = self.ParseSpaceGroupTable(file)
                     self.Groups[GrpIdx].addSpaceGroupElements(elems=Elements, matrix=SpaceGroupTable)
         self.SortGroups()
+        self.addGenerators()
+        # load the matrices for the irreducible representations
+        for (dirpath, dirnames, filenames) in os.walk('/'.join([module_dir,'IrrRep Matrix Forms'])):
+            for file in filenames:
+                if file.endswith('.csv'):
+                    self.GetIrrRepMatrixRepresentations('/'.join([dirpath,file]))
+
+    def addGenerators(self):
+        import ast
+        filename = '/'.join([module_dir,'PointGroupGeneratorList.csv'])
+        with open(filename) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            line_count = 0
+            for row in csv_reader:
+                if line_count == 0 or line_count>32:
+                    Null = 0
+                else:
+                    GrpIdx = int(row[0])-1
+                    generators = ast.literal_eval(row[1])
+                    self.Groups[GrpIdx].addGenList(GenList = generators)
+                line_count+=1
+
+    def GetIrrRepMatrixRepresentations(self, file):
+        '''
+        GetIrrRepMatrixRepresentations(Group, Gamma) returns the matrix \
+        representations for all elements of the irreducible representation \
+        Gamma of the group Group.
+        '''
+        from sympy import Matrix, sympify
+
+        Group = int(file.split('_')[1])
+
+        with open(file) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            IRMats =[]
+            line_count = 0
+
+            for row in csv_reader:
+                tempRow = []
+                for col in row:
+                    tempRow.append(sympify(col.replace('Sqrt','sqrt').replace('[','(').replace(']',')').replace('{','[').replace('}',']')))
+                IRMats.append(tempRow)
+                line_count+=1
+
+        self.Groups[int(Group-1)].IrrRepMatrices = IRMats
 
     def ParseCharacterTable(self, file):
         """This is a function to parse the formatting of the
@@ -626,7 +674,7 @@ def real_or_imagined(qet):
 
 def RYlm(l, m, alpha, beta, gamma, detRot):
     '''This would be rotateHarmonic in the Mathematica code. It is used
-    in the projection of the spherical harmonics to create symmetry
+    in the projection of the spherical  harmonics  to  create  symmetry
     adapted wavefunctions.
     '''
     Rf = Qet()
@@ -635,6 +683,208 @@ def RYlm(l, m, alpha, beta, gamma, detRot):
         if wigD != 0:
           Rf = Rf + Qet({(l,nn): wigD})
     return (S(detRot)**l) * Rf
+
+def flatten_matrix(mah):
+  ''' a convenience function
+  to flatten a sympy matrix into a
+  list of lists'''
+  return [item for sublist in mah.tolist() for item in sublist]
+
+def cg_eqns(group, Γ1_idx, γ1_idx, Γ2_idx, γ2_idx, Γ3_idx, γ3_idx):
+  '''
+ This function takes a group, three indices for three irreducible
+ representations, and three indices for elements of the corresponding
+ irreducible representation matrices. It returns a list of equations that
+ correspond to TSK 2.31, with each element corresponding to one of the group
+ generators. Here, to make the notation uniform, the sum index of the RHS has
+ been changed to a gamma3' and the capital Gamma, to Γ3_idx.
+ This function is used in the algorithm for computing the Clebsch-Gordan coeffs, that correspond to the problem of writing the basis functions of a product of two irreducible representations in terms of the basis functions of its factors.
+  '''
+  # grab the set of matrices for the irreducible representations of the generators
+  irrep_matrices = group.IrrRepMatrices
+  D1, D2, D3 = [irrep_matrices[idx] for idx in [Γ1_idx,Γ2_idx,Γ3_idx]]
+  d1, d2, d3 = list(map(len,[D1[0],D2[0],D3[0]])) # this is how many basis vecs in each
+  D1 = list(map(Matrix,D1))
+  D2 = list(map(Matrix,D2))
+  D3 = list(map(Matrix,D3))
+  num_generators = len(D1)
+  eqns = []
+  for gen_idx in range(num_generators):
+    lhs = S(0)
+    for γ1p_idx in range(d1):
+      for γ2p_idx in range(d2):
+        chevron = '<%d,%d|%d,%d>' % (γ1p_idx, γ2p_idx, Γ3_idx, γ3_idx)
+        chevron = Symbol(chevron)
+        coef = D1[gen_idx][γ1_idx, γ1p_idx] * D2[gen_idx][γ2_idx, γ2p_idx]
+        if coef != 0:
+          lhs += coef*chevron
+    rhs = S(0)
+    for γ3p_idx in range(d3):
+      chevron = '<%d,%d|%d,%d>' % (γ1_idx, γ2_idx, Γ3_idx, γ3p_idx)
+      chevron = Symbol(chevron)
+      coef = D3[gen_idx][γ3p_idx,γ3_idx]
+      if coef != 0:
+        rhs += coef * chevron
+    eqn = lhs-rhs
+    if eqn != 0:
+      eqns.append(eqn)
+  return eqns
+
+def group_clebsh_gordan_coeffs(group, Γ1, Γ2):
+  '''
+  Given a group and string labels for two irreducible representations
+  Γ1 and Γ2 this function calculates the  Clebsh-Gordan  coefficients
+  used to span the basis functions of  their  product in terms of the
+  basis functions of their factors.
+  This function returns a tuple, the  first  element being  a  matrix
+  of symbols which determine  to  which  CG  coefficient the elements
+  given in the second element of the tuple correspond to. These  sym-
+  bols are constructed thus
+  <i1,i2|i3,i4>
+  (i1 -> index for basis function in Γ1)
+  (i2 -> index for basis function in Γ2)
+  (i3 -> index for an irreducible representation Γ3 in the group)
+  (i4 -> index for a basis function of Γ3)
+  '''
+  # find the corresponding indices
+  Γ1_idx = group.IrrReps.index(Γ1)
+  Γ2_idx = group.IrrReps.index(Γ2)
+
+  # find the direct sum decomposition
+  Γ3s_bmask = representation_product(group, Γ1_idx, Γ2_idx)
+
+  # and the corresponding indices
+  Γ3s_idx = [idx for idx, boo in enumerate(Γ3s_bmask) if boo]
+
+  # also grab the labels for them
+  Γ3s = [group.IrrReps[idx] for idx in Γ3s_idx]
+
+  # construct the labels for the basis functions of all irreps
+  all_basis_labels = get_components(group)
+
+  # separate out the labels for the bases of Γ1, Γ2
+  basis_fun_labels = get_components(group)
+  Γ1_basis_labels = basis_fun_labels[Γ1_idx]
+  Γ2_basis_labels = basis_fun_labels[Γ2_idx]
+
+  # determine the shape of the CG matrix
+  print("CG is a ({size},{size})".format(size=len(Γ1_basis_labels)*len(Γ2_basis_labels)))
+
+  # then create all the linear constraints
+  all_eqns = []
+  for γ1_idx in range(len(Γ1_basis_labels)):
+    for γ2_idx in range(len(Γ2_basis_labels)):
+      for Γ3_idx in Γ3s_idx:
+        Γ3_basis_labels = basis_fun_labels[Γ3_idx]
+        for γ3_idx in range(len(Γ3_basis_labels)):
+          cg_args = (group, Γ1_idx, γ1_idx, Γ2_idx, γ2_idx, Γ3_idx, γ3_idx)
+          eqns = cg_eqns(*cg_args)
+          if len(eqns) > 0:
+            all_eqns.extend(eqns)
+  # remove all evident redundancies
+  all_eqns = list(set(all_eqns))
+
+  # collect all the symbols included in all_eqns
+  free_symbols = set()
+  for eqn in all_eqns:
+    free_symbols.update(eqn.free_symbols)
+  free_symbols = list(free_symbols)
+
+  # convert to matrix of coefficients
+  coef_matrix = Matrix([[eqn.coeff(cg) for cg in free_symbols] for eqn in all_eqns])
+
+  # and simplify using the rref
+  rref = coef_matrix.rref()[0]
+
+  # turn back to symbolic and solve
+  better_eqns = [r for r in rref*Matrix(free_symbols) if r!=0]
+  better_sol = solve(better_eqns, free_symbols)
+  # construct the unitary matrix with all the CGs
+  U = []
+  for γ1_idx in range(len(Γ1_basis_labels)):
+    for γ2_idx in range(len(Γ2_basis_labels)):
+      row = []
+      for Γ3_idx in Γ3s_idx:
+        Γ3_basis_labels = basis_fun_labels[Γ3_idx]
+        for γ3_idx in range(len(Γ3_basis_labels)):
+          chevron = ('<%d,%d|%d,%d>' % (γ1_idx, γ2_idx, Γ3_idx, γ3_idx))
+          chevron = Symbol(chevron)
+          row.append(chevron)
+      U.append(row)
+  # replace with the current solution
+  Usymbols = Matrix(U)
+  U = Matrix(U).subs(better_sol)
+  # build the unitary constraints
+  unitary_constraints = U*U.T - eye(U.shape[0])
+  # flatten and pick the nontrivial ones
+  unitary_set = [f for f in flatten_matrix(unitary_constraints) if f!=0]
+  # solve
+  unitary_sol = solve(unitary_set)
+  print("%d solutions found" % len(unitary_sol))
+  # use one solution
+  Usol = U.subs(unitary_sol[0])
+  return Usymbols, Usol
+
+def get_components(Group):
+    '''
+    This function takes a group and returns the a list of lists
+    each with  string  labels  for  the basis  functions of its
+    irreducible representations.
+    '''
+    Chi_0 = np.array(Group.CharacterTable)[:,0]
+    Gamma_0 = Group.IrrReps
+
+    componentList = []
+    for comp in np.arange(len(Chi_0)):
+        irrrep = Gamma_0[comp]
+        switcher={
+        1: [''.join(['a_{',irrrep,'}'])],
+        2: [''.join(['u_{',irrrep,'}']),''.join(['v_{',irrrep,'}'])],
+        3: [''.join(['x_{',irrrep,'}']),''.join(['y_{',irrrep,'}']),''.join(['z_{',irrrep,'}'])],
+        }
+        componentList.append(switcher.get(Chi_0[comp], "ERROR"))
+    return componentList
+
+def component_idx(Group):
+    '''
+    Given a group this function returns a a list of lists
+    each with the  indices  that  correspond to the basis
+    vectors of its irreducible representations.
+    '''
+    CompLen = list(map(np.shape, get_components(Group)))
+    for idx in np.arange(len(CompLen)):
+        ent = CompLen[idx]
+        if ent == ():
+            CompLen[idx] = 1
+        else:
+            CompLen[idx] = ent[0]
+
+    AccComList = np.cumsum(CompLen)
+
+    return [np.arange(x-1,y-1+0.1).astype(int).tolist() for x,y in zip((np.insert(AccComList[0:-1]+1,0,1)).astype(int),AccComList)]
+
+def representation_product(Group, Gamma1, Gamma2, verbose = False):
+    '''
+    This function takes  a  group  (Group)  and  two  indices  (Gamma1, Gamma2)
+    and returns a list of bools that indicate which irreducible representations
+    compose the direct sum decomposition  of  the  irreducible  representations
+    corresponding to the two given indices.
+    If verbose=True, then the function prints a string that  shows  the  direct
+    sum decomposition.
+    '''
+    if isinstance(Gamma1,str):
+        Gamma1 = Group.IrrReps.index(Gamma1)
+    if isinstance(Gamma2,str):
+        Gamma2 = Group.IrrReps.index(Gamma2)
+
+    Chi = Matrix(np.array(Group.CharacterTable[Gamma1])*np.array(Group.CharacterTable[Gamma2]))
+
+    IRBool = np.array(list(linsolve((Matrix(Group.CharacterTable).T,Chi)).args[0])).astype(bool).tolist()
+
+    if verbose == True:
+        RepString = ' + '.join(np.array(Group.IrrReps)[IRBool])
+        print('%s x %s : %s'%(Group.IrrReps[Gamma1],Group.IrrReps[Gamma2], RepString))
+    return IRBool
 
 def SymmetryAdaptedWF(group, l, m):
   '''
