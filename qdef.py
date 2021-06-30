@@ -9,6 +9,8 @@ from sympy import Dummy, sympify, Function
 from sympy.physics.quantum import Ket, Bra
 from sympy import Abs, exp, sqrt, factorial, sin, cos, cot, sign
 import sympy as sp
+from itertools import product
+from tqdm.notebook import tqdm
 
 import math
 import pickle
@@ -261,28 +263,6 @@ class Qet():
     def __repr__(self):
         return str(self.dict)
 
-# def parse_math_expression(stringo):
-#     '''Use to parse output from Mathematica'''
-#     if 'Subscript' in stringo:
-#       args = re.findall(r'\[(.*)\]',stringo)[0].replace('"','').replace(' ','').split(',')
-#       if len(args[0]) > 1:
-#         symb = '{%s}_{%s}' % tuple(args)
-#       else:
-#         symb = '%s_{%s}' % tuple(args)
-#     elif 'Subsuperscript' in stringo:
-#       args = re.findall(r'\[(.*)\]',stringo)[0].replace('"','').replace(' ','').split(',')
-#       if len(args[0]) > 1:
-#         symb = '{%s}_{%s}^{%s}' % tuple(args)
-#       else:
-#         symb = '%s_{%s}^{%s}' % tuple(args)
-#     elif '_' in stringo:
-#         symb = '{%s}_{%s}' % tuple(stringo.split('_'))
-#     else:
-#       symb = stringo
-#     if '”' in stringo:
-#       symb = symb.replace('”',"^{''}")
-#     return symb
-
 class ProductTable():
     def __init__(self, odict, irrep_labels, grp_label):
         self.odict = odict
@@ -315,8 +295,29 @@ class CrystalGroup():
         self.euler_angles = group_data_dict['euler angles']
         self.group_operations = group_data_dict['group operations']
         self.order = len(self.group_operations)
+        self.rot_matrices = {k: rotation_matrix(v) for k, v in self.euler_angles.items()}
+        self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
         self.direct_product_table()
+        self.basis_function_labels = self.get_basis_function_labels()
 
+    def get_basis_function_labels(self):
+        irrep_dims = self.irrep_dims
+        components = {}
+        for irrep_label, irrep_dim in irrep_dims.items():
+            str_label = str(irrep_label)
+            c_labels = []
+            if irrep_dim == 1:
+                c_labels = [sp.Symbol('a_{%s}' % str_label)]
+            elif irrep_dim == 2:
+                c_labels = [sp.Symbol('u_{%s}' % str_label),
+                            sp.Symbol('v_{%s}' % str_label)]
+            elif irrep_dim == 3:
+                c_labels = [sp.Symbol('x_{%s}' % str_label),
+                            sp.Symbol('y_{%s}' % str_label),
+                            sp.Symbol('z_{%s}' % str_label)]
+            assert len(c_labels) != 0
+            components[irrep_label] = c_labels
+        return components
     def direct_product(self, ir0, ir1):
         '''
         Given the label for a cpg and  labels for  two
@@ -339,7 +340,7 @@ class CrystalGroup():
         for element, ir in zip(partition, group_irreps):
             el = int(sp.N(element,1,chop=True))
             qet = qet + Qet({ir:el})
-        return qet.as_symbol_sum()
+        return qet.basis()
 
     def direct_product_table(self):
         '''
@@ -511,160 +512,138 @@ def flatten_matrix(mah):
   list of lists'''
   return [item for sublist in mah.tolist() for item in sublist]
 
-def cg_eqns(group, Γ1_idx, γ1_idx, Γ2_idx, γ2_idx, Γ3_idx, γ3_idx):
-  '''
- This function takes a group, three indices for three irreducible
- representations, and three indices for elements of the corresponding
- irreducible representation matrices. It returns a list of equations that
- correspond to TSK 2.31, with each element corresponding to one of the group
- generators. Here, to make the notation uniform, the sum index of the RHS has
- been changed to a gamma3' and the capital Gamma, to Γ3_idx.
- This function is used in the algorithm for computing the Clebsch-Gordan coeffs, that correspond to the problem of writing the basis functions of a product of two irreducible representations in terms of the basis functions of its factors.
-  '''
-  # grab the set of matrices for the irreducible representations of the generators
-  irrep_matrices = group.IrrRepMatrices
-  D1, D2, D3 = [irrep_matrices[idx] for idx in [Γ1_idx,Γ2_idx,Γ3_idx]]
-  d1, d2, d3 = list(map(len,[D1[0],D2[0],D3[0]])) # this is how many basis vecs in each
-  D1 = list(map(Matrix,D1))
-  D2 = list(map(Matrix,D2))
-  D3 = list(map(Matrix,D3))
-  num_generators = len(D1)
-  eqns = []
-  for gen_idx in range(num_generators):
-    lhs = S(0)
-    for γ1p_idx in range(d1):
-      for γ2p_idx in range(d2):
-        chevron = '<%d,%d|%d,%d>' % (γ1p_idx, γ2p_idx, Γ3_idx, γ3_idx)
-        chevron = Symbol(chevron)
-        coef = D1[gen_idx][γ1_idx, γ1p_idx] * D2[gen_idx][γ2_idx, γ2p_idx]
-        if coef != 0:
-          lhs += coef*chevron
-    rhs = S(0)
-    for γ3p_idx in range(d3):
-      chevron = '<%d,%d|%d,%d>' % (γ1_idx, γ2_idx, Γ3_idx, γ3p_idx)
-      chevron = Symbol(chevron)
-      coef = D3[gen_idx][γ3p_idx,γ3_idx]
-      if coef != 0:
-        rhs += coef * chevron
-    eqn = lhs-rhs
-    if eqn != 0:
-      eqns.append(eqn)
-  return eqns
-
-def group_clebsh_gordan_coeffs(group, Γ1, Γ2):
-  '''
-  Given a group and string labels for two irreducible representations
-  Γ1 and Γ2 this function calculates the  Clebsh-Gordan  coefficients
-  used to span the basis functions of  their  product in terms of the
-  basis functions of their factors.
-  This function returns a tuple, the  first  element being  a  matrix
-  of symbols which determine  to  which  CG  coefficient the elements
-  given in the second element of the tuple correspond to. These  sym-
-  bols are constructed thus
-  <i1,i2|i3,i4>
-  (i1 -> index for basis function in Γ1)
-  (i2 -> index for basis function in Γ2)
-  (i3 -> index for an irreducible representation Γ3 in the group)
-  (i4 -> index for a basis function of Γ3)
-  '''
-  # find the corresponding indices
-  Γ1_idx = group.IrrReps.index(Γ1)
-  Γ2_idx = group.IrrReps.index(Γ2)
-
-  # find the direct sum decomposition
-  Γ3s_bmask = representation_product(group, Γ1_idx, Γ2_idx)
-
-  # and the corresponding indices
-  Γ3s_idx = [idx for idx, boo in enumerate(Γ3s_bmask) if boo]
-
-  # also grab the labels for them
-  Γ3s = [group.IrrReps[idx] for idx in Γ3s_idx]
-
-  # construct the labels for the basis functions of all irreps
-  all_basis_labels = get_components(group)
-
-  # separate out the labels for the bases of Γ1, Γ2
-  basis_fun_labels = get_components(group)
-  Γ1_basis_labels = basis_fun_labels[Γ1_idx]
-  Γ2_basis_labels = basis_fun_labels[Γ2_idx]
-
-  # determine the shape of the CG matrix
-  print("CG is a ({size},{size})".format(size=len(Γ1_basis_labels)*len(Γ2_basis_labels)))
-
-  # then create all the linear constraints
-  all_eqns = []
-  for γ1_idx in range(len(Γ1_basis_labels)):
-    for γ2_idx in range(len(Γ2_basis_labels)):
-      for Γ3_idx in Γ3s_idx:
-        Γ3_basis_labels = basis_fun_labels[Γ3_idx]
-        for γ3_idx in range(len(Γ3_basis_labels)):
-          cg_args = (group, Γ1_idx, γ1_idx, Γ2_idx, γ2_idx, Γ3_idx, γ3_idx)
-          eqns = cg_eqns(*cg_args)
-          if len(eqns) > 0:
-            all_eqns.extend(eqns)
-  # remove all evident redundancies
-  all_eqns = list(set(all_eqns))
-
-  # collect all the symbols included in all_eqns
-  free_symbols = set()
-  for eqn in all_eqns:
-    free_symbols.update(eqn.free_symbols)
-  free_symbols = list(free_symbols)
-
-  # convert to matrix of coefficients
-  coef_matrix = Matrix([[eqn.coeff(cg) for cg in free_symbols] for eqn in all_eqns])
-
-  # and simplify using the rref
-  rref = coef_matrix.rref()[0]
-
-  # turn back to symbolic and solve
-  better_eqns = [r for r in rref*Matrix(free_symbols) if r!=0]
-  better_sol = solve(better_eqns, free_symbols)
-  # construct the unitary matrix with all the CGs
-  U = []
-  for γ1_idx in range(len(Γ1_basis_labels)):
-    for γ2_idx in range(len(Γ2_basis_labels)):
-      row = []
-      for Γ3_idx in Γ3s_idx:
-        Γ3_basis_labels = basis_fun_labels[Γ3_idx]
-        for γ3_idx in range(len(Γ3_basis_labels)):
-          chevron = ('<%d,%d|%d,%d>' % (γ1_idx, γ2_idx, Γ3_idx, γ3_idx))
-          chevron = Symbol(chevron)
-          row.append(chevron)
-      U.append(row)
-  # replace with the current solution
-  Usymbols = Matrix(U)
-  U = Matrix(U).subs(better_sol)
-  # build the unitary constraints
-  unitary_constraints = U*U.T - eye(U.shape[0])
-  # flatten and pick the nontrivial ones
-  unitary_set = [f for f in flatten_matrix(unitary_constraints) if f!=0]
-  # solve
-  unitary_sol = solve(unitary_set)
-  print("%d solutions found" % len(unitary_sol))
-  # use one solution
-  Usols = [U.subs(sol) for sol in unitary_sol]
-  return Usymbols, Usols
-
-def get_components(Group):
+def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False):
     '''
-    This function takes a group and returns the a list of lists
-    each with  string  labels  for  the basis  functions of its
-    irreducible representations.
+    Given a group and symbol labels for two irreducible representations
+    Γ1 and Γ2 this function calculates the  Clebsh-Gordan  coefficients
+    used to span the basis functions of  their  product in terms of the
+    basis functions of their factors.
+    By  assuming  the  phase convention the result is also obtained for
+    the exchanged order (Γ2, Γ1).
+    If rep_rules = False, this  function  returns  a tuple with 3  ele-
+    ments, the first element being a matrix of symbols for the CGs coe-
+    fficients for (Γ1, Γ2)  the  second element  the  matrix  for  sym-
+    bols  for (Γ2, Γ1) and the third one being a matrix  to  which  its
+    elements are matched element by element to  the  first  and  second
+    matrices of symbols.
+    If rep_rules = True, this  function  returns     two  dictionaries.
+    The keys in the first one equal CGs coefficients from (Γ1, Γ2)  and
+    the second one those for (Γ2, Γ1); with the values  being  the  co-
+    rresponding coefficients.
+    These CG symbols are constructed thus
+    <i1,i2|i3,i4>
+    (i1 -> symbol for basis function in Γ1 or Γ2)
+    (i2 -> symbol for basis function in Γ2 or Γ1)
+    (i3 -> symbol for an irreducible representation Γ3 in the group)
+    (i4 -> symbol for a basis function of Γ3)
     '''
-    Chi_0 = np.array(Group.CharacterTable)[:,0]
-    Gamma_0 = Group.IrrReps
+    irreps = group.irrep_labels
+    irep1, irep2 = Γ1, Γ2
+    # must first find the resulting direct sum decomposition of their product
+    irep3s = group.product_table.odict[(irep1, irep2)]
+    if irep3s == []: # this is needed in case theres a single term in the direct sum
+        irep3s = [group.product_table.odict[(irep1, irep2)]]
+    # also need to grab the labels for a set of generators
+    generators = group.generators
+    basis_labels = group.basis_function_labels
+    print("Grabbing the labels for the basis functions ...") if verbose else None
+    labels_1, labels_2 = basis_labels[irep1], basis_labels[irep2]
+    cg_size = len(labels_1)*len(labels_2)
+    print("CG is a ({size},{size}) matrix ...".format(size=cg_size)) if verbose else None
+    generators_1 = [group.irrep_matrices[irep1][g] for g in generators]
+    generators_2 = [group.irrep_matrices[irep2][g] for g in generators]
 
-    componentList = []
-    for comp in np.arange(len(Chi_0)):
-        irrrep = Gamma_0[comp]
-        switcher={
-        1: [''.join(['a_{',irrrep,'}'])],
-        2: [''.join(['u_{',irrrep,'}']),''.join(['v_{',irrrep,'}'])],
-        3: [''.join(['x_{',irrrep,'}']),''.join(['y_{',irrrep,'}']),''.join(['z_{',irrrep,'}'])],
-        }
-        componentList.append(switcher.get(Chi_0[comp], "ERROR"))
-    return componentList
+    # then create the list of linear constraints
+    print("Creating the set of linear constraints ...") if verbose else None
+    # In (2.31) there are five quantities that determine one constraints
+    all_eqns = []
+    for irep3 in irep3s:
+        labels_3 = basis_labels[irep3]
+        for generator in generators:
+            D1, D2, D3 = [group.irrep_matrices[irep][generator] for irep in [irep1,irep2,irep3]]
+            γ1s, γ2s, γ3s = [list(range(D.shape[0])) for D in [D1,D2,D3]]
+            for γ1, γ2, γ3p in product(γ1s, γ2s, γ3s):
+                lhs = []
+                for γ1p in γ1s:
+                    for γ2p in γ2s:
+                        symb_args = (labels_1[γ1p],labels_2[γ2p],irep3,labels_3[γ3p])
+                        chevron = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
+                        coeff = D1[γ1, γ1p]*D2[γ2,γ2p]
+                        if coeff:
+                            lhs.append(coeff*chevron)
+                lhs = sum(lhs)
+                rhs = []
+                for γ3 in γ3s:
+                    symb_args = (labels_1[γ1],labels_2[γ2],irep3,labels_3[γ3])
+                    chevron = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
+                    coeff = D3[γ3, γ3p]
+                    if coeff:
+                        rhs.append(coeff*chevron)
+                rhs = sum(rhs)
+                eqn = rhs-lhs
+                if (eqn not in all_eqns) and (-eqn not in all_eqns) and (eqn != 0):
+                    all_eqns.append(eqn)
+
+    # collect all the symbols included in all_eqns
+    free_symbols = set()
+    for eqn in all_eqns:
+        free_symbols.update(eqn.free_symbols)
+    free_symbols = list(free_symbols)
+
+    # convert to matrix of coefficients
+    coef_matrix = Matrix([[eqn.coeff(cg) for cg in free_symbols] for eqn in all_eqns])
+    # and simplify using the rref
+    rref = coef_matrix.rref()[0]
+    # turn back to symbolic and solve
+    better_eqns = [r for r in rref*sp.Matrix(free_symbols) if r!=0]
+    # return better_eqns, free_symbols
+    try:
+        better_sol = sp.solve(better_eqns, free_symbols)
+    except:
+        better_sol = sp.solve(better_eqns, free_symbols, manual=True)
+    # construct the unitary matrix with all the CGs
+    print("Building the big bad matrix ...") if verbose else None
+    U_0 = []
+    U_1 = []
+    for γ1 in labels_1:
+        for γ2 in labels_2:
+            row_0 = []
+            row_1 = []
+            for irep3 in irep3s:
+                labels_3 = basis_labels[irep3]
+                for γ3 in labels_3:
+                    # the given order and the exchanged one
+                    # is saved here to take care of the phase
+                    # convention upon exchange of Γ1 and Γ2
+                    chevron_0 = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % (γ1, γ2, irep3, γ3))
+                    chevron_1 = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % (γ2, γ1, irep3, γ3))
+                    row_0.append(chevron_0)
+                    row_1.append(chevron_1)
+            U_0.append(row_0)
+            U_1.append(row_1)
+    Usymbols_0 = sp.Matrix(U_0)
+    Usymbols_1 = sp.Matrix(U_1)
+    # replace with the solution to the linear constraints
+    U_0 = Usymbols_0.subs(better_sol)
+    # build the unitary constraints
+    print("Bulding the unitarity constraints and assuming U to be orthogonal ...") if verbose else None
+    unitary_constraints = U_0*U_0.T - eye(U_0.shape[0])
+    # flatten and pick the nontrivial ones
+    unitary_set = [f for f in flatten_matrix(unitary_constraints) if f!=0]
+    # solve
+    try:
+        unitary_sol = sp.solve(unitary_set)
+    except:
+        unitary_sol = sp.solve(unitary_set, manual=True)
+    print("%d solutions found ..." % len(unitary_sol)) if verbose else None
+    Usols = [U_0.subs(sol) for sol in unitary_sol]
+    sol_0 = Usols[0]
+    if not rep_rules:
+        return Usymbols_0, Usymbols_1, sol_0
+    else:
+        dic_0 = {k:v for k,v in zip(list(Usymbols_0), list(sol_0))}
+        dic_1 = {k:v for k,v in zip(list(Usymbols_1), list(sol_0))}
+        return dic_0, dic_1
 
 def component_idx(Group):
     '''
@@ -1028,6 +1007,20 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
     srtIdx = np.array(repIdx).argsort().tolist()
     return EigenVals, eVec, repIdx, srtIdx
 
+def rotation_matrix(euler_params):
+    α, β, γ, det = euler_params
+    row_0 = [-sp.sin(α)*sp.sin(γ) + sp.cos(α)*sp.cos(β)*sp.cos(γ),
+             -sp.sin(α)*sp.cos(γ) - sp.sin(γ)*sp.cos(α)*sp.cos(β),
+              sp.sin(β)*sp.cos(α)]
+    row_1 = [sp.sin(α)*sp.cos(β)*sp.cos(γ) + sp.sin(γ)*sp.cos(α),
+            -sp.sin(α)*sp.sin(γ)*sp.cos(β) + sp.cos(α)*sp.cos(γ),
+            sp.sin(α)*sp.sin(β)]
+    row_2 = [-sp.sin(β)*sp.cos(γ),
+             sp.sin(β)*sp.sin(γ),
+             sp.cos(β)]
+    mat = det*sp.Matrix([row_0,row_1,row_2])
+    return mat
+
 def Yrot(l,m,theta,phi):
     return RYlm(l, m, alpha, beta, gamma, detRot)
 
@@ -1037,3 +1030,4 @@ if os.path.exists(os.path.join(module_dir,'data','CPGs.pkl')):
 else:
     print("Regenerating...")
     CPGs = CPGroups(group_data)
+    pickle.dump(CPGs, open(os.path.join(module_dir,'data','CPGs.pkl'),'wb'))
