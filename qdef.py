@@ -1,49 +1,58 @@
-import os, csv, re
+import os, re, pickle
 import numpy as np
-from collections import OrderedDict
+from math import ceil
 
-from sympy import pi, I, Matrix, symbols, zeros, latex, simplify, N
-from sympy import Symbol, linsolve, Eq, eye, solve
-from sympy import S, conjugate, GramSchmidt
-from sympy import Dummy, sympify, Function
-from sympy.physics.quantum import Ket, Bra
-from sympy import Abs, exp, sqrt, factorial, sin, cos, cot, sign
 import sympy as sp
+from sympy import pi, I
+from sympy.physics.quantum import Ket, Bra
+
+from collections import OrderedDict
 from itertools import product
 from tqdm.notebook import tqdm
-
-import math
-import pickle
 
 from IPython.display import display, HTML, Math
 
 module_dir = os.path.dirname(__file__)
 
-from sympy import Ynm
+# =============================================================== #
+# ===================== Load group theory data ================== #
+
+group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
+group_data = group_dict['group_data']
+metadata = group_dict['metadata']
+
+# ===================== Load group theory data ================== #
+# =============================================================== #
+
+# =============================================================== #
+# =======================  Ynm eval tweak ======================= #
 
 # To avoid simplification of negative m values, the eval method
 # on the spherical  harmonics  Ynm  needs  to be redefined. All
 # that is done is  commenting   out  a  portion of the original
-# source code:
+# source code.
 
 @classmethod
 def new_eval(cls, n, m, theta, phi):
-    n, m, theta, phi = [sympify(x) for x in (n, m, theta, phi)]
+    n, m, theta, phi = [sp.sympify(x) for x in (n, m, theta, phi)]
     # Handle negative index m and arguments theta, phi
     #if m.could_extract_minus_sign():
     #    m = -m
     #    return S.NegativeOne**m * exp(-2*I*m*phi) * Ynm(n, m, theta, phi)
     if theta.could_extract_minus_sign():
         theta = -theta
-        return Ynm(n, m, theta, phi)
+        return sp.Ynm(n, m, theta, phi)
     if phi.could_extract_minus_sign():
         phi = -phi
-        return exp(-2*I*m*phi) * Ynm(n, m, theta, phi)
-Ynm.eval = new_eval
+        return sp.exp(-2*I*m*phi) * sp.Ynm(n, m, theta, phi)
+sp.Ynm.eval = new_eval
 
-group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
-group_data = group_dict['group_data']
-metadata = group_dict['metadata']
+# =======================  Ynm eval tweak ======================= #
+# =============================================================== #
+
+# =============================================================== #
+# =========================== Classes =========================== #
+
 
 class Qet():
     '''
@@ -89,7 +98,7 @@ class Qet():
     def subs(self, subs_dict):
         new_dict = dict()
         for key, val in self.dict.items():
-            new_dict[key] = S(val).subs(subs_dict)
+            new_dict[key] = sp.S(val).subs(subs_dict)
         return Qet(new_dict)
 
     def __mul__(self, multiplier):
@@ -131,13 +140,13 @@ class Qet():
         '''conjugate all the coefficients'''
         new_dict = dict(self.dict)
         for key, coeff in new_dict.items():
-            new_dict[key] = conjugate(coeff)
+            new_dict[key] = sp.conjugate(coeff)
         return Qet(new_dict)
 
     def as_operator(self, opfun):
-        OP = S(0)
+        OP = sp.S(0)
         for key, val in self.dict.items():
-                OP += S(val) * opfun(*key)
+                OP += sp.S(val) * opfun(*key)
         return OP
 
     def as_ket(self, fold_keys=False, nice_negatives=False):
@@ -148,14 +157,14 @@ class Qet():
         assumes all numeric  keys  and  presents  negative
         values with a bar on top.
         '''
-        sympyRep = S(0)
+        sympyRep = sp.S(0)
         for key, coeff in self.dict.items():
             if key == ():
                 sympyRep += coeff
             else:
                 if fold_keys:
                     if nice_negatives:
-                        key = tuple(latex(k) if k>=0 else (r'\bar{%s}' % latex(-k)) for k in key)
+                        key = tuple(sp.latex(k) if k>=0 else (r'\bar{%s}' % sp.latex(-k)) for k in key)
                     sympyRep += coeff*Ket(*key)
                 else:
                     sympyRep += coeff*Ket(key)
@@ -165,7 +174,7 @@ class Qet():
             Give a representation of the qet  as  a  Bra  from
             sympy.physics.quantum.
             '''
-            sympyRep = S(0)
+            sympyRep = sp.S(0)
             for key, coeff in self.dict.items():
                 if key == ():
                     sympyRep += coeff
@@ -180,7 +189,7 @@ class Qet():
         first half for the bra, and other second half  for
         the ket.
         '''
-        sympyRep = S(0)
+        sympyRep = sp.S(0)
         for key, coeff in self.dict.items():
             l = int(len(key)/2)
             if key == ():
@@ -190,7 +199,7 @@ class Qet():
         return sympyRep
 
     def as_symbol_sum(self):
-        tot = sp.S(0)
+        tot = sp.sp.S(0)
         for k, v in self.dict.items():
             tot += v*k
         return tot
@@ -202,14 +211,14 @@ class Qet():
         arguments a single pair  of  qnum  and  coeff  and
         return a dictionary or a (qnum, coeff) tuple.
         '''
-        sympyRep = S(0)
+        sympyRep = sp.S(0)
         for key, op_and_coeff in self.dict.items():
             ops_and_coeffs = list(zip(op_and_coeff[::2],op_and_coeff[1::2]))
             for op, coeff in ops_and_coeffs:
                 if key == ():
                     sympyRep += coeff
                 else:
-                    sympyRep += coeff*op(*key)#Function(op)(*key)
+                    sympyRep += coeff*op(*key)
         return sympyRep
 
     def apply(self,f):
@@ -243,7 +252,7 @@ class Qet():
         norm2 = 0
         for key, coeff in self.dict.items():
             norm2 += abs(coeff)**2
-        return sqrt(norm2)
+        return sp.sqrt(norm2)
 
     def symmetrize(self):
         '''at times a tuple of dict needs to
@@ -264,6 +273,11 @@ class Qet():
         return str(self.dict)
 
 class ProductTable():
+    '''
+    This class used to hold the data of a direct product of two
+    irreducible representations turned  into a  direct  sum  of
+    irreducible representations.
+    '''
     def __init__(self, odict, irrep_labels, grp_label):
         self.odict = odict
         self.irrep_labels = irrep_labels
@@ -280,7 +294,9 @@ class ProductTable():
         return fmt_table(rows).replace('+',r'{\oplus}')
 
 class CrystalGroup():
-    """Class for group character tables"""
+    '''
+    Class for a point symmetry group.
+    '''
     def __init__(self, group_data_dict):
         self.index = group_data_dict['index']
         self.label = group_data_dict['group label']
@@ -295,12 +311,21 @@ class CrystalGroup():
         self.euler_angles = group_data_dict['euler angles']
         self.group_operations = group_data_dict['group operations']
         self.order = len(self.group_operations)
-        self.rot_matrices = {k: rotation_matrix(v) for k, v in self.euler_angles.items()}
+        self.operations_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
         self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
         self.direct_product_table()
-        self.basis_function_labels = self.get_basis_function_labels()
+        self.component_labels = self.get_component_labels()
 
-    def get_basis_function_labels(self):
+    def get_component_labels(self):
+        '''
+        Generate the labels for the components of all the group
+        irreducible representations.
+        Labeling is done based on the size of the corresponding
+        irreducible representation.
+        1D -> a_{irrep label}
+        2D -> u_{irrep label}, v_{irrep label}
+        3D -> x_{irrep label}, y_{irrep label}, z_{irrep label}
+        '''
         irrep_dims = self.irrep_dims
         components = {}
         for irrep_label, irrep_dim in irrep_dims.items():
@@ -318,6 +343,7 @@ class CrystalGroup():
             assert len(c_labels) != 0
             components[irrep_label] = c_labels
         return components
+
     def direct_product(self, ir0, ir1):
         '''
         Given the label for a cpg and  labels for  two
@@ -371,7 +397,9 @@ class CrystalGroup():
         return self.label
 
 class CPGroups():
-    """Class of all crystallographic point groups"""
+    '''
+    Class to hold all crystallographic point groups.
+    '''
     def __init__(self, groups):
         self.all_group_labels = [
             'C_{1}', 'C_{i}', 'C_{2}', 'C_{s}',
@@ -391,6 +419,8 @@ class CPGroups():
         group_idx = 1 + self.all_group_labels.index(label)
         return self.groups[group_idx]
 
+# =========================== Classes =========================== #
+# =============================================================== #
 
 ###########################################################################
 #################### Calculation of Surface Harmonics #####################
@@ -399,14 +429,14 @@ def SubSupSymbol(radix,ll,mm):
     '''
     Generates a symbol placeholder for the B coefficients in the crystal field potential.
     '''
-    SubSupSym = symbols(r'{%s}_{%s}^{%s}' % (radix, str(ll), str(mm)))
+    SubSupSym = sp.symbols(r'{%s}_{%s}^{%s}' % (radix, str(ll), str(mm)))
     return SubSupSym
 
 def SubSubSymbol(radix,ll,mm):
     '''
     Generates a symbol placeholder for the B coefficients in the crystal field potential.
     '''
-    SubSubSym = symbols(r'{%s}_{{%s}{%s}}' % (radix, str(ll), str(mm)))
+    SubSubSym = sp.symbols(r'{%s}_{{%s}{%s}}' % (radix, str(ll), str(mm)))
     return SubSubSym
 
 def kronecker(i,j):
@@ -415,17 +445,17 @@ def kronecker(i,j):
 def Wigner_d(l, n, m, beta):
     k_min = max([0,m-n])
     k_max = min([l-n,l+m])
-    Wig_d_prefact = sqrt((factorial(l+n)
-                          *factorial(l+m)
-                          *factorial(l-n)
-                          *factorial(l-m)))
-    Wig_d_summands = [((-S(1))**(k - m + n)
-                      * cos(beta/2)**(2*l+m-n-2*k)
-                      * sin(beta/2)**(2*k+n-m)
-                      / factorial(l - n -k)
-                      / factorial(l + m - k)
-                      / factorial(k)
-                      / factorial(k-m+n)
+    Wig_d_prefact = sp.sqrt((sp.factorial(l+n)
+                          *sp.factorial(l+m)
+                          *sp.factorial(l-n)
+                          *sp.factorial(l-m)))
+    Wig_d_summands = [((-sp.S(1))**(k - m + n)
+                      * sp.cos(beta/2)**(2*l+m-n-2*k)
+                      * sp.sin(beta/2)**(2*k+n-m)
+                      / sp.factorial(l - n -k)
+                      / sp.factorial(l + m - k)
+                      / sp.factorial(k)
+                      / sp.factorial(k-m+n)
                       )
                       for k in range(k_min,k_max+1)]
     Wig_d = (Wig_d_prefact*sum(Wig_d_summands)).doit()
@@ -436,19 +466,19 @@ def Wigner_D(l, n, m, alpha, beta, gamma):
     if args in Wigner_D.values.keys():
       return Wigner_D.values[args]
     if beta == 0:
-      Wig_D = exp(-I*m*alpha-I*m*gamma) * kronecker(n,m)
+      Wig_D = sp.exp(-I*m*alpha-I*m*gamma) * kronecker(n,m)
       if n == m:
-        Wig_D = (cos(-m*alpha-m*gamma)+I*sin(-m*alpha-m*gamma))
+        Wig_D = (sp.cos(-m*alpha-m*gamma)+I*sp.sin(-m*alpha-m*gamma))
       else:
         Wig_D = 0
     elif beta == pi:
       if n == -m:
-        Wig_D = (-1)**l * (cos(-m*alpha + m*gamma)+I*sin(-m*alpha + m*gamma))
+        Wig_D = (-1)**l * (sp.cos(-m*alpha + m*gamma)+I*sp.sin(-m*alpha + m*gamma))
       else:
         Wig_D = 0
     else:
       Wig_D_0 = I**(abs(n)+n-abs(m)-m)
-      Wig_D_1 = (cos(-n*gamma-m*alpha)+I*sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
+      Wig_D_1 = (sp.cos(-n*gamma-m*alpha)+I*sp.sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
       Wig_D = Wig_D_0 * Wig_D_1
       Wig_D = Wig_D
     return Wig_D
@@ -470,7 +500,7 @@ def real_or_imagined(qet):
         if (l,-m) in chunks:
             partner = chunks[(l,-m)]
             if abs(partner) == abs(chunk):
-                if sign(partner) == sign(chunk):
+                if sp.sign(partner) == sp.sign(chunk):
                     if m%2 == 0:
                         valences.append("r")
                     else:
@@ -495,7 +525,8 @@ def real_or_imagined(qet):
 
 
 def RYlm(l, m, alpha, beta, gamma, detRot):
-    '''This would be rotateHarmonic in the Mathematica code. It is used
+    '''
+    This would be rotateHarmonic in the Mathematica  code.  It  is used
     in the projection of the spherical  harmonics  to  create  symmetry
     adapted wavefunctions.
     '''
@@ -504,13 +535,189 @@ def RYlm(l, m, alpha, beta, gamma, detRot):
         wigD = Wigner_D(l, m, nn, alpha, beta, gamma)
         if wigD != 0:
           Rf = Rf + Qet({(l,nn): wigD})
-    return (S(detRot)**l) * Rf
+    return (sp.S(detRot)**l) * Rf
 
 def flatten_matrix(mah):
-  ''' a convenience function
-  to flatten a sympy matrix into a
-  list of lists'''
-  return [item for sublist in mah.tolist() for item in sublist]
+    '''
+    A convenience function
+    to flatten a sympy matrix into a
+    list of lists
+    '''
+    return [item for sublist in mah.tolist() for item in sublist]
+
+def SymmetryAdaptedWF(group, l, m):
+    '''
+    This returns the proyection of Y_l^m
+    on the trivial irreducible representation
+    of the given group
+    '''
+    if isinstance(group,str):
+      group = CPGs.get_group_by_label(group)
+    degree = 1
+    # Order of the group which  is  equal  to
+    # the number of the elements
+    order = len(group.group_operations)
+    SALC = Qet()
+    # This sum is over all elements of the group
+    for group_params in group.euler_angles.values():
+        alpha, beta, gamma, detRot = group_params
+        SALC += RYlm(l,m,alpha,beta,gamma,detRot)
+    SALC = (sp.S(1)/order)*SALC
+    SALC = SALC.apply(lambda x,y : (x, sp.simplify(y)))
+    return SALC
+
+def linearly_independent(vecs):
+    '''
+    Given a list of vectors
+    return the largest subset which
+    of linearly independent ones
+    and the indices that correspond
+    to them in the original list.
+    '''
+    matrix = sp.Matrix(vecs).T
+    good_ones = matrix.rref()[-1]
+    return good_ones, [vecs[idx] for idx in good_ones]
+
+def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True):
+    '''
+    For a given group and a given value of
+    l, this returns a set of linearly independent
+    symmetry adapted functions which are also real-valued.
+    If the set that is found initially contains combinations that are
+    not purely imaginary or pure real, then the assumption
+    is made that this set contains single spherical
+    harmonics, and then sums and differences between
+    m and -m are given by doing this through the values
+    of |m| for the functions with mixed character.
+    '''
+    # apply the projection operator on the trivial irreducible rep
+    # and collect the resulting basis functions
+    # together with the values of (l,m) included
+    flags = []
+    WFs = []
+    complete_basis = []
+    for m in range(-l,l+1):
+        aWF = SymmetryAdaptedWF(group, l, m)
+        if len(aWF.dict)>0:
+            WFs.append(aWF)
+            complete_basis.extend(aWF.basis())
+
+    complete_basis = list(sorted(list(set(complete_basis))))
+    # to see if they are linearly independent
+    # convert the WFs to vectors on the basis collected
+    # above
+    vecs = [WF.vec_in_basis(complete_basis) for WF in WFs]
+    lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
+
+    # reduce the WFs to a linearly independent set
+
+    WFs = [WFs[i] for i in lin_indep_idx]
+    # test to see if the included WFs are real, imaginary, or mixed
+    # if real, keep as is
+    # if purely imaginary, multiply by I
+    # if mixed then collect for further processing
+    realWFs = []
+    mixedWFs = []
+    for WF in WFs:
+        valence = real_or_imagined(WF)
+        if normalize:
+            norm = WF.norm()
+            WF = WF*(sp.S(1)/norm)
+        if valence == 'r':
+            realWFs.append(WF)
+        elif valence == 'i':
+            realWFs.append(I*WF)
+        elif valence == 'm':
+            flags.append('m')
+            mixedWFs.append(WF)
+    # collect the values of |m| included in the mixed combos
+    mixedMs = set()
+    if (len(mixedWFs) != 0) and verbose:
+        print("\nMixtures found, unmixing...")
+    for WF in mixedWFs:
+        # ASSUMPTION: both m and -m are in there and only as singles
+        assert len(WF.dict) == 1
+        for key, val in WF.dict.items():
+            mixedMs.add(abs(key[1]))
+    # for the values of m in mixedMs compute the real sums
+    # and differences
+    for m in mixedMs:
+        if m%2 == 0:
+            qp = Qet({(l,m): 1}) + Qet({(l,-m): 1})
+            qm = Qet({(l,m): I}) + Qet({(l,-m): -I})
+            if normalize:
+                qp = qp*(sp.S(1)/sp.sqrt(2))
+                qm = qm*(sp.S(1)/sp.sqrt(2))
+            realWFs.append(qp)
+            realWFs.append(qm)
+        elif m%2 == 1:
+            qp = Qet({(l,m): I}) + Qet({(l,-m): I})
+            qm = Qet({(l,m): 1}) + Qet({(l,-m): -1})
+            if normalize:
+                qp = qp*(sp.S(1)/sp.sqrt(2))
+                qm = qm*(sp.S(1)/sp.sqrt(2))
+            realWFs.append(qp)
+            realWFs.append(qm)
+    # the resulting list of realWFs must be of equal lenght
+    # than WFs which in turn is equal to the number of linearly
+    # independent projectd basis functions
+    if len(realWFs) != len(WFs):
+        raise Exception("FAILED: there are less real combos than originally")
+    # in addition
+    # must check that the resulting basis is still linearly independent
+    # must run through the same business of collecting all the represented
+    # spherical harmonics, converting that to coefficient vectors
+    # and testing for linear independence
+    complete_basis = []
+    for WF in realWFs:
+        complete_basis.extend(WF.basis())
+    complete_basis = list(sorted(list(set(complete_basis))))
+
+    vecs = [WF.vec_in_basis(complete_basis) for WF in realWFs]
+    lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
+    if len(lin_indep_idx) != len(WFs):
+        raise Excepction("FAILED: +- mixture was not faithful")
+    # make the linearly independent vectors orthonormal
+    lin_indep_vecs = list(map(list,sp.GramSchmidt([sp.Matrix(vec) for vec in lin_indep_vecs], normalize)))
+    finalWFs = []
+    if sympathize:
+        better_vecs = []
+        for vec in lin_indep_vecs:
+            clear_elements = [abs(v) for v in vec if v!=0]
+            if len(list(set(clear_elements))) == 1:
+                better_vec = [0 if vl == 0 else sp.sign(vl) for vl in vec]
+                better_vecs.append(better_vec)
+            else:
+                better_vecs.append(vec)
+        lin_indep_vecs = better_vecs
+    for vec in lin_indep_vecs:
+        qdict = {k:v for k,v in zip(complete_basis, vec)}
+        finalWFs.append(Qet(qdict))
+    return finalWFs
+
+#################### Calculation of Surface Harmonics #####################
+###########################################################################
+
+###########################################################################
+############### Calculation of Clebsch-Gordan Coefficients ################
+
+def cg_symbol(comp_1, comp_2, irep_3, comp_3):
+    '''
+    Given symbols for three components (comp_1, comp_2, comp_3) of three
+    irreducible representations of a  group   this  function  returns  a
+    sp.Symbol for the corresponding Clebsch-Gordan coefficient:
+
+    <comp_1,comp_2|irep_3, comp_3>
+
+    The symbol of the third irrep is given  explicitly  as  irep_3.  The
+    other two irreps are implicit in (comp_1) and (comp_2) and should be
+    one of the symbols in group.irrep_labels.
+
+    (comp_1, comp_2, and comp_3) may be taken as elements from
+    group.component_labels.
+    '''
+    symb_args = (comp_1, comp_2, irep_3, comp_3)
+    return sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
 
 def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False):
     '''
@@ -545,9 +752,9 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
         irep3s = [group.product_table.odict[(irep1, irep2)]]
     # also need to grab the labels for a set of generators
     generators = group.generators
-    basis_labels = group.basis_function_labels
+    component_labels = group.component_labels
     print("Grabbing the labels for the basis functions ...") if verbose else None
-    labels_1, labels_2 = basis_labels[irep1], basis_labels[irep2]
+    labels_1, labels_2 = component_labels[irep1], component_labels[irep2]
     cg_size = len(labels_1)*len(labels_2)
     print("CG is a ({size},{size}) matrix ...".format(size=cg_size)) if verbose else None
     generators_1 = [group.irrep_matrices[irep1][g] for g in generators]
@@ -558,7 +765,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
     # In (2.31) there are five quantities that determine one constraints
     all_eqns = []
     for irep3 in irep3s:
-        labels_3 = basis_labels[irep3]
+        labels_3 = component_labels[irep3]
         for generator in generators:
             D1, D2, D3 = [group.irrep_matrices[irep][generator] for irep in [irep1,irep2,irep3]]
             γ1s, γ2s, γ3s = [list(range(D.shape[0])) for D in [D1,D2,D3]]
@@ -567,7 +774,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
                 for γ1p in γ1s:
                     for γ2p in γ2s:
                         symb_args = (labels_1[γ1p],labels_2[γ2p],irep3,labels_3[γ3p])
-                        chevron = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
+                        chevron = cg_symbol(*symb_args)
                         coeff = D1[γ1, γ1p]*D2[γ2,γ2p]
                         if coeff:
                             lhs.append(coeff*chevron)
@@ -575,7 +782,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
                 rhs = []
                 for γ3 in γ3s:
                     symb_args = (labels_1[γ1],labels_2[γ2],irep3,labels_3[γ3])
-                    chevron = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
+                    chevron = cg_symbol(*symb_args)
                     coeff = D3[γ3, γ3p]
                     if coeff:
                         rhs.append(coeff*chevron)
@@ -591,7 +798,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
     free_symbols = list(free_symbols)
 
     # convert to matrix of coefficients
-    coef_matrix = Matrix([[eqn.coeff(cg) for cg in free_symbols] for eqn in all_eqns])
+    coef_matrix = sp.Matrix([[eqn.coeff(cg) for cg in free_symbols] for eqn in all_eqns])
     # and simplify using the rref
     rref = coef_matrix.rref()[0]
     # turn back to symbolic and solve
@@ -610,13 +817,13 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
             row_0 = []
             row_1 = []
             for irep3 in irep3s:
-                labels_3 = basis_labels[irep3]
+                labels_3 = component_labels[irep3]
                 for γ3 in labels_3:
                     # the given order and the exchanged one
                     # is saved here to take care of the phase
                     # convention upon exchange of Γ1 and Γ2
-                    chevron_0 = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % (γ1, γ2, irep3, γ3))
-                    chevron_1 = sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % (γ2, γ1, irep3, γ3))
+                    chevron_0 = cg_symbol(γ1, γ2, irep3, γ3)
+                    chevron_1 = cg_symbol(γ2, γ1, irep3, γ3)
                     row_0.append(chevron_0)
                     row_1.append(chevron_1)
             U_0.append(row_0)
@@ -627,7 +834,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
     U_0 = Usymbols_0.subs(better_sol)
     # build the unitary constraints
     print("Bulding the unitarity constraints and assuming U to be orthogonal ...") if verbose else None
-    unitary_constraints = U_0*U_0.T - eye(U_0.shape[0])
+    unitary_constraints = U_0*U_0.T - sp.eye(U_0.shape[0])
     # flatten and pick the nontrivial ones
     unitary_set = [f for f in flatten_matrix(unitary_constraints) if f!=0]
     # solve
@@ -645,217 +852,7 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
         dic_1 = {k:v for k,v in zip(list(Usymbols_1), list(sol_0))}
         return dic_0, dic_1
 
-def component_idx(Group):
-    '''
-    Given a group this function returns a a list of lists
-    each with the  indices  that  correspond to the basis
-    vectors of its irreducible representations.
-    '''
-    CompLen = list(map(np.shape, get_components(Group)))
-    for idx in np.arange(len(CompLen)):
-        ent = CompLen[idx]
-        if ent == ():
-            CompLen[idx] = 1
-        else:
-            CompLen[idx] = ent[0]
-
-    AccComList = np.cumsum(CompLen)
-
-    return [np.arange(x-1,y-1+0.1).astype(int).tolist() for x,y in zip((np.insert(AccComList[0:-1]+1,0,1)).astype(int),AccComList)]
-
-def representation_product(Group, Gamma1, Gamma2, verbose = False):
-    '''
-    This function takes  a  group  (Group)  and  two  indices  (Gamma1, Gamma2)
-    and returns a list of bools that indicate which irreducible representations
-    compose the direct sum decomposition  of  the  irreducible  representations
-    corresponding to the two given indices.
-    If verbose=True, then the function prints a string that  shows  the  direct
-    sum decomposition.
-    '''
-    if isinstance(Gamma1,str):
-        Gamma1 = Group.IrrReps.index(Gamma1)
-    if isinstance(Gamma2,str):
-        Gamma2 = Group.IrrReps.index(Gamma2)
-
-    Chi = Matrix(np.array(Group.CharacterTable[Gamma1])*np.array(Group.CharacterTable[Gamma2]))
-
-    IRBool = np.array(list(linsolve((Matrix(Group.CharacterTable).T,Chi)).args[0])).astype(bool).tolist()
-
-    if verbose == True:
-        RepString = ' + '.join(np.array(Group.IrrReps)[IRBool])
-        print('%s x %s : %s'%(Group.IrrReps[Gamma1],Group.IrrReps[Gamma2], RepString))
-    return IRBool
-
-def SymmetryAdaptedWF_old(group, l, m):
-  '''
-  This returns the proyection of Y_l^m
-  on the trivial irreducible representation
-  of the given group
-  '''
-  if isinstance(group,str):
-      group = CPG.Groups[CPG.AllGroupLabels.index(group)]
-  degree = 1
-  # Order of the group which  is  equal  to
-  # the number of the elements
-  order = group.order
-  SALC = Qet()
-  # This sum is over all elements of the group
-  for group_idx, group_op in enumerate(group.Elements):
-    alpha, beta, gamma, detRot = group.ParameterTable[group_idx][:4]
-    SALC += RYlm(l,m,alpha,beta,gamma,detRot)
-  SALC = (S(1)/order)*SALC
-  SALC = SALC.apply(lambda x,y : (x, simplify(y)))
-  return SALC
-
-def SymmetryAdaptedWF(group, l, m):
-  '''
-  This returns the proyection of Y_l^m
-  on the trivial irreducible representation
-  of the given group
-  '''
-  if isinstance(group,str):
-      group = CPGs.get_group_by_label(group)
-  degree = 1
-  # Order of the group which  is  equal  to
-  # the number of the elements
-  order = len(group.group_operations)
-  SALC = Qet()
-  # This sum is over all elements of the group
-  for group_params in group.euler_angles.values():
-    alpha, beta, gamma, detRot = group_params
-    SALC += RYlm(l,m,alpha,beta,gamma,detRot)
-  SALC = (S(1)/order)*SALC
-  SALC = SALC.apply(lambda x,y : (x, simplify(y)))
-  return SALC
-
-def linearly_independent(vecs):
-  '''given a list of vectors
-  return the largest subset which
-  of linearly independent ones
-  and the indices that correspond
-  to them in the original list
-  '''
-  matrix = Matrix(vecs).T
-  good_ones = matrix.rref()[-1]
-  return good_ones, [vecs[idx] for idx in good_ones]
-
-def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True):
-  '''For a given group and a given value of
-  l, this returns a set of linearly independent
-  symmetry adapted functions which are also real-valued.
-  If the set that is found initially contains combinations that are
-  not purely imaginary or pure real, then the assumption
-  is made that this set contains single spherical
-  harmonics, and then sums and differences between
-  m and -m are given by doing this through the values
-  of |m| for the functions with mixed character.'''
-
-  # apply the projection operator on the trivial irreducible rep
-  # and collect the resulting basis functions
-  # together with the values of (l,m) included
-  flags = []
-  WFs = []
-  complete_basis = []
-  for m in range(-l,l+1):
-    aWF = SymmetryAdaptedWF(group, l, m)
-    if len(aWF.dict)>0:
-      WFs.append(aWF)
-      complete_basis.extend(aWF.basis())
-
-  complete_basis = list(sorted(list(set(complete_basis))))
-  # to see if they are linearly independent
-  # convert the WFs to vectors on the basis collected
-  # above
-  vecs = [WF.vec_in_basis(complete_basis) for WF in WFs]
-  lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
-
-  # reduce the WFs to a linearly independent set
-
-  WFs = [WFs[i] for i in lin_indep_idx]
-  # test to see if the included WFs are real, imaginary, or mixed
-  # if real, keep as is
-  # if purely imaginary, multiply by I
-  # if mixed then collect for further processing
-  realWFs = []
-  mixedWFs = []
-  for WF in WFs:
-    valence = real_or_imagined(WF)
-    if normalize:
-      norm = WF.norm()
-      WF = WF*(S(1)/norm)
-    if valence == 'r':
-      realWFs.append(WF)
-    elif valence == 'i':
-      realWFs.append(I*WF)
-    elif valence == 'm':
-      flags.append('m')
-      mixedWFs.append(WF)
-  # collect the values of |m| included in the mixed combos
-  mixedMs = set()
-  if (len(mixedWFs) != 0) and verbose:
-    print("\nMixtures found, unmixing...")
-  for WF in mixedWFs:
-    # ASSUMPTION: both m and -m are in there and only as singles
-    assert len(WF.dict) == 1
-    for key, val in WF.dict.items():
-      mixedMs.add(abs(key[1]))
-  # for the values of m in mixedMs compute the real sums
-  # and differences
-  for m in mixedMs:
-    if m%2 == 0:
-      qp = Qet({(l,m): 1}) + Qet({(l,-m): 1})
-      qm = Qet({(l,m): I}) + Qet({(l,-m): -I})
-      if normalize:
-        qp = qp*(S(1)/sqrt(2))
-        qm = qm*(S(1)/sqrt(2))
-      realWFs.append(qp)
-      realWFs.append(qm)
-    elif m%2 == 1:
-      qp = Qet({(l,m): I}) + Qet({(l,-m): I})
-      qm = Qet({(l,m): 1}) + Qet({(l,-m): -1})
-      if normalize:
-        qp = qp*(S(1)/sqrt(2))
-        qm = qm*(S(1)/sqrt(2))
-      realWFs.append(qp)
-      realWFs.append(qm)
-  # the resulting list of realWFs must be of equal lenght
-  # than WFs which in turn is equal to the number of linearly
-  # independent projectd basis functions
-  if len(realWFs) != len(WFs):
-    raise Exception("FAILED: there are less real combos than originally")
-  # in addition
-  # must check that the resulting basis is still linearly independent
-  # must run through the same business of collecting all the represented
-  # spherical harmonics, converting that to coefficient vectors
-  # and testing for linear independence
-  complete_basis = []
-  for WF in realWFs:
-    complete_basis.extend(WF.basis())
-  complete_basis = list(sorted(list(set(complete_basis))))
-
-  vecs = [WF.vec_in_basis(complete_basis) for WF in realWFs]
-  lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
-  if len(lin_indep_idx) != len(WFs):
-    raise Excepction("FAILED: +- mixture was not faithful")
-  # make the linearly independent vectors orthonormal
-  lin_indep_vecs = list(map(list,GramSchmidt([Matrix(vec) for vec in lin_indep_vecs], normalize)))
-  finalWFs = []
-  if sympathize:
-    better_vecs = []
-    for vec in lin_indep_vecs:
-      clear_elements = [abs(v) for v in vec if v!=0]
-      if len(list(set(clear_elements))) == 1:
-        better_vec = [0 if vl == 0 else sign(vl) for vl in vec]
-        better_vecs.append(better_vec)
-      else:
-        better_vecs.append(vec)
-    lin_indep_vecs = better_vecs
-  for vec in lin_indep_vecs:
-    qdict = {k:v for k,v in zip(complete_basis, vec)}
-    finalWFs.append(Qet(qdict))
-  return finalWFs
-
-#################### Calculation of Surface Harmonics #####################
+############### Calculation of Clebsch-Gordan Coefficients ################
 ###########################################################################
 
 def fmt_table(data, center_data=False, add_row_nums=False):
@@ -873,7 +870,7 @@ def fmt_table(data, center_data=False, add_row_nums=False):
         if add_row_nums and row_idx > 0:
             row += str(row_idx) + " & "
         if center_data and row_idx > 0:
-            to_add = math.ceil( (max_cols - len(row_data))/2 )
+            to_add = ceil( (max_cols - len(row_data))/2 )
             row += ' & '.join([''] * to_add)
         row += ' & '.join([sp.latex(thing) for thing in row_data])
         if row_idx == 0:
@@ -905,8 +902,7 @@ def ThreeHarmonicIntegrate(l1, m1, l2, m2, l3, m3):
     m2 : q in STK notation [ q = m-m' ]
     '''
     from sympy.physics.quantum.cg import CG
-    from sympy import sqrt
-    THI = sqrt((2*l1+1)/(2*l3+1))*CG(l2,0,l3,0,l1,0)*CG(l2,m2,l3,m3,l1,m1)
+    THI = sp.sqrt((2*l1+1)/(2*l3+1))*CG(l2,0,l3,0,l1,0)*CG(l2,m2,l3,m3,l1,m1)
     return THI
 
 def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
@@ -918,7 +914,6 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
     ----------------------------
     Note that this is currently only valid for intra-orbital
     '''
-    from sympy import Symbol, Matrix, simplify
 
     if isinstance(orbital,str):
         if orbital == 's':
@@ -934,10 +929,10 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
 
     global l1, m1, l3, m3
 
-    l1 = Symbol('l1')
-    m1 = Symbol('m1')
-    l3 = Symbol('l3')
-    m3 = Symbol('m3')
+    l1 = sp.Symbol('l1')
+    m1 = sp.Symbol('m1')
+    l3 = sp.Symbol('l3')
+    m3 = sp.Symbol('m3')
 
     CFP_Table = []
     THI_func = CFP(Group,l=4).replace(Ynm,Ckq2THI)
@@ -952,7 +947,7 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
 
     del l1, m1, l3, m3
 
-    EigenSys = Matrix(CFP_Table).eigenvects()
+    EigenSys = sp.Matrix(CFP_Table).eigenvects()
     EigenVals = []
     EigenVecs = []
     for eRes in EigenSys:
@@ -962,9 +957,9 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
 
     Yarray = []
     for mm in np.arange(-orbital,orbital+0.1):
-        Yarray.append(Ynm(2,int(mm),theta,phi))
-    Yarray = Matrix(Yarray)
-    EigenVecs = Matrix(EigenVecs)
+        Yarray.append(sp.Ynm(2,int(mm),theta,phi))
+    Yarray = sp.Matrix(Yarray)
+    EigenVecs = sp.Matrix(EigenVecs)
 
     global alpha, beta, gamma, detRot
 
@@ -986,7 +981,7 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
     for row in reps:
         rowsimp = []
         for col in row:
-            colsimp = simplify(col)
+            colsimp = sp.simplify(col)
             CoeffDict = colsimp.as_coefficients_dict()
 
             col_tmp = 0
@@ -1007,7 +1002,12 @@ def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
     srtIdx = np.array(repIdx).argsort().tolist()
     return EigenVals, eVec, repIdx, srtIdx
 
-def rotation_matrix(euler_params):
+def orthogonal_matrix(euler_params):
+    '''
+    For a given symmetry operation as parametrized by Euler angles
+    α, β, γ, and by its  determinant  det (±1).  The corresponding
+    orthogonal matrix is returned.
+    '''
     α, β, γ, det = euler_params
     row_0 = [-sp.sin(α)*sp.sin(γ) + sp.cos(α)*sp.cos(β)*sp.cos(γ),
              -sp.sin(α)*sp.cos(γ) - sp.sin(γ)*sp.cos(α)*sp.cos(β),
@@ -1024,10 +1024,12 @@ def rotation_matrix(euler_params):
 def Yrot(l,m,theta,phi):
     return RYlm(l, m, alpha, beta, gamma, detRot)
 
-if os.path.exists(os.path.join(module_dir,'data','CPGs.pkl')):
-    print("Reloading...")
+regen_fname = os.path.join(module_dir,'data','CPGs.pkl')
+
+if os.path.exists(regen_fname):
+    print("Reloading %s ..." % regen_fname)
     CPGs = pickle.load(open(os.path.join(module_dir,'data','CPGs.pkl'),'rb'))
 else:
-    print("Regenerating...")
+    print("%s not found, regenerating ..." % regen_fname)
     CPGs = CPGroups(group_data)
     pickle.dump(CPGs, open(os.path.join(module_dir,'data','CPGs.pkl'),'wb'))
