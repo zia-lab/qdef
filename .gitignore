@@ -137,3 +137,5 @@ crystal_secrets.py
 .DS_Store
 .DS_Store
 Parameter Tables/.DS_Store
+docs/Makefile
+docs/make.bat
