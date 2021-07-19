@@ -20,6 +20,7 @@ module_dir = os.path.dirname(__file__)
 group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
 group_data = group_dict['group_data']
 metadata = group_dict['metadata']
+vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs.pkl')
 
 # ===================== Load group theory data ================== #
 # =============================================================== #
@@ -719,30 +720,61 @@ def cg_symbol(comp_1, comp_2, irep_3, comp_3):
     symb_args = (comp_1, comp_2, irep_3, comp_3)
     return sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
 
+class V_coefficients():
+    '''
+    This class loads data for the V coefficients for the octahedral group
+    as defined in Appendix C of Griffith's book "The  Irreducible  Tensor
+    Method for Molecular Symmetry Groups".
+    In here the labels for the components for the irreducible  reps  have
+    been matched in the following way:
+    A_1 : \iota -> a_{A_1}
+    A_2 : \iota -> a_{A_2}
+    E   : \theta -> u_{E} \epsilon -> v_{E}
+    T_1 : x -> x_{T_1} y -> y_{T_1} z -> z_{T_1}
+    T_2 : x -> x_{T_2} y -> y_{T_1} z -> z_{T_1}
+    '''
+    def __init__(self):
+        self.coeffs = pickle.load(open(vcoeffs_fname,'rb'))
+    def eval(self, args):
+        '''
+        Args must be a tuple of sympy symbols for irreducible representations
+        and components. This  tuple  must  contain  interleaved  symbols  for
+        irreducible representations and components.
+        args must match the template (a,α,b,β,c,γ) that matches with
+        Griffith's notation like so:
+                        V ⎛ a b c ⎞
+                          ⎝ α β γ ⎠.
+        '''
+        return self.coeffs[args]
+
 def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False):
     '''
     Given a group and symbol labels for two irreducible representations
     Γ1 and Γ2 this function calculates the  Clebsh-Gordan  coefficients
     used to span the basis functions of  their  product in terms of the
     basis functions of their factors.
-    By  assuming  the  phase convention the result is also obtained for
-    the exchanged order (Γ2, Γ1).
+
+    By  assuming  an even phase convention for all coefficients the
+    result is also given for the exchanged order (Γ2, Γ1).
+
     If rep_rules = False, this  function  returns  a tuple with 3  ele-
     ments, the first element being a matrix of symbols for the CGs coe-
     fficients for (Γ1, Γ2)  the  second element  the  matrix  for  sym-
     bols  for (Γ2, Γ1) and the third one being a matrix  to  which  its
     elements are matched element by element to  the  first  and  second
     matrices of symbols.
+
     If rep_rules = True, this  function  returns     two  dictionaries.
     The keys in the first one equal CGs coefficients from (Γ1, Γ2)  and
     the second one those for (Γ2, Γ1); with the values  being  the  co-
     rresponding coefficients.
-    These CG symbols are constructed thus
-    <i1,i2|i3,i4>
-    (i1 -> symbol for basis function in Γ1 or Γ2)
-    (i2 -> symbol for basis function in Γ2 or Γ1)
-    (i3 -> symbol for an irreducible representation Γ3 in the group)
-    (i4 -> symbol for a basis function of Γ3)
+
+    These CG symbols are made according to the following template:
+        <i1,i2|i3,i4>
+        (i1 -> symbol for basis function in Γ1 or Γ2)
+        (i2 -> symbol for basis function in Γ2 or Γ1)
+        (i3 -> symbol for an irreducible representation Γ3 in the group)
+        (i4 -> symbol for a basis function of Γ3)
     '''
     irreps = group.irrep_labels
     irep1, irep2 = Γ1, Γ2
