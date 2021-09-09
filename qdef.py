@@ -3,12 +3,16 @@ import numpy as np
 from math import ceil
 
 import sympy as sp
+import pandas as pd
+import math
 from sympy import pi, I
 from sympy.physics.quantum import Ket, Bra
 
 from collections import OrderedDict
 from itertools import product
 from tqdm.notebook import tqdm
+
+from matplotlib import pyplot as plt
 
 from IPython.display import display, HTML, Math
 
@@ -23,6 +27,27 @@ metadata = group_dict['metadata']
 vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs.pkl')
 
 # ===================== Load group theory data ================== #
+# =============================================================== #
+
+# =============================================================== #
+# ====================== Load element data ====================== #
+
+name_to_symb = pickle.load(open(os.path.join(module_dir,'data','name_to_symb.pkl'),'rb'))
+name_to_num  = pickle.load(open(os.path.join(module_dir,'data','name_to_num.pkl'),'rb'))
+symb_to_name  = pickle.load(open(os.path.join(module_dir,'data','symb_to_name.pkl'),'rb'))
+symb_to_num  = pickle.load(open(os.path.join(module_dir,'data','symb_to_num.pkl'),'rb'))
+num_to_name  = pickle.load(open(os.path.join(module_dir,'data','num_to_name.pkl'),'rb'))
+num_to_symb  = pickle.load(open(os.path.join(module_dir,'data','num_to_symb.pkl'),'rb'))
+atomicGoodies  = pickle.load(open(os.path.join(module_dir,'data','atomicGoodies.pkl'),'rb'))
+ionization_data  = pickle.load(open(os.path.join(module_dir,'data','ionization_data.pkl'),'rb'))['data']
+
+atom_symbs   = list(symb_to_name.keys())
+atom_names   = list(name_to_num.keys())
+
+nistdf = pd.read_pickle(os.path.join(module_dir,'data','nist_atomic_spectra_database_levels.pkl'))
+spinData = pd.read_pickle(os.path.join(module_dir,'data','spindata.pkl'))
+
+# ====================== Load element data ====================== #
 # =============================================================== #
 
 # =============================================================== #
@@ -54,6 +79,129 @@ sp.Ynm.eval = new_eval
 # =============================================================== #
 # =========================== Classes =========================== #
 
+class Atom():
+    '''
+    From these everything is made up.
+    '''
+    def __init__(self, kernel):
+        '''
+        Object can be initialized either by giving an atomic number,
+        element name, or element symbol.
+        '''
+        if kernel in range(1, 119):
+            self.atomic_number = kernel
+            self.symbol = num_to_symb[kernel]
+            self.name = num_to_name[kernel]
+        elif (kernel in atom_names) or (kernel.lower() in atom_names):
+            self.name = kernel.lower()
+            self.symbol = name_to_symb[self.name]
+            self.atomic_number = name_to_num[self.name]
+        elif kernel in atom_symbs:
+            self.symbol = kernel
+            self.atomic_number = symb_to_num[kernel]
+            self.name = symb_to_name[kernel]
+        else:
+            raise ValueError('to initialize input must be either an atomic' +
+                             ' number, element name, or element symbol')
+        # a dictionary with known ionization energies at different stages
+        if self.symbol in ['Db','Sg','Bh','Hs','Mt','Ds','Rg',
+                           'Cn','Nh','Fl','Mc','Lv','Ts','Og']:
+            self.ionization_energies = []
+        else:
+            self.ionization_energies = ionization_data[self.symbol]
+        # a dataframe with level data as compiled by NIST
+        self.nist_data = nistdf[nistdf['Element'] == self.symbol]
+        # a dataframe with isotopic data
+        self.isotope_data = spinData[spinData['atomic_number'] == self.atomic_number]
+        # additional data
+        # the electronegativity of the free neutral atom
+        self.electronegativity = atomicGoodies["Electronegativity"][self.atomic_number]
+        # a latex string for the electron configuration of the ground state
+        self.electron_configuration = atomicGoodies["Electron Config"][self.atomic_number]
+        # crystal structure of its most common solid form
+        self.common_crystal_structure = atomicGoodies["Crystal Structure"][self.atomic_number]
+        # electron configuration
+        self.electron_configuration_string = atomicGoodies["Electron Config String"][self.atomic_number]
+        # Van der Waals radius
+        self.van_der_waals_radius =  atomicGoodies["Van der Waals radius"][self.atomic_number]
+        # Atomic radius
+        self.atomic_radius = atomicGoodies["Atomic Radius"][self.atomic_number]
+        # Covalent radius
+        self.covalent_radius = atomicGoodies["Covalent Radius"][self.atomic_number]
+        # Block
+        self.block = atomicGoodies["Block"][self.atomic_number]
+        # Period
+        self.period = atomicGoodies["Period"][self.atomic_number]
+        # Series
+        self.series = atomicGoodies["Series"][self.atomic_number]
+        # Group
+        self.group = atomicGoodies["Group"][self.atomic_number]
+
+    def level_diagram(self, charge, min_energy=-np.inf, max_energy=np.inf):
+        '''make a nice plot of the levels of the ion with the given charge'''
+        cmap = plt.cm.RdYlGn
+        datum = self.nist_data[self.nist_data['Charge'] == charge]
+        energy_levels = datum['Level (eV)']
+        configs = datum['Configuration']
+        if charge == 0:
+            fig_name = '%s' % (self.symbol)
+            latex_name = fig_name
+        else:
+            fig_name = '%s +%d' % (self.symbol, charge)
+            latex_name = '{%s}^{+%d}' % (self.symbol, charge)
+        plt.close(fig_name)
+        fig, ax = plt.subplots(figsize=(2, 5), num=fig_name)
+        annot = ax.annotate("", xy=(0, 0), xytext=(-20, 20),
+                            textcoords="offset points",
+                            bbox=dict(boxstyle="round", fc="w"),
+                            arrowprops=dict(arrowstyle="->"))
+        annot.set_visible(False)
+
+        for level_energy in energy_levels:
+            if ((level_energy < max_energy) & (level_energy > min_energy)):
+                ax.plot([0, 1], [level_energy]*2, 'k-', lw=0.5)
+        level_anchors = ax.scatter([0]*len(datum['Level (eV)']),
+                                   datum['Level (eV)'],
+                                   c='k', s=4)
+        ax.axes.xaxis.set_visible(False)
+        plt.ylabel('E / eV')
+        ax.set_title('$%s$' % latex_name)
+        plt.tight_layout()
+
+        def update_annot(ind):
+            pos = level_anchors.get_offsets()[ind["ind"][0]]
+            annot.xy = pos
+            indices = ind["ind"]
+            text = (configs[indices[0]] + '\n' +
+                    ('%.3f eV' % (energy_levels[indices[0]])))
+            annot.set_text(text)
+            annot.get_bbox_patch().set_facecolor('white')
+
+        def hover(event):
+            vis = annot.get_visible()
+            if event.inaxes == ax:
+                cont, ind = level_anchors.contains(event)
+                if cont:
+                    update_annot(ind)
+                    annot.set_visible(True)
+                    fig.canvas.draw_idle()
+                else:
+                    if vis:
+                        annot.set_visible(False)
+                        fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("motion_notify_event", hover)
+        plt.show()
+
+    def __repr__(self):
+        return '%s : %s : %d' % (self.name, self.symbol, self.atomic_number)
+
+    def __str__(self):
+        return '%s : %s : %d' % (self.name, self.symbol, self.atomic_number)
+
+class PeriodicTable():
+    def __init__(self):
+        self.atoms = {i:Atom(i) for i in range(1,119)}
 
 class Qet():
     '''
@@ -419,6 +567,8 @@ class CPGroups():
                 label = '%s_{%s}' % label.split('_')
         group_idx = 1 + self.all_group_labels.index(label)
         return self.groups[group_idx]
+
+
 
 # =========================== Classes =========================== #
 # =============================================================== #
