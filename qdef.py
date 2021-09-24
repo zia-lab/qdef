@@ -47,8 +47,26 @@ atom_names   = list(name_to_num.keys())
 nistdf = pd.read_pickle(os.path.join(module_dir,'data','nist_atomic_spectra_database_levels.pkl'))
 spinData = pd.read_pickle(os.path.join(module_dir,'data','spindata.pkl'))
 
+# gives the atomic numbers of the firs three rows of transition
+# metals, the keys correspond to the row of periodic table
+# to which they correspond
+element_groups = {
+'transition metals': {4: list(range(21,31)),
+                5: list(range(39,49)),
+                6: list(range(71,80))}}
+
 # ====================== Load element data ====================== #
 # =============================================================== #
+
+# =============================================================== #
+# =========================== Load others ======================= #
+
+morrison_loc = os.path.join(module_dir,'data','morrison.pkl')
+morrison = pickle.load(open(morrison_loc,'rb'))
+
+# =========================== Load others ======================= #
+# =============================================================== #
+
 
 # =============================================================== #
 # =======================  Ynm eval tweak ======================= #
@@ -245,9 +263,36 @@ class Qet():
         return coeffs
 
     def subs(self, subs_dict):
+        '''
+        The substitutions in subs_dict are evaluated on the
+        coeffients of the qet.
+        Equal to valsubs but kept for backwards compatibility.
+        '''
         new_dict = dict()
         for key, val in self.dict.items():
             new_dict[key] = sp.S(val).subs(subs_dict)
+        return Qet(new_dict)
+
+    def valsubs(self, subs_dict):
+        '''
+        The substitutions in subs_dict are evaluated on the
+        coeffients of the qet.
+        '''
+        new_dict = dict()
+        for key, val in self.dict.items():
+            new_dict[key] = sp.S(val).subs(subs_dict)
+        return Qet(new_dict)
+
+    def keysubs(self, subs_dict):
+        '''
+        The substitutions in subs_dict are evaluated on the
+        keys of the qet.
+        It assumes that they keys are already symby symbols.
+        If not, then they are converted to them.
+        '''
+        new_dict = dict()
+        for key, val in self.dict.items():
+            new_dict[sp.Symbol(key).subs(subs_dict)] = sp.S(val)
         return Qet(new_dict)
 
     def __mul__(self, multiplier):
@@ -674,7 +719,6 @@ def real_or_imagined(qet):
     else:
         return valences[0]
 
-
 def RYlm(l, m, alpha, beta, gamma, detRot):
     '''
     This would be rotateHarmonic in the Mathematica  code.  It  is used
@@ -740,6 +784,8 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
     harmonics, and then sums and differences between
     m and -m are given by doing this through the values
     of |m| for the functions with mixed character.
+    The output is a list of dictionaries whose keys are (l,m) tuples,
+    and whose values are the corresponding coefficients.
     '''
     # apply the projection operator on the trivial irreducible rep
     # and collect the resulting basis functions
@@ -845,6 +891,71 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
         qdict = {k:v for k,v in zip(complete_basis, vec)}
         finalWFs.append(Qet(qdict))
     return finalWFs
+
+generic_cf = Qet({(k,q):(sp.Symbol('B_{%d%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
+def compute_crystal_field(group_num):
+    '''
+    This function returns a list with the possible forms that the
+    crystal field has for the given group. This list has only one
+    element up till group 27, after that the list has two  possi-
+    bilities that express the possible sign relationships between
+    the B4q and the B6q coefficients.
+    For groups 1-3 an empty list is returned.
+    The crystal field is a qet which has as keys tuples (k,q) and
+    as values sympy symbols for the corresponding coefficients.
+    '''
+    if group_num < 3:
+        print("Too little symmetry, returning empty list.")
+        return []
+    if group_num <=27:
+        cf = [generic_cf.subs(special_reps[group_num]).subs({k:0 for k,v in full_params[group_num].items() if not v})]
+    elif group_num == 28:
+        cf_p = Qet({
+                 (3,2): sp.Symbol('B_{3,2}^r'),
+                 (3,-2): sp.Symbol('B_{3,2}^r'),
+                 (4,0): sp.Symbol('B_{4,0}^r'),
+                 (4,4): sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (4,-4): sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (6,0): sp.Symbol('B_{6,0}^r'),
+                 (6,4): -sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 (6,-4): -sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 })
+        cf_m = Qet({
+                 (3,2): sp.Symbol('B_{3,2}^r'),
+                 (3,-2): sp.Symbol('B_{3,2}^r'),
+                 (4,0): sp.Symbol('B_{4,0}^r'),
+                 (4,4): -sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (4,-4): -sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (6,0): sp.Symbol('B_{6,0}^r'),
+                 (6,4): sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 (6,-4): sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 })
+        cf = [cf_p, cf_m]
+    elif group_num == 29:
+        cf_p = Qet({
+                 (4,0): sp.Symbol('B_{4,0}^r'),
+                 (4,4): sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (4,-4): sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (6,0): sp.Symbol('B_{6,0}^r'),
+                 (6,4): -sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 (6,-4): -sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 })
+        cf_m = Qet({
+                 (4,0): sp.Symbol('B_{4,0}^r'),
+                 (4,4): -sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (4,-4): -sp.sqrt(sp.S(5)/sp.S(14))*sp.Symbol('B_{4,0}^r'),
+                 (6,0): sp.Symbol('B_{6,0}^r'),
+                 (6,4): sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 (6,-4): sp.sqrt(sp.S(7)/sp.S(2))*sp.Symbol('B_{6,0}^r'),
+                 })
+        cf = [cf_p, cf_m]
+    elif group_num == 30:
+        cf = compute_crystal_field(29)
+    elif group_num == 31:
+        cf = compute_crystal_field(28)
+    elif group_num == 32:
+        cf = compute_crystal_field(30)
+    return cf
 
 #################### Calculation of Surface Harmonics #####################
 ###########################################################################
@@ -1079,7 +1190,6 @@ def ThreeHarmonicIntegrate(l1, m1, l2, m2, l3, m3):
     l3 : l quantum number of orbital 2 (Y_l3,m3) [l' in STK notation]
     m1 : m quantum number of l1 [-l1,-l1+1,...,l1-1,l1] [m in STK notation]
     m3 : m quantum number of l3 [-l3,-l3+1,...,l3-1,l3] [m' in STK notation]
-
     l2 : k in STK notation [ |l-l'|<=k<=l+l' ]
     m2 : q in STK notation [ q = m-m' ]
     '''
@@ -1207,6 +1317,7 @@ def Yrot(l,m,theta,phi):
     return RYlm(l, m, alpha, beta, gamma, detRot)
 
 regen_fname = os.path.join(module_dir,'data','CPGs.pkl')
+crystal_fields_fname = os.path.join(module_dir,'data','CPGs.pkl')
 
 if os.path.exists(regen_fname):
     print("Reloading %s ..." % regen_fname)
