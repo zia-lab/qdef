@@ -7,6 +7,7 @@ import pandas as pd
 import math
 from sympy import pi, I
 from sympy.physics.quantum import Ket, Bra
+from sympy.physics.wigner import gaunt
 
 from collections import OrderedDict
 from itertools import product
@@ -15,6 +16,9 @@ from tqdm.notebook import tqdm
 from matplotlib import pyplot as plt
 
 from IPython.display import display, HTML, Math
+
+from misc import *
+
 
 module_dir = os.path.dirname(__file__)
 
@@ -32,19 +36,28 @@ vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs.pkl')
 # =============================================================== #
 # ====================== Load element data ====================== #
 
-name_to_symb = pickle.load(open(os.path.join(module_dir,'data','name_to_symb.pkl'),'rb'))
-name_to_num  = pickle.load(open(os.path.join(module_dir,'data','name_to_num.pkl'),'rb'))
-symb_to_name  = pickle.load(open(os.path.join(module_dir,'data','symb_to_name.pkl'),'rb'))
-symb_to_num  = pickle.load(open(os.path.join(module_dir,'data','symb_to_num.pkl'),'rb'))
-num_to_name  = pickle.load(open(os.path.join(module_dir,'data','num_to_name.pkl'),'rb'))
-num_to_symb  = pickle.load(open(os.path.join(module_dir,'data','num_to_symb.pkl'),'rb'))
-atomicGoodies  = pickle.load(open(os.path.join(module_dir,'data','atomicGoodies.pkl'),'rb'))
-ionization_data  = pickle.load(open(os.path.join(module_dir,'data','ionization_data.pkl'),'rb'))['data']
+name_to_symb = pickle.load(open(os.path.join(module_dir,'data',
+                                            'name_to_symb.pkl'),'rb'))
+name_to_num  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'name_to_num.pkl'),'rb'))
+symb_to_name  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'symb_to_name.pkl'),'rb'))
+symb_to_num  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'symb_to_num.pkl'),'rb'))
+num_to_name  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'num_to_name.pkl'),'rb'))
+num_to_symb  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'num_to_symb.pkl'),'rb'))
+atomicGoodies  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'atomicGoodies.pkl'),'rb'))
+ionization_data  = pickle.load(open(os.path.join(module_dir,'data',
+                                            'ionization_data.pkl'),'rb'))['data']
 
 atom_symbs   = list(symb_to_name.keys())
 atom_names   = list(name_to_num.keys())
 
-nistdf = pd.read_pickle(os.path.join(module_dir,'data','nist_atomic_spectra_database_levels.pkl'))
+nistdf = pd.read_pickle(os.path.join(module_dir,'data',
+                                    'nist_atomic_spectra_database_levels.pkl'))
 spinData = pd.read_pickle(os.path.join(module_dir,'data','spindata.pkl'))
 
 # gives the atomic numbers of the firs three rows of transition
@@ -96,6 +109,51 @@ sp.Ynm.eval = new_eval
 
 # =============================================================== #
 # =========================== Classes =========================== #
+
+class HartreeFockData():
+    '''
+    Repo of data from the land of Hartree-Fock.
+    '''
+    HFradavg = pickle.load(open(os.path.join(module_dir,'data','HFravgs.pkl'),'rb'))
+    HFsizes = pickle.load(open(os.path.join(module_dir,'data','HFsizes.pkl'),'rb'))
+    ArabicToRoman = dict(zip(range(1,36),['I','II','III','IV','V','VI','VII',
+                            'VIII','IX','X','XI','XII','XIII','XIV','XV','XVI',
+                            'XVII','XVIII','XIX','XX','XXI','XXII','XXIII',
+                            'XXIV','XXV','XXVI','XXVII','XXVIII','XXIX','XXX',
+                            'XXXI','XXXII','XXXIII','XXXIV','XXXV']))
+    num_to_symb  = num_to_symb
+    @classmethod
+    def radial_average(cls, element, charge_state, n):
+        '''
+        Returns the radial average <r^n> for a valence electron
+        for the given element
+        and charge state (n=0 neutral, n=1 singly ionized, ...)
+        within the limitations of Hartree-Fock.
+        The element can be given either as its atomic number
+        or by its symbol.
+        Data is taken from Fraga's et al Handbook of Atomic Data.
+        The unit for the provided radial average is Angstrom^n.
+        Provided data has 5 significant figures.
+        '''
+        charge_state = int(charge_state)
+        assert charge_state >= 0, "What odd ion state you speak of?"
+        charge_state = cls.ArabicToRoman[charge_state+1]
+        if isinstance(element, int):
+            element = cls.num_to_symb[element]
+        try:
+            return float(cls.HFradavg['<r^%d>' % n].loc[[element]][charge_state])
+        except:
+            raise ValueError('This radial average is not here.')
+    @classmethod
+    def atom_size(cls, element, charge_state):
+        '''
+        Size of given element with given charge.
+        Given in Angstrom.
+        '''
+        if isinstance(element, int):
+            element = cls.num_to_symb[element]
+        charge_state = cls.ArabicToRoman[charge_state+1]
+        return float(cls.HFsizes.loc[[element]][charge_state])
 
 class Atom():
     '''
@@ -363,18 +421,19 @@ class Qet():
                 else:
                     sympyRep += coeff*Ket(key)
         return sympyRep
-        def as_bra(self):
-            '''
-            Give a representation of the qet  as  a  Bra  from
-            sympy.physics.quantum.
-            '''
-            sympyRep = sp.S(0)
-            for key, coeff in self.dict.items():
-                if key == ():
-                    sympyRep += coeff
-                else:
-                    sympyRep += coeff*Bra(*key)
-            return sympyRep
+
+    def as_bra(self):
+        '''
+        Give a representation of the qet  as  a  Bra  from
+        sympy.physics.quantum.
+        '''
+        sympyRep = sp.S(0)
+        for key, coeff in self.dict.items():
+            if key == ():
+                sympyRep += coeff
+            else:
+                sympyRep += coeff*Bra(*key)
+        return sympyRep
 
     def as_braket(self):
         '''
@@ -393,7 +452,12 @@ class Qet():
         return sympyRep
 
     def as_symbol_sum(self):
-        tot = sp.sp.S(0)
+        '''
+        Take the keys multiply them by their corresponding
+        coefficients, add them all up, and return the resulting
+        sympy expression.
+        '''
+        tot = sp.S(0)
         for k, v in self.dict.items():
             tot += v*k
         return tot
@@ -449,8 +513,10 @@ class Qet():
         return sp.sqrt(norm2)
 
     def symmetrize(self):
-        '''at times a tuple of dict needs to
-        be identified with its inverse'''
+        '''use if the keys of the kets are tuples
+        and one wants to make equal keys that
+        are the reverse of one another, i.e.
+        {(1,0):a, (0,1):b} -> {(1,0):a+b}'''
         new_dict = dict()
         for key, coeff in self.dict.items():
             rkey = key[::-1]
@@ -463,8 +529,11 @@ class Qet():
                     new_dict[key] = coeff
         return Qet(new_dict)
 
-    def __repr__(self):
+    def __str__(self):
         return str(self.dict)
+
+    def __repr__(self):
+        return 'Qet(%s)' % str(self.dict)
 
 class ProductTable():
     '''
@@ -590,6 +659,18 @@ class CrystalGroup():
     def __repr__(self):
         return self.label
 
+# this is an ugly way of loading this
+# but it's necessary given that having saved them
+# as a pickle with included Qets fails to load given
+# that unpickling needs knowing the class it's trying to load
+# therefore I turned them into regular dictionaries
+# and here they're converted to qets again
+
+crystal_fields_raw = morrison['crystal_fields_raw']
+crystal_fields = {}
+for k in crystal_fields_raw:
+    crystal_fields[k] = [Qet(q) for q in crystal_fields_raw[k]]
+
 class CPGroups():
     '''
     Class to hold all crystallographic point groups.
@@ -613,7 +694,57 @@ class CPGroups():
         group_idx = 1 + self.all_group_labels.index(label)
         return self.groups[group_idx]
 
-
+class CrystalField():
+    def __init__(self, group_num):
+        self.group_num = group_num
+        # In the groups with the largest symmetry
+        # the number of free parameters can be reduced
+        # and this gives a set of possible simplifications.
+        # This list contains all the possible parametric forms of the crystal field.
+        self.cflist = crystal_fields[group_num]
+        self.simplified_ham = self.to_expression()
+    def matrix_rep_symb(self, l):
+        '''
+        Calculates the  matrix  representations  of
+        the crystal field operator in the subspace
+        of angular momentum l.
+        The ordered basis for this representation is
+        :math:`\{|l,-l\rangle,|l,-1+1\rangle,\ldots,\l,l-1\rangle,|l,l\rangle\}`
+        so that the top left element in the resulting matrices correspond
+        to :math:`\langle l, -l | V_{CF} | l, -l\rangle`,
+        and the bottom right element to
+        :math:`\langle l, +l | V_{CF} | l, +l\rangle`.
+        '''
+        if isinstance(l,str):
+            l = {'s':0,'p':1,'d':2,'f':3,'g':4}[l]
+        self.symb_matrix_reps = []
+        for one_cf in self.cflist:
+            mat = []
+            mls = list(range(-l,l+1))
+            for m1 in mls:
+                row = []
+                for m2 in mls:
+                    total = sum([sp.sqrt(sp.S(4)*sp.pi/sp.S(2*k[0]+sp.S(1)))*threeHarmonicIntegral(l,m1,k[0],k[1],l,m2)*v for (k,v) in one_cf.dict.items()])
+                    row.append(total)
+                mat.append(row)
+            self.symb_matrix_reps.append(sp.Matrix(mat))
+        if len(self.symb_matrix_reps) == 2:
+            if self.symb_matrix_reps[0] == self.symb_matrix_reps[1]:
+                self.symb_matrix_reps = [self.symb_matrix_reps[0]]
+        return self.symb_matrix_reps
+    def to_expression(self):
+        return [Bsimple(sum([sp.Symbol('C_{%d,%d}' % k) * v for k,v in field.dict.items()])) for field in self.cflist]
+    def splitter(self,l):
+        try:
+            reps = self.symb_matrix_reps
+        except AttributeError:
+            self.matrix_rep_symb(l)
+            reps = self.symb_matrix_reps
+        splits = []
+        for rep in reps:
+            eigen_stuff = rep.eigenvects()
+            splits.append(eigen_stuff)
+        return splits
 
 # =========================== Classes =========================== #
 # =============================================================== #
@@ -756,7 +887,7 @@ def SymmetryAdaptedWF(group, l, m):
     # This sum is over all elements of the group
     for group_params in group.euler_angles.values():
         alpha, beta, gamma, detRot = group_params
-        SALC += RYlm(l,m,alpha,beta,gamma,detRot)
+        SALC = SALC + RYlm(l,m,alpha,beta,gamma,detRot)
     SALC = (sp.S(1)/order)*SALC
     SALC = SALC.apply(lambda x,y : (x, sp.simplify(y)))
     return SALC
@@ -892,7 +1023,8 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
         finalWFs.append(Qet(qdict))
     return finalWFs
 
-generic_cf = Qet({(k,q):(sp.Symbol('B_{%d%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
+generic_cf = Qet({(k,q):(sp.Symbol('B_{%d,%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d,%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
+
 def compute_crystal_field(group_num):
     '''
     This function returns a list with the possible forms that the
@@ -904,11 +1036,12 @@ def compute_crystal_field(group_num):
     The crystal field is a qet which has as keys tuples (k,q) and
     as values sympy symbols for the corresponding coefficients.
     '''
+    full_params = morrison['Bkq grid from tables 8.1-8.3 in_Morrison 1988']
     if group_num < 3:
         print("Too little symmetry, returning empty list.")
         return []
     if group_num <=27:
-        cf = [generic_cf.subs(special_reps[group_num]).subs({k:0 for k,v in full_params[group_num].items() if not v})]
+        cf = [generic_cf.subs(morrison['special_reps'][group_num]).subs({k:0 for k,v in full_params[group_num].items() if not v})]
     elif group_num == 28:
         cf_p = Qet({
                  (3,2): sp.Symbol('B_{3,2}^r'),
@@ -1148,6 +1281,16 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
 ############### Calculation of Clebsch-Gordan Coefficients ################
 ###########################################################################
 
+###########################################################################
+################################## Others #################################
+
+def mbasis(l):
+    '''
+    Return a row matrix with symbols corresponding to the kets
+    that span the angular momentum space for a given value of l.
+    '''
+    return sp.Matrix([[sp.Symbol('|%d,%d\\rangle' % (l,ml)) for ml in range(-l,l+1)]])
+
 def fmt_table(data, center_data=False, add_row_nums=False):
     '''Create a LaTeX table from a given list of lists'''
     buf='''
@@ -1176,123 +1319,122 @@ def fmt_table(data, center_data=False, add_row_nums=False):
     buf += '''\\end{array}'''
     return buf
 
-def Ckq2THI(l,m,theta,phi):
-    return ThreeHarmonicIntegrate(l1, m1, l, m, l3, m3)
 
-def ThreeHarmonicIntegrate(l1, m1, l2, m2, l3, m3):
+def threeHarmonicIntegral(l1, m1, l2, m2, l3, m3):
     '''
-    ThreeHarmonicIntegrate(l1,m1,l2,m2,l3,m3) solves the integral of
-    the product of three spherical harmonics (i.e., eqn 1.15 from  STK) where
-    one is unnormalized. This is used in the determination of the single
-    electron crystal field splitting.
+    Returns the value of the three spherical harmonics integral,
+    the variety with the first one having a complex conjugate.
 
-    l1 : l quantum number of orbital 1 (Y_l1,m1) [l in STK notation]
-    l3 : l quantum number of orbital 2 (Y_l3,m3) [l' in STK notation]
-    m1 : m quantum number of l1 [-l1,-l1+1,...,l1-1,l1] [m in STK notation]
-    m3 : m quantum number of l3 [-l3,-l3+1,...,l3-1,l3] [m' in STK notation]
-    l2 : k in STK notation [ |l-l'|<=k<=l+l' ]
-    m2 : q in STK notation [ q = m-m' ]
-    '''
-    from sympy.physics.quantum.cg import CG
-    THI = sp.sqrt((2*l1+1)/(2*l3+1))*CG(l2,0,l3,0,l1,0)*CG(l2,m2,l3,m3,l1,m1)
-    return THI
+    - It may be non-zero only if l1 + l2 + l2 is even.
+    - It is non-zero unless |l1-l2| <= l3 <= l1+l2
 
-def SingleElectronSplitting(Group, l=4, orbital = 'd', debug=False):
-    '''
-    ----------------------------
-    | orbitals | s | p | d | f |
-    ----------------------------
-    |    l     | 0 | 1 | 2 | 3 |
-    ----------------------------
-    Note that this is currently only valid for intra-orbital
-    '''
+    .. math:: \int d\Omega Y_{l_1,m_1}^* Y_{l_2,m_2} Y_{l_3,m_3}
 
-    if isinstance(orbital,str):
-        if orbital == 's':
-            orbital = 0
-        elif orbital == 'p':
-            orbital = 1
-        elif orbital == 'd':
-            orbital = 2
-        elif orbital == 'f':
-            orbital = 3
+    '''
+    return sp.S(-1)**m1 * gaunt(l1,l2,l3,-m1,m2,m3)
+
+
+def l_splitter(group_num_or_label, l):
+    '''
+    This function takes a value of l and determines how
+    many times each of the irreducible representations of
+    the given group is contained in the reducible representation
+    obtained from the irreducible representation of the
+    continous rotation group as represented by the set
+    of Y_{l,m}.
+
+    More simply stated it returns how states that transform
+    like an l=2 would split into states that would transform
+    as the irreducible representations of the given group.
+
+    The function returns a Qet whose keys correspond to
+    irreducible representation symbols of the given group
+    and whose values are how many times they are contained in the
+    reducible representation of the group.
+
+    Parameters
+    ----------
+    group_num_or_label : int or str
+        Index or string for a crystallographic point group.
+                     l : int or str
+        azimutal quantum number (arbitrary) or string character s,p,d,f,g,h,i
+
+    Examples
+    -------
+
+    A d-electron in an cubic field splits into states that
+    transform either like E or like T_2. This can be computed
+    with this function like so:
+
+    l_splitter('O', 2) -> Qet({E: 1, T_2: 1})
+
+    An if one were interested in how the states of an f-electron
+    split under C_4v symmetry, one could
+
+    l_splitter('C_{4v}', 3) -> Qet({A_2: 1, B_2: 1, B_1: 1, E: 2})
+
+    '''
+    if isinstance(l, str):
+        l = {'s': 0, 'p': 1, 'd': 2, 'f': 3, 'g': 4, 'h': 5, 'i': 6}[l]
+    l = sp.S(l)
+    if isinstance(group_num_or_label, str):
+        group_num = CPGs.all_group_labels.index(group_num_or_label)+1
+    else:
+        group_num = group_num_or_label
+    group = CPGs.groups[group_num]
+    charVec = []
+    # calculate the character of each of the classes
+    # in the reducible representation for the given l
+    # this requires iterating over all the classes
+    # and picking up any of its symmetry operations
+    # figuring out what is the angle of rotation
+    # that corresponds to the rotation part of
+    # the matrix that represents it
+    for group_class in group.classes:
+        group_op = group.classes[group_class][0]
+        _, _, _, detRot = group.euler_angles[group_op]
+        rot_matrix = group.operations_matrices[group_op]*detRot
+        cos_eta = (rot_matrix.trace()-1)/sp.S(2)
+        eta = sp.acos(cos_eta)
+        if sp.N(eta,chop=True) == 0:
+            char = 2*l + 1
         else:
-            print('ERROR: Orbital does not exist! Please choose one of s,p,d, or f orbitals')
+            char = sp.sin((l+sp.S(1)/2)*eta)/sp.sin(eta/2)
+        charVec.append(char)
+    # Once the characters have been computed
+    # the inverse of the matrix representing the character
+    # table for the group can be used.
+    charVec = sp.N(sp.Matrix(charVec),chop=True)
+    splitted = list(map(lambda x: round(sp.N(x,chop=True)),
+                list(group.character_table_inverse*charVec)))
+    return Qet(dict(zip(group.irrep_labels,splitted)))
 
-    global l1, m1, l3, m3
-
-    l1 = sp.Symbol('l1')
-    m1 = sp.Symbol('m1')
-    l3 = sp.Symbol('l3')
-    m3 = sp.Symbol('m3')
-
-    CFP_Table = []
-    THI_func = CFP(Group,l=4).replace(Ynm,Ckq2THI)
-
-    for mm1 in np.arange(-orbital,orbital+0.1):
-        mm1 = int(mm1)
-        col_tmp = []
-        for mm3 in np.arange(-orbital,orbital+0.1):
-            mm3 = int(mm3)
-            col_tmp.append(THI_func.subs([(l1, orbital), (m1,mm1), (l3, orbital), (m3,mm3)]).simplify())
-        CFP_Table.append(col_tmp)
-
-    del l1, m1, l3, m3
-
-    EigenSys = sp.Matrix(CFP_Table).eigenvects()
-    EigenVals = []
-    EigenVecs = []
-    for eRes in EigenSys:
-        for deg in np.arange(eRes[1]):
-            EigenVals.append(eRes[0])
-            EigenVecs.append(list(eRes[2][deg]))
-
-    Yarray = []
-    for mm in np.arange(-orbital,orbital+0.1):
-        Yarray.append(sp.Ynm(2,int(mm),theta,phi))
-    Yarray = sp.Matrix(Yarray)
-    EigenVecs = sp.Matrix(EigenVecs)
-
-    global alpha, beta, gamma, detRot
-
-    eVec = list(EigenVecs*Yarray)
-    reps = []
-    ParTable = Group.ParameterTable
-    for evc in eVec:
-        rotEVecs = []
-
-        for rep in np.arange(len(ParTable)):
-            alpha = ParTable[rep][0]
-            beta = ParTable[rep][1]
-            gamma = ParTable[rep][2]
-            detRot = ParTable[rep][3]
-            rotEVecs.append(evc.replace(Ynm,Yrot))
-        reps.append(np.array(Group.ElementCharacterTable).dot(np.array(rotEVecs)).tolist())
-
-    repIdx = []
-    for row in reps:
-        rowsimp = []
-        for col in row:
-            colsimp = sp.simplify(col)
-            CoeffDict = colsimp.as_coefficients_dict()
-
-            col_tmp = 0
-            for coeff in CoeffDict.keys():
-
-                if abs(CoeffDict[coeff])<1e-10:
-                    CoeffDict[coeff] = 0
-                col_tmp = col_tmp + CoeffDict[coeff]*coeff
-            rowsimp.append(col_tmp)
-
-        repIdx.append([idx for idx, val in enumerate(rowsimp) if val != 0][0])
-
-    '''if debug == True:
-        for row in reps:
-            for col in row:
-                print(simplify(col))'''
-
-    srtIdx = np.array(repIdx).argsort().tolist()
-    return EigenVals, eVec, repIdx, srtIdx
+def Bsimple(Bexpr):
+    '''
+    Takes a sympy expression, finds the Bnm coefficients in it
+    and if there's only a real or an imaginary part then it
+    returns the expression without the ^r or ^i.
+    '''
+    free_symbs = list(Bexpr.free_symbols)
+    symb_counter = {}
+    for symb in free_symbs:
+        if 'B_' not in str(symb):
+            continue
+        kqcombo = eval(str(symb).split('{')[-1].split('}')[0])
+        reorim = str(symb).split('^')[-1]
+        if kqcombo not in symb_counter.keys():
+            symb_counter[kqcombo] = 1
+        else:
+            symb_counter[kqcombo] += 1
+    simpler_reps = {}
+    for k, v in symb_counter.items():
+        if v == 1:
+            only = sp.Symbol('B_{%d,%d}' %k)
+            real = sp.Symbol('B_{%d,%d}^r' %k)
+            imag = sp.Symbol('B_{%d,%d}^i' %k)
+            simpler_reps[real] = only
+            simpler_reps[imag] = only
+    return Bexpr.subs(simpler_reps, simultaneous=True)
 
 def orthogonal_matrix(euler_params):
     '''
@@ -1326,3 +1468,6 @@ else:
     print("%s not found, regenerating ..." % regen_fname)
     CPGs = CPGroups(group_data)
     pickle.dump(CPGs, open(os.path.join(module_dir,'data','CPGs.pkl'),'wb'))
+
+################################## Others #################################
+###########################################################################

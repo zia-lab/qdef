@@ -9,6 +9,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Excel extras
+~$*.xls*
+*.xlk
+
 # Distribution / packaging
 .Python
 build/
@@ -135,7 +139,7 @@ dmypy.json
 **/Icon?
 crystal_secrets.py
 .DS_Store
-.DS_Store
 Parameter Tables/.DS_Store
 docs/Makefile
 docs/make.bat
+data/mp_2018.pkl
