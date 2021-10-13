@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os, re, pickle
 import numpy as np
 from math import ceil
@@ -116,23 +118,29 @@ class HartreeFockData():
     '''
     HFradavg = pickle.load(open(os.path.join(module_dir,'data','HFravgs.pkl'),'rb'))
     HFsizes = pickle.load(open(os.path.join(module_dir,'data','HFsizes.pkl'),'rb'))
-    ArabicToRoman = dict(zip(range(1,36),['I','II','III','IV','V','VI','VII',
-                            'VIII','IX','X','XI','XII','XIII','XIV','XV','XVI',
-                            'XVII','XVIII','XIX','XX','XXI','XXII','XXIII',
-                            'XXIV','XXV','XXVI','XXVII','XXVIII','XXIX','XXX',
-                            'XXXI','XXXII','XXXIII','XXXIV','XXXV']))
+    ArabicToRoman = dict(zip(range(1,36),[
+                    'I','II','III','IV','V','VI','VII','VIII','IX','X',
+                    'XI',  'XII',  'XIII',  'XIV', 'XV', 'XVI', 'XVII',
+                    'XVIII',      'XIX',     'XX','XXI','XXII','XXIII',
+                    'XXIV', 'XXV','XXVI','XXVII','XXVIII','XXIX','XXX',
+                    'XXXI','XXXII','XXXIII','XXXIV','XXXV']
+                    )
+                    )
     num_to_symb  = num_to_symb
     @classmethod
     def radial_average(cls, element, charge_state, n):
         '''
-        Returns the radial average <r^n> for a valence electron
-        for the given element
-        and charge state (n=0 neutral, n=1 singly ionized, ...)
-        within the limitations of Hartree-Fock.
-        The element can be given either as its atomic number
-        or by its symbol.
+        Returns  the radial average <r^n> for a valence electron for
+        the  given element and charge state (n=0 neutral, n=1 singly
+        ionized, ...) within the limitations of Hartree-Fock.
+
+        The  element  can be given either as its atomic number or by
+        its symbol.
+
         Data is taken from Fraga's et al Handbook of Atomic Data.
+
         The unit for the provided radial average is Angstrom^n.
+
         Provided data has 5 significant figures.
         '''
         charge_state = int(charge_state)
@@ -275,7 +283,21 @@ class Atom():
     def __str__(self):
         return '%s : %s : %d' % (self.name, self.symbol, self.atomic_number)
 
+class Ion(Atom):
+    '''
+    Same as an Atom, but with the added attribute of charge_state.
+    Also, the spectroscopic data is limited to that ion.
+    '''
+    def __init__(self, element, charge_state):
+        Atom.__init__(self,element)
+        self.charge_state = charge_state
+        self.nist_data = self.nist_data[self.nist_data['Charge'] == self.charge_state]
+        self.nist_data.reset_index(drop=True, inplace=True)
+
 class PeriodicTable():
+    '''
+    It basically instantiates all atoms.
+    '''
     def __init__(self):
         self.atoms = {i:Atom(i) for i in range(1,119)}
 
@@ -454,8 +476,8 @@ class Qet():
     def as_symbol_sum(self):
         '''
         Take the keys multiply them by their corresponding
-        coefficients, add them all up, and return the resulting
-        sympy expression.
+        coefficients,  add  them  all  up,  and return the
+        resulting sympy expression.
         '''
         tot = sp.S(0)
         for k, v in self.dict.items():
@@ -513,10 +535,13 @@ class Qet():
         return sp.sqrt(norm2)
 
     def symmetrize(self):
-        '''use if the keys of the kets are tuples
-        and one wants to make equal keys that
-        are the reverse of one another, i.e.
-        {(1,0):a, (0,1):b} -> {(1,0):a+b}'''
+        '''
+        Use  if  the  keys  of the kets are tuples and one
+        wants  to  make equal keys that are the reverse of
+        one another, i.e.
+
+        {(1,0):a, (0,1):b} -> {(1,0):a+b}
+        '''
         new_dict = dict()
         for key, coeff in self.dict.items():
             rkey = key[::-1]
@@ -705,14 +730,21 @@ class CrystalField():
         self.simplified_ham = self.to_expression()
     def matrix_rep_symb(self, l):
         '''
-        Calculates the  matrix  representations  of
-        the crystal field operator in the subspace
-        of angular momentum l.
+        Calculates   the  matrix  representations  of  the
+        crystal  field operator in the subspace of angular
+        momentum l.
+
         The ordered basis for this representation is
+
         :math:`\{|l,-l\rangle,|l,-1+1\rangle,\ldots,\l,l-1\rangle,|l,l\rangle\}`
-        so that the top left element in the resulting matrices correspond
-        to :math:`\langle l, -l | V_{CF} | l, -l\rangle`,
+
+        so  that  the  top  left  element in the resulting
+        matrices correspond to
+
+        :math:`\langle l, -l | V_{CF} | l, -l\rangle`,
+
         and the bottom right element to
+
         :math:`\langle l, +l | V_{CF} | l, +l\rangle`.
         '''
         if isinstance(l,str):
@@ -724,7 +756,9 @@ class CrystalField():
             for m1 in mls:
                 row = []
                 for m2 in mls:
-                    total = sum([sp.sqrt(sp.S(4)*sp.pi/sp.S(2*k[0]+sp.S(1)))*threeHarmonicIntegral(l,m1,k[0],k[1],l,m2)*v for (k,v) in one_cf.dict.items()])
+                    total = sum([sp.sqrt(sp.S(4)*sp.pi/sp.S(2*k[0]+sp.S(1)))* \
+                    threeHarmonicIntegral(l,m1,k[0],k[1],l,m2)*v \
+                     for (k,v) in one_cf.dict.items()])
                     row.append(total)
                 mat.append(row)
             self.symb_matrix_reps.append(sp.Matrix(mat))
@@ -733,7 +767,8 @@ class CrystalField():
                 self.symb_matrix_reps = [self.symb_matrix_reps[0]]
         return self.symb_matrix_reps
     def to_expression(self):
-        return [Bsimple(sum([sp.Symbol('C_{%d,%d}' % k) * v for k,v in field.dict.items()])) for field in self.cflist]
+        return [Bsimple(sum([sp.Symbol('C_{%d,%d}' % k) * v for k,v \
+                    in field.dict.items()])) for field in self.cflist]
     def splitter(self,l):
         try:
             reps = self.symb_matrix_reps
@@ -746,6 +781,44 @@ class CrystalField():
             splits.append(eigen_stuff)
         return splits
 
+class Bnm():
+    '''
+    A class for Bnm crystal field parameters.
+
+    Instantiated  with  a  dictionary that must contain at least
+    the following keys:
+
+    host            (str) e.g. 'MgO'
+    site            (str) e.g. 'Mg'
+    point_sym_group (str) e.g. 'C_{3v}'
+    ion         (str,int) e.g. ('Cr',3)
+    params         (dict) e.g. {(2,0): 1.34e3, (4,2): -2.34e3}
+    unit            (str) e.g. 'cm^{-1}'
+    sources        (list) e.g. ['Morrison 1982, Crystal F ...', ...]
+    comments       (list) e.g. ['This is very approximate.', 'Yup.']
+    experimental   (bool) e.g. False
+
+    Ideally  params should be accompanied by params_uncertainty,
+    a  dictionary with the same keys than params but with values
+    equal to corresponding uncertainties.
+    '''
+    def __init__(self, Bnm_params):
+        self.min_keys = set(['host','site','point_sym_group','params',
+                             'unit','sources', 'ion', 'is_experimental'])
+        self.energy_units = ['cm^{-1}','eV','J']
+        self.init_dict = Bnm_params
+        assert self.min_keys <= set(params.keys()), \
+            'provide at least: %s' % str(self.min_keys)
+        for attr_name in Bnm_params:
+            setattr(self, attr_name, Bnm_params[attr_name])
+        assert self.unit in self.energy_units, \
+                "unit must be one of %s" % str(self.energy_units)
+    def __str__(self):
+        return '%s\n%s^%d+:%s\n%s' % (self.point_sym_group, self.ion[0],
+                                    self.ion[1], self.host, str(self.params))
+    def __repr__(self):
+        return str(self.init_dict)
+
 # =========================== Classes =========================== #
 # =============================================================== #
 
@@ -754,14 +827,17 @@ class CrystalField():
 
 def SubSupSymbol(radix,ll,mm):
     '''
-    Generates a symbol placeholder for the B coefficients in the crystal field potential.
+    Generates a symbol placeholder for the B
+    coefficients   in   the   crystal  field
+    potential.
     '''
     SubSupSym = sp.symbols(r'{%s}_{%s}^{%s}' % (radix, str(ll), str(mm)))
     return SubSupSym
 
 def SubSubSymbol(radix,ll,mm):
     '''
-    Generates a symbol placeholder for the B coefficients in the crystal field potential.
+    Generates   a   symbol   placeholder   for  the  B
+    coefficients in the crystal field potential.
     '''
     SubSubSym = sp.symbols(r'{%s}_{{%s}{%s}}' % (radix, str(ll), str(mm)))
     return SubSubSym
@@ -805,7 +881,8 @@ def Wigner_D(l, n, m, alpha, beta, gamma):
         Wig_D = 0
     else:
       Wig_D_0 = I**(abs(n)+n-abs(m)-m)
-      Wig_D_1 = (sp.cos(-n*gamma-m*alpha)+I*sp.sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
+      Wig_D_1 = (sp.cos(-n*gamma-m*alpha) \
+                 + I*sp.sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
       Wig_D = Wig_D_0 * Wig_D_1
       Wig_D = Wig_D
     return Wig_D
@@ -813,9 +890,11 @@ Wigner_D.values = {}
 
 def real_or_imagined(qet):
     '''
-    For a given superposition of spherical  harmonics,  determine  if  the
-    total has a pure imaginary (i), pure real (r), or mixed character (m),
-    it assumes that the coefficients in the superposition are all real.
+    For  a given superposition of spherical harmonics,
+    determine  if  the total has a pure imaginary (i),
+    pure  real (r), or mixed character (m), it assumes
+    that the coefficients in the superposition are all
+    real.
     '''
     chunks = dict(qet.dict)
     valences = []
@@ -852,9 +931,10 @@ def real_or_imagined(qet):
 
 def RYlm(l, m, alpha, beta, gamma, detRot):
     '''
-    This would be rotateHarmonic in the Mathematica  code.  It  is used
-    in the projection of the spherical  harmonics  to  create  symmetry
-    adapted wavefunctions.
+    This  would  be  rotateHarmonic in the Mathematica
+    code.   It  is  used  in  the  projection  of  the
+    spherical  harmonics  to  create  symmetry adapted
+    wavefunctions.
     '''
     Rf = Qet()
     for nn in range(-l,l+1):
@@ -865,17 +945,16 @@ def RYlm(l, m, alpha, beta, gamma, detRot):
 
 def flatten_matrix(mah):
     '''
-    A convenience function
-    to flatten a sympy matrix into a
-    list of lists
+    A  convenience  function to flatten a sympy matrix
+    into a list of lists
     '''
     return [item for sublist in mah.tolist() for item in sublist]
 
 def SymmetryAdaptedWF(group, l, m):
     '''
-    This returns the proyection of Y_l^m
-    on the trivial irreducible representation
-    of the given group
+    This  returns  the  proyection  of  Y_l^m  on  the
+    trivial  irreducible  representation  of the given
+    group.
     '''
     if isinstance(group,str):
       group = CPGs.get_group_by_label(group)
@@ -894,11 +973,9 @@ def SymmetryAdaptedWF(group, l, m):
 
 def linearly_independent(vecs):
     '''
-    Given a list of vectors
-    return the largest subset which
-    of linearly independent ones
-    and the indices that correspond
-    to them in the original list.
+    Given  a  list  of vectors return the largest subset which of linearly
+    independent  ones  and  the  indices  that  correspond  to them in the
+    original list.
     '''
     matrix = sp.Matrix(vecs).T
     good_ones = matrix.rref()[-1]
@@ -906,17 +983,18 @@ def linearly_independent(vecs):
 
 def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True):
     '''
-    For a given group and a given value of
-    l, this returns a set of linearly independent
-    symmetry adapted functions which are also real-valued.
-    If the set that is found initially contains combinations that are
-    not purely imaginary or pure real, then the assumption
-    is made that this set contains single spherical
-    harmonics, and then sums and differences between
-    m and -m are given by doing this through the values
-    of |m| for the functions with mixed character.
-    The output is a list of dictionaries whose keys are (l,m) tuples,
-    and whose values are the corresponding coefficients.
+    For  a  given  group  and  a  given  value of l, this returns a set of
+    linearly  independent  symmetry adapted functions which are also real-
+    valued.
+
+    If  the set that is found initially contains combinations that are not
+    purely  imaginary  or pure real, then the assumption is made that this
+    set contains single spherical harmonics, and then sums and differences
+    between m and -m are given by doing this through the values of |m| for
+    the functions with mixed character.
+
+    The  output is a list of dictionaries whose keys are (l,m) tuples, and
+    whose values are the corresponding coefficients.
     '''
     # apply the projection operator on the trivial irreducible rep
     # and collect the resulting basis functions
@@ -1027,14 +1105,15 @@ generic_cf = Qet({(k,q):(sp.Symbol('B_{%d,%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B
 
 def compute_crystal_field(group_num):
     '''
-    This function returns a list with the possible forms that the
-    crystal field has for the given group. This list has only one
-    element up till group 27, after that the list has two  possi-
-    bilities that express the possible sign relationships between
-    the B4q and the B6q coefficients.
+    This  function returns a list with the possible forms that the crystal
+    field  has for the given group. This list has only one element up till
+    group  27,  after that the list has two possibilities that express the
+    possible sign relationships between the B4q and the B6q coefficients.
+
     For groups 1-3 an empty list is returned.
-    The crystal field is a qet which has as keys tuples (k,q) and
-    as values sympy symbols for the corresponding coefficients.
+
+    The  crystal  field  is  a  qet  which has as keys tuples (k,q) and as
+    values sympy symbols for the corresponding coefficients.
     '''
     full_params = morrison['Bkq grid from tables 8.1-8.3 in_Morrison 1988']
     if group_num < 3:
@@ -1098,17 +1177,17 @@ def compute_crystal_field(group_num):
 
 def cg_symbol(comp_1, comp_2, irep_3, comp_3):
     '''
-    Given symbols for three components (comp_1, comp_2, comp_3) of three
-    irreducible representations of a  group   this  function  returns  a
+    Given  symbols  for three components (comp_1, comp_2, comp_3) of three
+    irreducible  representations  of  a  group  this  function  returns  a
     sp.Symbol for the corresponding Clebsch-Gordan coefficient:
 
     <comp_1,comp_2|irep_3, comp_3>
 
-    The symbol of the third irrep is given  explicitly  as  irep_3.  The
-    other two irreps are implicit in (comp_1) and (comp_2) and should be
-    one of the symbols in group.irrep_labels.
+    The symbol of the third irrep is given explicitly as irep_3. The other
+    two  irreps are implicit in (comp_1) and (comp_2) and should be one of
+    the symbols in group.irrep_labels.
 
-    (comp_1, comp_2, and comp_3) may be taken as elements from
+    (comp_1,   comp_2,   and   comp_3)  may  be  taken  as  elements  from
     group.component_labels.
     '''
     symb_args = (comp_1, comp_2, irep_3, comp_3)
@@ -1143,31 +1222,33 @@ class V_coefficients():
 
 def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False):
     '''
-    Given a group and symbol labels for two irreducible representations
-    Γ1 and Γ2 this function calculates the  Clebsh-Gordan  coefficients
-    used to span the basis functions of  their  product in terms of the
-    basis functions of their factors.
+    Given   a  group  and  symbol  labels  for  two  irreducible
+    representations  Γ1  and  Γ2  this  function  calculates the
+    Clebsh-Gordan  coefficients used to span the basis functions
+    of  their  product  in terms of the basis functions of their
+    factors.
 
-    By  assuming  an even phase convention for all coefficients the
-    result is also given for the exchanged order (Γ2, Γ1).
+    By  assuming  an  even phase convention for all coefficients
+    the result is also given for the exchanged order (Γ2, Γ1).
 
-    If rep_rules = False, this  function  returns  a tuple with 3  ele-
-    ments, the first element being a matrix of symbols for the CGs coe-
-    fficients for (Γ1, Γ2)  the  second element  the  matrix  for  sym-
-    bols  for (Γ2, Γ1) and the third one being a matrix  to  which  its
-    elements are matched element by element to  the  first  and  second
-    matrices of symbols.
+    If  rep_rules  = False, this function returns a tuple with 3
+    elements,  the  first  element being a matrix of symbols for
+    the  CGs  coefficients  for  (Γ1, Γ2) the second element the
+    matrix  for  symbols  for (Γ2, Γ1) and the third one being a
+    matrix  to which its elements are matched element by element
+    to the first and second matrices of symbols.
 
-    If rep_rules = True, this  function  returns     two  dictionaries.
-    The keys in the first one equal CGs coefficients from (Γ1, Γ2)  and
-    the second one those for (Γ2, Γ1); with the values  being  the  co-
-    rresponding coefficients.
+    If rep_rules = True, this function returns two dictionaries.
+    The  keys  in the first one equal CGs coefficients from (Γ1,
+    Γ2)  and  the second one those for (Γ2, Γ1); with the values
+    being the co- rresponding coefficients.
 
-    These CG symbols are made according to the following template:
+    These  CG  symbols  are  made  according  to  the  following
+    template:
         <i1,i2|i3,i4>
         (i1 -> symbol for basis function in Γ1 or Γ2)
         (i2 -> symbol for basis function in Γ2 or Γ1)
-        (i3 -> symbol for an irreducible representation Γ3 in the group)
+        (i3 -> symbol for an ir rep Γ3 in the group)
         (i4 -> symbol for a basis function of Γ3)
     '''
     irreps = group.irrep_labels
@@ -1336,34 +1417,33 @@ def threeHarmonicIntegral(l1, m1, l2, m2, l3, m3):
 
 def l_splitter(group_num_or_label, l):
     '''
-    This function takes a value of l and determines how
-    many times each of the irreducible representations of
-    the given group is contained in the reducible representation
-    obtained from the irreducible representation of the
-    continous rotation group as represented by the set
-    of Y_{l,m}.
+    This  function  takes  a  value of l and determines how many
+    times  each  of the irreducible representations of the given
+    group  is contained in the reducible representation obtained
+    from   the   irreducible  representation  of  the  continous
+    rotation group as represented by the set of Y_{l,m}.
 
-    More simply stated it returns how states that transform
-    like an l=2 would split into states that would transform
-    as the irreducible representations of the given group.
+    More simply stated it returns how states that transform like
+    an  l=2  would split into states that would transform as the
+    irreducible representations of the given group.
 
-    The function returns a Qet whose keys correspond to
-    irreducible representation symbols of the given group
-    and whose values are how many times they are contained in the
+    The   function  returns  a  Qet  whose  keys  correspond  to
+    irreducible  representation  symbols  of the given group and
+    whose  values  are  how many times they are contained in the
     reducible representation of the group.
 
-    Parameters
     ----------
-    group_num_or_label : int or str
-        Index or string for a crystallographic point group.
-                     l : int or str
-        azimutal quantum number (arbitrary) or string character s,p,d,f,g,h,i
+    Parameters
 
-    Examples
+    group_num_or_label  :  int  or  str  Index  or  string for a
+    crystallographic  point  group.  l  :  int  or  str azimutal
+    quantum number (arbitrary) or string character s,p,d,f,g,h,i
+
     -------
+    Examples
 
-    A d-electron in an cubic field splits into states that
-    transform either like E or like T_2. This can be computed
+    A  d-electron  in  an  cubic  field  splits into states that
+    transform  either  like  E or like T_2. This can be computed
     with this function like so:
 
     l_splitter('O', 2) -> Qet({E: 1, T_2: 1})
@@ -1371,7 +1451,8 @@ def l_splitter(group_num_or_label, l):
     An if one were interested in how the states of an f-electron
     split under C_4v symmetry, one could
 
-    l_splitter('C_{4v}', 3) -> Qet({A_2: 1, B_2: 1, B_1: 1, E: 2})
+    l_splitter('C_{4v}',  3)  -> Qet({A_2: 1, B_2: 1, B_1: 1, E:
+    2})
 
     '''
     if isinstance(l, str):
@@ -1411,9 +1492,10 @@ def l_splitter(group_num_or_label, l):
 
 def Bsimple(Bexpr):
     '''
-    Takes a sympy expression, finds the Bnm coefficients in it
-    and if there's only a real or an imaginary part then it
-    returns the expression without the ^r or ^i.
+    Takes   a   sympy   expression,   finds   the  Bnm
+    coefficients  in  it and if there's only a real or
+    an  imaginary  part then it returns the expression
+    without the ^r or ^i.
     '''
     free_symbs = list(Bexpr.free_symbols)
     symb_counter = {}
