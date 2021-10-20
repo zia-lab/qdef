@@ -1,8 +1,19 @@
 #!/usr/bin/env python
 
+######################################################################
+#                                   __     ____                      #
+#                        ____ _____/ /__  / __/                      #
+#                       / __ `/ __  / _ \/ /_                        #
+#                      / /_/ / /_/ /  __/ __/                        #
+#                      \__, /\__,_/\___/_/                           #
+#                        /_/                                         #
+#                                                                    #
+######################################################################
+
+
 import os, re, pickle
 import numpy as np
-from math import ceil 
+from math import ceil
 
 import sympy as sp
 import pandas as pd
@@ -20,58 +31,10 @@ from matplotlib import pyplot as plt
 from IPython.display import display, HTML, Math
 
 from misc import *
+from qdefcore import *
 
 
 module_dir = os.path.dirname(__file__)
-
-# =============================================================== #
-# ===================== Load group theory data ================== #
-
-group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
-group_data = group_dict['group_data']
-metadata = group_dict['metadata']
-vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs.pkl')
-
-# ===================== Load group theory data ================== #
-# =============================================================== #
-
-# =============================================================== #
-# ====================== Load element data ====================== #
-
-name_to_symb = pickle.load(open(os.path.join(module_dir,'data',
-                                            'name_to_symb.pkl'),'rb'))
-name_to_num  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'name_to_num.pkl'),'rb'))
-symb_to_name  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'symb_to_name.pkl'),'rb'))
-symb_to_num  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'symb_to_num.pkl'),'rb'))
-num_to_name  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'num_to_name.pkl'),'rb'))
-num_to_symb  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'num_to_symb.pkl'),'rb'))
-atomicGoodies  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'atomicGoodies.pkl'),'rb'))
-ionization_data  = pickle.load(open(os.path.join(module_dir,'data',
-                                            'ionization_data.pkl'),'rb'))['data']
-
-atom_symbs   = list(symb_to_name.keys())
-atom_names   = list(name_to_num.keys())
-
-nistdf = pd.read_pickle(os.path.join(module_dir,'data',
-                                    'nist_atomic_spectra_database_levels.pkl'))
-spinData = pd.read_pickle(os.path.join(module_dir,'data','spindata.pkl'))
-
-# gives the atomic numbers of the firs three rows of transition
-# metals, the keys correspond to the row of periodic table
-# to which they correspond
-element_groups = {
-'transition metals': {4: list(range(21,31)),
-                5: list(range(39,49)),
-                6: list(range(71,80))}}
-
-# ====================== Load element data ====================== #
-# =============================================================== #
 
 # =============================================================== #
 # =========================== Load others ======================= #
@@ -109,581 +72,6 @@ sp.Ynm.eval = new_eval
 # =======================  Ynm eval tweak ======================= #
 # =============================================================== #
 
-# =============================================================== #
-# =========================== Classes =========================== #
-
-class HartreeFockData():
-    '''
-    Repo of data from the land of Hartree-Fock.
-    '''
-    HFradavg = pickle.load(open(os.path.join(module_dir,'data','HFravgs.pkl'),'rb'))
-    HFsizes = pickle.load(open(os.path.join(module_dir,'data','HFsizes.pkl'),'rb'))
-    ArabicToRoman = dict(zip(range(1,36),[
-                    'I','II','III','IV','V','VI','VII','VIII','IX','X',
-                    'XI',  'XII',  'XIII',  'XIV', 'XV', 'XVI', 'XVII',
-                    'XVIII',      'XIX',     'XX','XXI','XXII','XXIII',
-                    'XXIV', 'XXV','XXVI','XXVII','XXVIII','XXIX','XXX',
-                    'XXXI','XXXII','XXXIII','XXXIV','XXXV']
-                    )
-                    )
-    num_to_symb  = num_to_symb
-    @classmethod
-    def radial_average(cls, element, charge_state, n):
-        '''
-        Returns  the radial average <r^n> for a valence electron for
-        the  given element and charge state (n=0 neutral, n=1 singly
-        ionized, ...) within the limitations of Hartree-Fock.
-
-        The  element  can be given either as its atomic number or by
-        its symbol.
-
-        Data is taken from Fraga's et al Handbook of Atomic Data.
-
-        The unit for the provided radial average is Angstrom^n.
-
-        Provided data has 5 significant figures.
-        '''
-        charge_state = int(charge_state)
-        assert charge_state >= 0, "What odd ion state you speak of?"
-        charge_state = cls.ArabicToRoman[charge_state+1]
-        if isinstance(element, int):
-            element = cls.num_to_symb[element]
-        try:
-            return float(cls.HFradavg['<r^%d>' % n].loc[[element]][charge_state])
-        except:
-            raise ValueError('This radial average is not here.')
-    @classmethod
-    def atom_size(cls, element, charge_state):
-        '''
-        Size of given element with given charge.
-        Given in Angstrom.
-        '''
-        if isinstance(element, int):
-            element = cls.num_to_symb[element]
-        charge_state = cls.ArabicToRoman[charge_state+1]
-        return float(cls.HFsizes.loc[[element]][charge_state])
-
-class Atom():
-    '''
-    From these everything is made up.
-    '''
-    def __init__(self, kernel):
-        '''
-        Object can be initialized either by giving an atomic number,
-        element name, or element symbol.
-        '''
-        if kernel in range(1, 119):
-            self.atomic_number = kernel
-            self.symbol = num_to_symb[kernel]
-            self.name = num_to_name[kernel]
-        elif (kernel in atom_names) or (kernel.lower() in atom_names):
-            self.name = kernel.lower()
-            self.symbol = name_to_symb[self.name]
-            self.atomic_number = name_to_num[self.name]
-        elif kernel in atom_symbs:
-            self.symbol = kernel
-            self.atomic_number = symb_to_num[kernel]
-            self.name = symb_to_name[kernel]
-        else:
-            raise ValueError('to initialize input must be either an atomic' +
-                             ' number, element name, or element symbol')
-        # a dictionary with known ionization energies at different stages
-        if self.symbol in ['Db','Sg','Bh','Hs','Mt','Ds','Rg',
-                           'Cn','Nh','Fl','Mc','Lv','Ts','Og']:
-            self.ionization_energies = []
-        else:
-            self.ionization_energies = ionization_data[self.symbol]
-        # a dataframe with level data as compiled by NIST
-        self.nist_data = nistdf[nistdf['Element'] == self.symbol]
-        # a dataframe with isotopic data
-        self.isotope_data = spinData[spinData['atomic_number'] == self.atomic_number]
-        # additional data
-        # the electronegativity of the free neutral atom
-        self.electronegativity = atomicGoodies["Electronegativity"][self.atomic_number]
-        # a latex string for the electron configuration of the ground state
-        self.electron_configuration = atomicGoodies["Electron Config"][self.atomic_number]
-        # crystal structure of its most common solid form
-        self.common_crystal_structure = atomicGoodies["Crystal Structure"][self.atomic_number]
-        # electron configuration
-        self.electron_configuration_string = atomicGoodies["Electron Config String"][self.atomic_number]
-        # Van der Waals radius
-        self.van_der_waals_radius =  atomicGoodies["Van der Waals radius"][self.atomic_number]
-        # Atomic radius
-        self.atomic_radius = atomicGoodies["Atomic Radius"][self.atomic_number]
-        # Covalent radius
-        self.covalent_radius = atomicGoodies["Covalent Radius"][self.atomic_number]
-        # Block
-        self.block = atomicGoodies["Block"][self.atomic_number]
-        # Period
-        self.period = atomicGoodies["Period"][self.atomic_number]
-        # Series
-        self.series = atomicGoodies["Series"][self.atomic_number]
-        # Group
-        self.group = atomicGoodies["Group"][self.atomic_number]
-
-    def level_diagram(self, charge, min_energy=-np.inf, max_energy=np.inf):
-        '''make a nice plot of the levels of the ion with the given charge'''
-        cmap = plt.cm.RdYlGn
-        datum = self.nist_data[self.nist_data['Charge'] == charge]
-        energy_levels = datum['Level (eV)']
-        configs = datum['Configuration']
-        if charge == 0:
-            fig_name = '%s' % (self.symbol)
-            latex_name = fig_name
-        else:
-            fig_name = '%s +%d' % (self.symbol, charge)
-            latex_name = '{%s}^{+%d}' % (self.symbol, charge)
-        plt.close(fig_name)
-        fig, ax = plt.subplots(figsize=(2, 5), num=fig_name)
-        annot = ax.annotate("", xy=(0, 0), xytext=(-20, 20),
-                            textcoords="offset points",
-                            bbox=dict(boxstyle="round", fc="w"),
-                            arrowprops=dict(arrowstyle="->"))
-        annot.set_visible(False)
-
-        for level_energy in energy_levels:
-            if ((level_energy < max_energy) & (level_energy > min_energy)):
-                ax.plot([0, 1], [level_energy]*2, 'k-', lw=0.5)
-        level_anchors = ax.scatter([0]*len(datum['Level (eV)']),
-                                   datum['Level (eV)'],
-                                   c='k', s=4)
-        ax.axes.xaxis.set_visible(False)
-        plt.ylabel('E / eV')
-        ax.set_title('$%s$' % latex_name)
-        plt.tight_layout()
-
-        def update_annot(ind):
-            pos = level_anchors.get_offsets()[ind["ind"][0]]
-            annot.xy = pos
-            indices = ind["ind"]
-            text = (configs[indices[0]] + '\n' +
-                    ('%.3f eV' % (energy_levels[indices[0]])))
-            annot.set_text(text)
-            annot.get_bbox_patch().set_facecolor('white')
-
-        def hover(event):
-            vis = annot.get_visible()
-            if event.inaxes == ax:
-                cont, ind = level_anchors.contains(event)
-                if cont:
-                    update_annot(ind)
-                    annot.set_visible(True)
-                    fig.canvas.draw_idle()
-                else:
-                    if vis:
-                        annot.set_visible(False)
-                        fig.canvas.draw_idle()
-
-        fig.canvas.mpl_connect("motion_notify_event", hover)
-        plt.show()
-
-    def __repr__(self):
-        return '%s : %s : %d' % (self.name, self.symbol, self.atomic_number)
-
-    def __str__(self):
-        return '%s : %s : %d' % (self.name, self.symbol, self.atomic_number)
-
-class Ion(Atom):
-    '''
-    Same as an Atom, but with the added attribute of charge_state.
-    Also, the spectroscopic data is limited to that ion.
-    '''
-    def __init__(self, element, charge_state):
-        Atom.__init__(self,element)
-        self.charge_state = charge_state
-        self.nist_data = self.nist_data[self.nist_data['Charge'] == self.charge_state]
-        self.nist_data.reset_index(drop=True, inplace=True)
-
-class PeriodicTable():
-    '''
-    It basically instantiates all atoms.
-    '''
-    def __init__(self):
-        self.atoms = {i:Atom(i) for i in range(1,119)}
-
-class Qet():
-    '''
-    A Qet is a dictionary of  keys  and  values.  Keys
-    correspond to tuples of quantum numbers or symbols
-    and the  values  correspond  to  the  accompanying
-    coefficients.
-    Scalars may be added by using an empty tuple as  a
-    key.
-    A qet may be multiplied by a scalar, in which case
-    all the coefficients are multiplied by it.
-    It may also be multiplied by another qet, in which
-    case  quantum   numbers   are   concatenated   and
-    coefficients multiplied accordingly.
-    '''
-    def __init__(self, bits=0):
-        if bits == 0:
-                self.dict = {}
-        elif isinstance(bits, dict):
-                self.dict = {k: v for k, v in bits.items() if v!=0}
-
-    def __add__(self, other):
-        new_dict = dict(self.dict)
-        if other == 0:
-                return self
-        for key, coeff in other.dict.items():
-            if key in new_dict.keys():
-                new_dict[key] += coeff
-            else:
-                new_dict[key] = coeff
-        return Qet(new_dict)
-
-    def vec_in_basis(self, basis):
-        '''
-        Given an ordered basis  return  a  list  with  the
-        coefficients of the qet in that basis.
-        '''
-        coeffs = [0]*len(basis)
-        for key, val in self.dict.items():
-            coeffs[basis.index(key)] = val
-        return coeffs
-
-    def subs(self, subs_dict):
-        '''
-        The substitutions in subs_dict are evaluated on the
-        coeffients of the qet.
-        Equal to valsubs but kept for backwards compatibility.
-        '''
-        new_dict = dict()
-        for key, val in self.dict.items():
-            new_dict[key] = sp.S(val).subs(subs_dict)
-        return Qet(new_dict)
-
-    def valsubs(self, subs_dict):
-        '''
-        The substitutions in subs_dict are evaluated on the
-        coeffients of the qet.
-        '''
-        new_dict = dict()
-        for key, val in self.dict.items():
-            new_dict[key] = sp.S(val).subs(subs_dict)
-        return Qet(new_dict)
-
-    def keysubs(self, subs_dict):
-        '''
-        The substitutions in subs_dict are evaluated on the
-        keys of the qet.
-        It assumes that they keys are already symby symbols.
-        If not, then they are converted to them.
-        '''
-        new_dict = dict()
-        for key, val in self.dict.items():
-            new_dict[sp.Symbol(key).subs(subs_dict)] = sp.S(val)
-        return Qet(new_dict)
-
-    def __mul__(self, multiplier):
-        '''
-        Give a representation of the qet  as  a  Ket  from
-        sympy.physics.quantum, fold_keys  =  True  removes
-        unnecessary parentheses and nice_negatives =  True
-        assumes all numeric  keys  and  presents  negative
-        values with a bar on top.
-        '''
-        if isinstance(multiplier, Qet):
-            new_dict = dict()
-            for k1, v1 in self.dict.items():
-                for k2, v2 in multiplier.dict.items():
-                    k3 = k1 + k2
-                    v3 = v1 * v2
-                    if v3 !=0:
-                        new_dict[k3] = v3
-            return Qet(new_dict)
-        else:
-            new_dict = dict(self.dict)
-            for key, coeff in new_dict.items():
-                new_dict[key] = multiplier*(coeff)
-            return Qet(new_dict)
-
-    def __rmul__(self, multiplier):
-        '''this is required to enable multiplication
-        from the left and from the right'''
-        new_dict = dict()
-        for key, coeff in self.dict.items():
-            new_dict[key] = multiplier*(coeff)
-        return Qet(new_dict)
-
-    def basis(self):
-        '''return a list with all the keys in the qet'''
-        return list(self.dict.keys())
-
-    def dual(self):
-        '''conjugate all the coefficients'''
-        new_dict = dict(self.dict)
-        for key, coeff in new_dict.items():
-            new_dict[key] = sp.conjugate(coeff)
-        return Qet(new_dict)
-
-    def as_operator(self, opfun):
-        OP = sp.S(0)
-        for key, val in self.dict.items():
-                OP += sp.S(val) * opfun(*key)
-        return OP
-
-    def as_ket(self, fold_keys=False, nice_negatives=False):
-        '''
-        Give a representation of the qet  as  a  Ket  from
-        sympy.physics.quantum, fold_keys  =  True  removes
-        unnecessary parentheses and nice_negatives =  True
-        assumes all numeric  keys  and  presents  negative
-        values with a bar on top.
-        '''
-        sympyRep = sp.S(0)
-        for key, coeff in self.dict.items():
-            if key == ():
-                sympyRep += coeff
-            else:
-                if fold_keys:
-                    if nice_negatives:
-                        key = tuple(sp.latex(k) if k>=0 else (r'\bar{%s}' % sp.latex(-k)) for k in key)
-                    sympyRep += coeff*Ket(*key)
-                else:
-                    sympyRep += coeff*Ket(key)
-        return sympyRep
-
-    def as_bra(self):
-        '''
-        Give a representation of the qet  as  a  Bra  from
-        sympy.physics.quantum.
-        '''
-        sympyRep = sp.S(0)
-        for key, coeff in self.dict.items():
-            if key == ():
-                sympyRep += coeff
-            else:
-                sympyRep += coeff*Bra(*key)
-        return sympyRep
-
-    def as_braket(self):
-        '''
-        Give a representation of the qet as a Bra*Ket. The
-        keys in the dict for the ket are assumed to  split
-        first half for the bra, and other second half  for
-        the ket.
-        '''
-        sympyRep = sp.S(0)
-        for key, coeff in self.dict.items():
-            l = int(len(key)/2)
-            if key == ():
-                sympyRep += coeff
-            else:
-                sympyRep += coeff*(Bra(*key[:l])*Ket(*key[l:]))
-        return sympyRep
-
-    def as_symbol_sum(self):
-        '''
-        Take the keys multiply them by their corresponding
-        coefficients,  add  them  all  up,  and return the
-        resulting sympy expression.
-        '''
-        tot = sp.S(0)
-        for k, v in self.dict.items():
-            tot += v*k
-        return tot
-
-    def as_c_number_with_fun(self):
-        '''
-        This method can be used to apply a function  to  a
-        qet.  The  provided  function  f  must   take   as
-        arguments a single pair  of  qnum  and  coeff  and
-        return a dictionary or a (qnum, coeff) tuple.
-        '''
-        sympyRep = sp.S(0)
-        for key, op_and_coeff in self.dict.items():
-            ops_and_coeffs = list(zip(op_and_coeff[::2],op_and_coeff[1::2]))
-            for op, coeff in ops_and_coeffs:
-                if key == ():
-                    sympyRep += coeff
-                else:
-                    sympyRep += coeff*op(*key)
-        return sympyRep
-
-    def apply(self,f):
-        '''
-        This method can be used to apply a function  to  a
-        qet the provided function f must take as arguments
-        a single pair of  qnum  and  coeff  and  return  a
-        dictionary or a (qnum, coeff) tuple
-        '''
-        new_dict = dict()
-        for key, coeff in self.dict.items():
-            appfun = f(key,coeff)
-            if isinstance(appfun, dict):
-                for key2, coeff2 in appfun.items():
-                    if coeff2 != 0:
-                        if key2 not in new_dict.keys():
-                            new_dict[key2] = coeff2
-                        else:
-                            new_dict[key2] += coeff2
-            else:
-                new_key, new_coeff = appfun
-                if new_coeff !=0:
-                    if new_key not in new_dict.keys():
-                        new_dict[new_key] = (new_coeff)
-                    else:
-                        new_dict[new_key] += (new_coeff)
-        return Qet(new_dict)
-
-    def norm(self):
-        '''compute the norm of the qet'''
-        norm2 = 0
-        for key, coeff in self.dict.items():
-            norm2 += abs(coeff)**2
-        return sp.sqrt(norm2)
-
-    def symmetrize(self):
-        '''
-        Use  if  the  keys  of the kets are tuples and one
-        wants  to  make equal keys that are the reverse of
-        one another, i.e.
-
-        {(1,0):a, (0,1):b} -> {(1,0):a+b}
-        '''
-        new_dict = dict()
-        for key, coeff in self.dict.items():
-            rkey = key[::-1]
-            if rkey in new_dict.keys():
-                new_dict[rkey] += coeff
-            else:
-                if key in new_dict.keys():
-                    new_dict[key] += coeff
-                else:
-                    new_dict[key] = coeff
-        return Qet(new_dict)
-
-    def __str__(self):
-        return str(self.dict)
-
-    def __repr__(self):
-        return 'Qet(%s)' % str(self.dict)
-
-class ProductTable():
-    '''
-    This class used to hold the data of a direct product of two
-    irreducible representations turned  into a  direct  sum  of
-    irreducible representations.
-    '''
-    def __init__(self, odict, irrep_labels, grp_label):
-        self.odict = odict
-        self.irrep_labels = irrep_labels
-        self.grp_label = grp_label
-    def pretty_parse(self):
-        '''creates a nice latex representation of the product table'''
-        irep_symbols = self.irrep_labels
-        list_o_lists = [[self.odict[(ir0,ir1)] for ir0 in self.irrep_labels] for ir1 in self.irrep_labels]
-        rows = [[sp.Symbol(self.grp_label)]+irep_symbols]
-        for idx, arow in enumerate(list_o_lists):
-            row = [irep_symbols[idx]]
-            row.extend(arow)
-            rows.append(row)
-        return fmt_table(rows).replace('+',r'{\oplus}')
-
-class CrystalGroup():
-    '''
-    Class for a point symmetry group.
-    '''
-    def __init__(self, group_data_dict):
-        self.index = group_data_dict['index']
-        self.label = group_data_dict['group label']
-        self.classes = group_data_dict['classes']
-        self.irrep_labels = group_data_dict['irrep labels']
-        self.character_table = group_data_dict['character table']
-        self.character_table_inverse = sp.simplify(group_data_dict['character table'].T**(-1))
-        self.class_labels = group_data_dict['class labels']
-        self.irrep_matrices = group_data_dict['irrep matrices']
-        self.generators = group_data_dict['generators']
-        self.multiplication_table = group_data_dict['multiplication table']
-        self.euler_angles = group_data_dict['euler angles']
-        self.group_operations = group_data_dict['group operations']
-        self.order = len(self.group_operations)
-        self.operations_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
-        self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
-        self.direct_product_table()
-        self.component_labels = self.get_component_labels()
-
-    def get_component_labels(self):
-        '''
-        Generate the labels for the components of all the group
-        irreducible representations.
-        Labeling is done based on the size of the corresponding
-        irreducible representation.
-        1D -> a_{irrep label}
-        2D -> u_{irrep label}, v_{irrep label}
-        3D -> x_{irrep label}, y_{irrep label}, z_{irrep label}
-        '''
-        irrep_dims = self.irrep_dims
-        components = {}
-        for irrep_label, irrep_dim in irrep_dims.items():
-            str_label = str(irrep_label)
-            c_labels = []
-            if irrep_dim == 1:
-                c_labels = [sp.Symbol('a_{%s}' % str_label)]
-            elif irrep_dim == 2:
-                c_labels = [sp.Symbol('u_{%s}' % str_label),
-                            sp.Symbol('v_{%s}' % str_label)]
-            elif irrep_dim == 3:
-                c_labels = [sp.Symbol('x_{%s}' % str_label),
-                            sp.Symbol('y_{%s}' % str_label),
-                            sp.Symbol('z_{%s}' % str_label)]
-            assert len(c_labels) != 0
-            components[irrep_label] = c_labels
-        return components
-
-    def direct_product(self, ir0, ir1):
-        '''
-        Given the label for a cpg and  labels for  two
-        of its irreducible  representations, determine
-        the direct sum decomposition of their product.
-        This product  is  returned  as a qet with keys
-        corresponding  to  the irreps and values equal
-        to the integer coefficients.
-        '''
-        # grab group classes, irrep names, and character table
-        group_classes = self.classes
-        group_irreps = self.irrep_labels
-        group_chartable = self.character_table
-        assert ir0 in group_irreps, 'irrep not in %s' % str(group_irreps)
-        assert ir1 in group_irreps, 'irrep not in %s' % str(group_irreps)
-        chars_0, chars_1 = [group_chartable.row(group_irreps.index(ir)) for ir in [ir0, ir1]]
-        chars = sp.Matrix([char0*char1 for char0, char1 in zip(chars_0, chars_1)])
-        partition = (self.character_table_inverse*chars)
-        qet = Qet()
-        for element, ir in zip(partition, group_irreps):
-            el = int(sp.N(element,1,chop=True))
-            qet = qet + Qet({ir:el})
-        return qet.basis()
-
-    def direct_product_table(self):
-        '''
-        This creates the complete set of  binary
-        products of irreducible  representations
-        for the given group.
-        The result is saved as  an attribute  in
-        the group.
-        '''
-        if hasattr(self, 'product_table'):
-            return self.product_table
-        group_classes = self.classes
-        group_irreps = self.irrep_labels
-        product_table = OrderedDict()
-        for ir0 in group_irreps:
-            for ir1 in group_irreps:
-                if (ir1,ir0) in product_table.keys():
-                    product_table[(ir0,ir1)] = product_table[(ir1,ir0)]
-                else:
-                    product_table[(ir0,ir1)] = self.direct_product(ir0, ir1)#.as_symbol_sum()
-        self.product_table = ProductTable(product_table, group_irreps, self.label)
-        return self.product_table
-
-    def __str__(self):
-        return self.label
-
-    def __repr__(self):
-        return self.label
-
 # this is an ugly way of loading this
 # but it's necessary given that having saved them
 # as a pickle with included Qets fails to load given
@@ -695,132 +83,6 @@ crystal_fields_raw = morrison['crystal_fields_raw']
 crystal_fields = {}
 for k in crystal_fields_raw:
     crystal_fields[k] = [Qet(q) for q in crystal_fields_raw[k]]
-
-class CPGroups():
-    '''
-    Class to hold all crystallographic point groups.
-    '''
-    def __init__(self, groups):
-        self.all_group_labels = [
-            'C_{1}', 'C_{i}', 'C_{2}', 'C_{s}',
-            'C_{2h}', 'D_{2}', 'C_{2v}', 'D_{2h}',
-            'C_{4}', 'S_{4}', 'C_{4h}', 'D_{4}',
-            'C_{4v}', 'D_{2d}', 'D_{4h}', 'C_{3}',
-            'S_{6}', 'D_{3}', 'C_{3v}', 'D_{3d}',
-            'C_{6}', 'C_{3h}', 'C_{6h}', 'D_{6}',
-            'C_{6v}', 'D_{3h}', 'D_{6h}', 'T',
-            'T_{h}', 'O', 'T_{d}', 'O_{h}']
-        self.groups = {k: CrystalGroup(v) for k, v in groups.items()}
-        self.metadata = metadata
-    def get_group_by_label(self, label):
-        if '{' not in label:
-            if len(label) > 1:
-                label = '%s_{%s}' % label.split('_')
-        group_idx = 1 + self.all_group_labels.index(label)
-        return self.groups[group_idx]
-
-class CrystalField():
-    def __init__(self, group_num):
-        self.group_num = group_num
-        # In the groups with the largest symmetry
-        # the number of free parameters can be reduced
-        # and this gives a set of possible simplifications.
-        # This list contains all the possible parametric forms of the crystal field.
-        self.cflist = crystal_fields[group_num]
-        self.simplified_ham = self.to_expression()
-    def matrix_rep_symb(self, l):
-        '''
-        Calculates   the  matrix  representations  of  the
-        crystal  field operator in the subspace of angular
-        momentum l.
-
-        The ordered basis for this representation is
-
-        :math:`\{|l,-l\rangle,|l,-1+1\rangle,\ldots,\l,l-1\rangle,|l,l\rangle\}`
-
-        so  that  the  top  left  element in the resulting
-        matrices correspond to
-
-        :math:`\langle l, -l | V_{CF} | l, -l\rangle`,
-
-        and the bottom right element to
-
-        :math:`\langle l, +l | V_{CF} | l, +l\rangle`.
-        '''
-        if isinstance(l,str):
-            l = {'s':0,'p':1,'d':2,'f':3,'g':4}[l]
-        self.symb_matrix_reps = []
-        for one_cf in self.cflist:
-            mat = []
-            mls = list(range(-l,l+1))
-            for m1 in mls:
-                row = []
-                for m2 in mls:
-                    total = sum([sp.sqrt(sp.S(4)*sp.pi/sp.S(2*k[0]+sp.S(1)))* \
-                    threeHarmonicIntegral(l,m1,k[0],k[1],l,m2)*v \
-                     for (k,v) in one_cf.dict.items()])
-                    row.append(total)
-                mat.append(row)
-            self.symb_matrix_reps.append(sp.Matrix(mat))
-        if len(self.symb_matrix_reps) == 2:
-            if self.symb_matrix_reps[0] == self.symb_matrix_reps[1]:
-                self.symb_matrix_reps = [self.symb_matrix_reps[0]]
-        return self.symb_matrix_reps
-    def to_expression(self):
-        return [Bsimple(sum([sp.Symbol('C_{%d,%d}' % k) * v for k,v \
-                    in field.dict.items()])) for field in self.cflist]
-    def splitter(self,l):
-        try:
-            reps = self.symb_matrix_reps
-        except AttributeError:
-            self.matrix_rep_symb(l)
-            reps = self.symb_matrix_reps
-        splits = []
-        for rep in reps:
-            eigen_stuff = rep.eigenvects()
-            splits.append(eigen_stuff)
-        return splits
-
-class Bnm():
-    '''
-    A class for Bnm crystal field parameters.
-
-    Instantiated  with  a  dictionary that must contain at least
-    the following keys:
-
-    host            (str) e.g. 'MgO'
-    site            (str) e.g. 'Mg'
-    point_sym_group (str) e.g. 'C_{3v}'
-    ion         (str,int) e.g. ('Cr',3)
-    params         (dict) e.g. {(2,0): 1.34e3, (4,2): -2.34e3}
-    unit            (str) e.g. 'cm^{-1}'
-    sources        (list) e.g. ['Morrison 1982, Crystal F ...', ...]
-    comments       (list) e.g. ['This is very approximate.', 'Yup.']
-    experimental   (bool) e.g. False
-
-    Ideally  params should be accompanied by params_uncertainty,
-    a  dictionary with the same keys than params but with values
-    equal to corresponding uncertainties.
-    '''
-    def __init__(self, Bnm_params):
-        self.min_keys = set(['host','site','point_sym_group','params',
-                             'unit','sources', 'ion', 'is_experimental'])
-        self.energy_units = ['cm^{-1}','eV','J']
-        self.init_dict = Bnm_params
-        assert self.min_keys <= set(params.keys()), \
-            'provide at least: %s' % str(self.min_keys)
-        for attr_name in Bnm_params:
-            setattr(self, attr_name, Bnm_params[attr_name])
-        assert self.unit in self.energy_units, \
-                "unit must be one of %s" % str(self.energy_units)
-    def __str__(self):
-        return '%s\n%s^%d+:%s\n%s' % (self.point_sym_group, self.ion[0],
-                                    self.ion[1], self.host, str(self.params))
-    def __repr__(self):
-        return str(self.init_dict)
-
-# =========================== Classes =========================== #
-# =============================================================== #
 
 ###########################################################################
 #################### Calculation of Surface Harmonics #####################
@@ -929,19 +191,37 @@ def real_or_imagined(qet):
     else:
         return valences[0]
 
-def RYlm(l, m, alpha, beta, gamma, detRot):
+def RYlm(l, m, op_params):
     '''
-    This  would  be  rotateHarmonic in the Mathematica
-    code.   It  is  used  in  the  projection  of  the
-    spherical  harmonics  to  create  symmetry adapted
-    wavefunctions.
+    Given  a group operation (as parametrized with the
+    iterable  op_params which contains Euler angles α,
+    β,  γ  and  the determinant of the operation) this
+    function   returns   the  effect  that  that  this
+    operation has on the sperical harmonic Y_lm.
+
+    The  result  is  a  qet  whose  keys correspond to
+    values   of   (l,m)   and  whose  values  are  the
+    corresponding coefficients. Keys not present imply
+    that the corresponding coefficient is zero.
+
+    --- Example ---
+
+    RYlm(1,0,(pi, pi/2, pi, 1) ->
+
+    Qet({(2, -2): 1/4,
+         (2, -1): 1/2,
+         (2, 0): sqrt(6)/4,
+         (2, 1): -1/2,
+         (2, 2): 1/4})
+
     '''
+    alpha, beta, gamma, detOp = op_params
     Rf = Qet()
     for nn in range(-l,l+1):
         wigD = Wigner_D(l, m, nn, alpha, beta, gamma)
         if wigD != 0:
-          Rf = Rf + Qet({(l,nn): wigD})
-    return (sp.S(detRot)**l) * Rf
+            Rf = Rf + Qet({(l,nn): wigD})
+    return (sp.S(detOp)**l) * Rf
 
 def flatten_matrix(mah):
     '''
@@ -950,7 +230,7 @@ def flatten_matrix(mah):
     '''
     return [item for sublist in mah.tolist() for item in sublist]
 
-def SymmetryAdaptedWF(group, l, m):
+def trivial_sym_adapted_WF(group, l, m):
     '''
     This  returns  the  proyection  of  Y_l^m  on  the
     trivial  irreducible  representation  of the given
@@ -958,15 +238,13 @@ def SymmetryAdaptedWF(group, l, m):
     '''
     if isinstance(group,str):
       group = CPGs.get_group_by_label(group)
-    degree = 1
     # Order of the group which  is  equal  to
     # the number of the elements
-    order = len(group.group_operations)
+    order = group.order
     SALC = Qet()
     # This sum is over all elements of the group
-    for group_params in group.euler_angles.values():
-        alpha, beta, gamma, detRot = group_params
-        SALC = SALC + RYlm(l,m,alpha,beta,gamma,detRot)
+    for op_params in group.euler_angles.values():
+        SALC = SALC + RYlm(l,m,op_params)
     SALC = (sp.S(1)/order)*SALC
     SALC = SALC.apply(lambda x,y : (x, sp.simplify(y)))
     return SALC
@@ -981,11 +259,12 @@ def linearly_independent(vecs):
     good_ones = matrix.rref()[-1]
     return good_ones, [vecs[idx] for idx in good_ones]
 
-def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True):
+def trivial_irrep_basis_from_Ylm(group, l, normalize=True, verbose=False, sympathize=True):
     '''
     For  a  given  group  and  a  given  value of l, this returns a set of
     linearly  independent  symmetry adapted functions which are also real-
-    valued.
+    valued  and  which transform as the trivial irreducible representation
+    of the group.
 
     If  the set that is found initially contains combinations that are not
     purely  imaginary  or pure real, then the assumption is made that this
@@ -995,6 +274,9 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
 
     The  output is a list of dictionaries whose keys are (l,m) tuples, and
     whose values are the corresponding coefficients.
+
+    Essentially  this a special case of the irrep_basis_from_Ylm function,
+    with additional work added to ensure that the result is real-valued.
     '''
     # apply the projection operator on the trivial irreducible rep
     # and collect the resulting basis functions
@@ -1003,7 +285,7 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
     WFs = []
     complete_basis = []
     for m in range(-l,l+1):
-        aWF = SymmetryAdaptedWF(group, l, m)
+        aWF = trivial_sym_adapted_WF(group, l, m)
         if len(aWF.dict)>0:
             WFs.append(aWF)
             complete_basis.extend(aWF.basis())
@@ -1082,7 +364,7 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
     vecs = [WF.vec_in_basis(complete_basis) for WF in realWFs]
     lin_indep_idx, lin_indep_vecs = linearly_independent(vecs)
     if len(lin_indep_idx) != len(WFs):
-        raise Excepction("FAILED: +- mixture was not faithful")
+        raise Exception("FAILED: +- mixture was not faithful")
     # make the linearly independent vectors orthonormal
     lin_indep_vecs = list(map(list,sp.GramSchmidt([sp.Matrix(vec) for vec in lin_indep_vecs], normalize)))
     finalWFs = []
@@ -1100,6 +382,219 @@ def SymmetryAdaptedWFs(group, l, normalize=True, verbose=False, sympathize=True)
         qdict = {k:v for k,v in zip(complete_basis, vec)}
         finalWFs.append(Qet(qdict))
     return finalWFs
+
+def GramSchmidtAlt(vs, orthonormal=True):
+    def projection(u,v):
+        return (sp.S(u.dot(v,hermitian=True))/u.dot(u,hermitian=True))*u
+    us = {}
+    us[0] = vs[0]
+    for k in range(1,len(vs)):
+        vk = vs[k]
+        projected_bit = sp.Matrix([0]*len(vs[0]))
+        for j in range(k):
+            projected_bit += sp.simplify(projection(us[j],vk))
+        us[k] = vs[k] - projected_bit
+    if orthonormal:
+        es = [sp.simplify(us[k]/sp.sqrt(sp.S(us[k].dot(sp.conjugate(us[k]))))) for k in us]
+        return es
+    else:
+        return [sp.simplify(us[k]) for k in range(len(us))]
+
+def basis_check(group_label, irrep_symbol, qets, full_output = False):
+    '''
+    This   function   checks  if  a  list  of  qets  (which  are
+    interpreted  as  superpositions  of Ylms for fixed l), are a
+    basis  for  the  given representation. This is done by going
+    through  all  the  operations  of  the  group,  applying the
+    corresponding rotations to all of the components of the qets
+    and  seeing  if  the  result  matches  what  is  obtained by
+    directly    using    the    matrix   for   the   irreducible
+    representation.
+    '''
+    group = CPGs.get_group_by_label(group_label)
+    if not isinstance(irrep_symbol, sp.Symbol):
+        irrep_symbol = sp.Symbol(irrep_symbol)
+    if len(qets) != group.irrep_dims[irrep_symbol]:
+        print("A basis needs to have as many entries as the size of the irrep!")
+    the_one_ways = []
+    irrep_way = []
+    irrep_matrices = group.irrep_matrices[irrep_symbol]
+    irrep_dim = group.irrep_dims[irrep_symbol]
+    all_comparisons = {}
+    all_checks = {}
+    for R, DR in irrep_matrices.items():
+        for idx, qet in enumerate(qets):
+            direct_way = sum([v*RYlm(*k,group.euler_angles[R]) for k,v in qet.dict.items()],Qet())
+            irrep_way = sum([DR[k,idx]*qets[k] for k in range(irrep_dim)],Qet())
+        checks = []
+        if set(irrep_way.dict.keys()) == set(direct_way.dict.keys()):
+            for key in set(irrep_way.dict.keys()):
+                v1 = sp.N(irrep_way.dict[key],chop=True)
+                v2 = sp.N(direct_way.dict[key],chop=True)
+                checks.append(sp.N(v1-v2,chop=True) == 0)
+        else:
+            check = (False)
+        if sum(checks) == len(checks):
+            check = True
+        else:
+            check = False
+        all_comparisons[R] = (check,direct_way, irrep_way)
+        all_checks[R] = check
+    if sum(all_checks.values()) == len(all_checks):
+        all_good = True
+    else:
+        all_good = False
+    if full_output:
+        return all_comparisons
+    else:
+        return all_good
+
+def symmetry_adapted_basis(group_label, lmax, verbose=False):
+    '''
+    This function takes a  label  for a crystallographic point group and a
+    maximum  value for l, and it constructs the symmetry adapted bases for
+    all  of the irreducible representations of the group by taking the Ylm
+    as the generating functions.
+
+    The  result  is  a dictionary whose keys are symbols for the different
+    irreducible   representations  of  the  group  and  whose  values  are
+    dictionaries  whose keys are values of l and whose values are lists of
+    lists  of  Qets  (in  chunks  of  length  equal  to  the  size  of the
+    correspnding  irrep)  that represent the linear combinations that form
+    bases  that  transform  according  to  the irreducible representation.
+    These   Qets   (which  represent  linear  combinations  of  Ylms)  are
+    orthonormal.
+
+    An  empty list means that the corresponding irreducible representation
+    is not contained in the subspace for the corresponding value of l.
+
+    --- Example ---
+    symmetry_adapted_basis('O', 3) ->
+
+    {A_1: {0: [[Qet({(0, 0): 1})]],
+           1: [],
+           2: [],
+           3: []},
+     A_2: {0: [],
+           1: [],
+           2: [],
+           3: [[Qet({(3, -2): sqrt(2)/2,
+                     (3,  2): -sqrt(2)/2})]]},
+     E: {0: [],
+         1: [],
+         2: [[Qet({(2,  0): 1}),
+              Qet({(2, -2): sqrt(2)/2,
+                   (2,  2): sqrt(2)/2})]],
+         3: []},
+     T_1: {0: [],
+           1: [[Qet({(1, -1): sqrt(2)/2,
+                      (1, 1): -sqrt(2)/2}),
+                Qet({(1,  0): I}),
+                Qet({(1, -1): sqrt(2)*I/2,
+                     (1,  1): sqrt(2)*I/2})]],
+           2: [],
+           3: [[Qet({(3, -3): sqrt(5)/4,
+                     (3, -1): sqrt(3)/4,
+                     (3,  1): -sqrt(3)/4,
+                     (3,  3): -sqrt(5)/4}),
+                Qet({(3,  0): -I}),
+                Qet({(3, -3): -sqrt(5)*I/4,
+                     (3, -1): sqrt(3)*I/4,
+                     (3,  1): sqrt(3)*I/4,
+                     (3,  3): -sqrt(5)*I/4})]]},
+     T_2: {0: [],
+           1: [],
+           2: [[Qet({(2, -2): sqrt(2)/2,
+                     (2,  2): -sqrt(2)/2}),
+                Qet({(2, -1): sqrt(2)/2,
+                     (2,  1): -sqrt(2)/2}),
+                Qet({(2, -1): sqrt(2)*I/2,
+                     (2,  1): sqrt(2)*I/2})]],
+           3: [[Qet({(3, -2): -sqrt(2)/2,
+                     (3,  2): -sqrt(2)/2}),
+                Qet({(3, -3): sqrt(3)/4,
+                     (3, -1): sqrt(5)/4,
+                     (3,  1): sqrt(5)/4,
+                     (3,  3): sqrt(3)/4}),
+                Qet({(3, -3): -sqrt(3)*I/4,
+                     (3, -1): sqrt(5)*I/4,
+                     (3,  1): -sqrt(5)*I/4,
+                     (3,  3): sqrt(3)*I/4})]]}}
+    '''
+    # The GramSchmidt routine from sympy fails in an odd case,
+    # because of this I had to replace it with a custom version.
+    GramSchmidtFun = GramSchmidtAlt
+    # GramSchmidtFun = sp.GramSchmidt
+    group = CPGs.get_group_by_label(group_label)
+    group_irreps = group.irrep_labels
+    symmetry_basis = {}
+    for group_irrep in group_irreps:
+        if verbose:
+            print(str(group_irrep))
+        irrep_dim = group.irrep_dims[group_irrep]
+        symmetry_basis[group_irrep] = {}
+        irrep_matrices = group.irrep_matrices[group_irrep]
+        for l in range(lmax+1):
+            full_basis = [(l,m) for m in range(-l,l+1)]
+            all_phis = {}
+            for m in range(-l,l+1):
+                phis = {}
+                # for a fixed row t,
+                for t in range(irrep_dim):
+                    # collect of of the sums by adding over columns
+                    phi = Qet({})
+                    for s in range(irrep_dim):
+                        for R, DR in irrep_matrices.items():
+                            dr = sp.conjugate(DR[t,s])
+                            op_params = group.euler_angles[R]
+                            if dr != 0:
+                                phi = phi + dr*RYlm(l,m,op_params)
+                        phis[(t,s)] = (sp.S(irrep_dim)/group.order)*phi
+                all_phis[m] = phis
+            # Take the qets and find the coefficients in the basis full_basis
+            # this is necessary to evaluate linear independence, and useful
+            # for applying the Gram-Schmidt orthonormalization process.
+            coord_vecs = []
+            #    |     | s1
+            #    | t1  | s2
+            # m1 |
+            #    |     | s1
+            #    | t2  | s2
+            for m in range(-l,l+1):
+                for s in range(irrep_dim):
+                    for t in range(irrep_dim):
+                        coord_vecs.append(all_phis[m][(t,s)].vec_in_basis(full_basis))
+            if verbose:
+                print("Constructing a big matrix with coordinates in standard basis....")
+            bigmatrix = sp.Matrix(coord_vecs)
+            num_lin_indep_rows = (bigmatrix.rank())
+            if verbose:
+                print("There are %d linearly independent entries..." % (num_lin_indep_rows))
+                print("Collecting that many, and in groups of %d, from the original set..." % irrep_dim)
+            total_indep_rows = 0
+            good_rows = []
+            assert (bigmatrix.rows % irrep_dim) == 0, "No. of indep entries should divide the dim of the irrep."
+            for i in range(bigmatrix.rows // irrep_dim):
+                rows = coord_vecs[i*irrep_dim:i*irrep_dim+irrep_dim]
+                if sp.Matrix(rows).rank() == irrep_dim:
+                    good_rows.append(rows)
+                    total_indep_rows += irrep_dim
+                if total_indep_rows == num_lin_indep_rows:
+                    break
+            if verbose:
+                print("Only %d rows were necessary." % len(good_rows))
+                print("Orthonormalizing ...")
+            # convert the coefficient vectors back to qets
+            all_normal_qets = []
+            for rows in good_rows:
+                # normalized = list(map(list,sp.GramSchmidt([sp.Matrix(rows).row(i) for i in range(sp.Matrix(rows).rows)],orthonormal=True)))
+                normalized = list(map(list, GramSchmidtFun([sp.Matrix(row) for row in rows],orthonormal=True)))
+                normal_qets = [Qet({k: v for k,v in zip(full_basis,normalized[i]) if v!=0}) for i in range(len(normalized))]
+                all_normal_qets.append(normal_qets)
+            if verbose:
+                print("Finished!")
+            symmetry_basis[group_irrep][l] = all_normal_qets
+    return symmetry_basis
 
 generic_cf = Qet({(k,q):(sp.Symbol('B_{%d,%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d,%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
 
@@ -1372,6 +867,13 @@ def mbasis(l):
     '''
     return sp.Matrix([[sp.Symbol('|%d,%d\\rangle' % (l,ml)) for ml in range(-l,l+1)]])
 
+def lmbasis(lmax):
+    '''
+    Return a dictionary whose keys correspond to (l,m) up till l=lmax
+    and whose values are coordinate vectors corresponding to them.
+    '''
+
+
 def fmt_table(data, center_data=False, add_row_nums=False):
     '''Create a LaTeX table from a given list of lists'''
     buf='''
@@ -1424,8 +926,8 @@ def l_splitter(group_num_or_label, l):
     rotation group as represented by the set of Y_{l,m}.
 
     More simply stated it returns how states that transform like
-    an  l=2  would split into states that would transform as the
-    irreducible representations of the given group.
+    a  given  l  would split into states that would transform as
+    the irreducible representations of the given group.
 
     The   function  returns  a  Qet  whose  keys  correspond  to
     irreducible  representation  symbols  of the given group and
@@ -1473,8 +975,8 @@ def l_splitter(group_num_or_label, l):
     # the matrix that represents it
     for group_class in group.classes:
         group_op = group.classes[group_class][0]
-        _, _, _, detRot = group.euler_angles[group_op]
-        rot_matrix = group.operations_matrices[group_op]*detRot
+        _, _, _, detOp = group.euler_angles[group_op]
+        rot_matrix = group.operations_matrices[group_op]*detOp
         cos_eta = (rot_matrix.trace()-1)/sp.S(2)
         eta = sp.acos(cos_eta)
         if sp.N(eta,chop=True) == 0:
@@ -1517,28 +1019,6 @@ def Bsimple(Bexpr):
             simpler_reps[real] = only
             simpler_reps[imag] = only
     return Bexpr.subs(simpler_reps, simultaneous=True)
-
-def orthogonal_matrix(euler_params):
-    '''
-    For a given symmetry operation as parametrized by Euler angles
-    α, β, γ, and by its  determinant  det (±1).  The corresponding
-    orthogonal matrix is returned.
-    '''
-    α, β, γ, det = euler_params
-    row_0 = [-sp.sin(α)*sp.sin(γ) + sp.cos(α)*sp.cos(β)*sp.cos(γ),
-             -sp.sin(α)*sp.cos(γ) - sp.sin(γ)*sp.cos(α)*sp.cos(β),
-              sp.sin(β)*sp.cos(α)]
-    row_1 = [sp.sin(α)*sp.cos(β)*sp.cos(γ) + sp.sin(γ)*sp.cos(α),
-            -sp.sin(α)*sp.sin(γ)*sp.cos(β) + sp.cos(α)*sp.cos(γ),
-            sp.sin(α)*sp.sin(β)]
-    row_2 = [-sp.sin(β)*sp.cos(γ),
-             sp.sin(β)*sp.sin(γ),
-             sp.cos(β)]
-    mat = det*sp.Matrix([row_0,row_1,row_2])
-    return mat
-
-def Yrot(l,m,theta,phi):
-    return RYlm(l, m, alpha, beta, gamma, detRot)
 
 regen_fname = os.path.join(module_dir,'data','CPGs.pkl')
 crystal_fields_fname = os.path.join(module_dir,'data','CPGs.pkl')
