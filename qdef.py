@@ -204,15 +204,15 @@ def RYlm(l, m, op_params):
     corresponding coefficients. Keys not present imply
     that the corresponding coefficient is zero.
 
-    --- Example ---
+    Examples
+    --------
 
-    RYlm(1,0,(pi, pi/2, pi, 1) ->
-
-    Qet({(2, -2): 1/4,
-         (2, -1): 1/2,
-         (2, 0): sqrt(6)/4,
-         (2, 1): -1/2,
-         (2, 2): 1/4})
+    >>> print(RYlm(1,0,(pi, pi/2, pi, 1))
+        Qet({(2, -2): 1/4,
+             (2, -1): 1/2,
+             (2, 0): sqrt(6)/4,
+             (2, 1): -1/2,
+             (2, 2): 1/4})
 
     '''
     alpha, beta, gamma, detOp = op_params
@@ -465,12 +465,30 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
     These   Qets   (which  represent  linear  combinations  of  Ylms)  are
     orthonormal.
 
+    The  ordering  of  the components in the resulting lists, matches with
+    the  ordering  implied by the irreducible representation matrices, and
+    that too matches with the labels included in group.component_labels.
+
     An  empty list means that the corresponding irreducible representation
     is not contained in the subspace for the corresponding value of l.
 
-    --- Example ---
-    symmetry_adapted_basis('O', 3) ->
+    Parameters
+    ----------
 
+    group_label : str
+                One of of CPGs.all_group_labels
+    lmax        : int
+                Maximum l to which the bases are computed.
+
+
+    Returns
+    -------
+    symmetry_basis : dict{sp.Symbol : dict{int : list of Qet}}
+
+    Example
+    -------
+
+    >>> print(symmetry_adapted_basis('O', 3))
     {A_1: {0: [[Qet({(0, 0): 1})]],
            1: [],
            2: [],
@@ -615,7 +633,8 @@ def compute_crystal_field(group_num):
         print("Too little symmetry, returning empty list.")
         return []
     if group_num <=27:
-        cf = [generic_cf.subs(morrison['special_reps'][group_num]).subs({k:0 for k,v in full_params[group_num].items() if not v})]
+        cf = [generic_cf.subs(morrison['special_reps'][group_num]).subs({k:0 \
+                        for k,v in full_params[group_num].items() if not v})]
     elif group_num == 28:
         cf_p = Qet({
                  (3,2): sp.Symbol('B_{3,2}^r'),
@@ -666,6 +685,199 @@ def compute_crystal_field(group_num):
 
 #################### Calculation of Surface Harmonics #####################
 ###########################################################################
+
+###########################################################################
+####################### Irreducible basis transforms ######################
+
+def irrepqet_to_lmqet(group_label, irrep_qet, l, returnbasis=False):
+    '''
+    This  function  take  a  label  for a crystallographic point
+    group  and  a  qet  written in an irreducible representation
+    basis,  understood  to  originate from the given value of l,
+    and  it  returns  the  representation  in the standard (l,m)
+    basis.
+
+    Parameters
+    ----------
+
+    group_label : str
+                A  label for crystallographic point group, must be
+                one of CGPs.all_group_labels
+    irrep_qet   : Qet
+                A  Qet  whose  keys  are  assumed labels for irrep
+                components    and   whose   values   are   complex
+                coefficients.
+    returnbasis : bool
+                For debugging purposes only. If True, the function
+                also  returns  the  list  whose  elements  are the
+                coefficients  of  the  basis  vectors  used in the
+                decomposition.
+
+    Returns
+    -------
+    tuple : (l, p_qet)
+
+        l       : int
+                The value of l for the input Qet.
+       lm_qet   : Qet
+                A  Qet  whose  keys  are  (l,m) tuples and whose
+                values are complex coefficients.
+
+    See Also
+    --------
+    lmqet_to_irrepqet
+
+    Examples
+    --------
+    import sympy as sp
+
+    >>> irrep_qet = Qet({sp.Symbol('u_{E}'):1/2, sp.Symbol('y_{T_2}'):-sp.sqrt(2)/2})
+    >>> print(irrepqet_to_lmqet('O', irrep_qet, 2))
+        (2,
+        Qet({(2,-1):-1/2,
+             (2,0) :1/2,
+             (2,1) :1/2})
+        )
+    '''
+    group = CPGs.get_group_by_label(group_label)
+    irrep_basis = group.symmetry_adapted_bases
+    irrep_labels = group.irrep_labels
+    l_basis = [(l,m) for m in range(-l,l+1)]
+    # pick out all the parts for this value of l
+    this_irrep_basis = {ir: irrep_basis[ir][l] for ir in irrep_labels}
+    # kick out the ones that are empty
+    this_irrep_basis = {k:v for k,v in this_irrep_basis.items() if len(v) != 0}
+    size_of_basis = {k:len(v) for k, v in this_irrep_basis.items()}
+    # convert the qets in the bases to coordinate vectors in the standard basis
+    this_irrep_basis = {(irrep_label,basis_idx):list( \
+                    map(lambda x: x.vec_in_basis(l_basis), basis)) \
+                       for irrep_label, bases in this_irrep_basis.items() \
+                       for basis_idx, basis in enumerate(bases)}
+    # flatten and grab component labels
+    nice_basis = {}
+
+    for k, basis in this_irrep_basis.items():
+        irrep_label = k[0]
+        basis_idx = k[1]
+        irrep_dim = group.irrep_dims[irrep_label]
+        num_basis_vecs =  size_of_basis[irrep_label]
+        if num_basis_vecs == 1:
+            basis_labels = [((group.component_labels[irrep_label][i])) \
+                                            for i in range((irrep_dim))]
+        else:
+            basis_labels = [(sp.Symbol(("{}^{(%d)}%s") % (basis_idx+1, \
+                        str(group.component_labels[irrep_label][i])))) \
+                                            for i in range((irrep_dim))]
+        nice_basis.update(OrderedDict(zip(basis_labels, basis)))
+    lm_qet = [sp.Matrix(nice_basis[k])*v for k,v in irrep_qet.dict.items()]
+    lm_qet = sum(lm_qet, sp.Matrix([0]*(2*l+1)))
+    lm_qet = Qet(dict(zip(l_basis,lm_qet)))
+    if returnbasis:
+        return l, lm_qet, list(nice_basis.values())
+    else:
+        return l, lm_qet
+
+
+def lmqet_to_irrepqet(group_label, qet, returnbasis=False):
+    '''
+    Given  a qet whose keys are (l,m) values, for a shared value
+    of l this function determines the representation in terms of
+    irreducible basis functions.
+
+    Note    that    the    basis   obtained   from   irreducible
+    representations   may  not  necessarily  be  orthonormal  or
+    complete.
+
+    Parameters
+    ----------
+
+    group_label : str
+                A  label for crystallographic point group, must be
+                one of CGPs.all_group_labels
+    qet         : Qet
+                A  Qet  whose  keys are assumed to be tuples (l,m)
+                and whose values are complex numbers.
+    returnbasis : bool
+                If  True, the function also returns the list whose
+                elements are the coefficients of the basis vectors
+                used  in  the  decomposition.  This may be used to
+                check if the basis is orthonormal.
+
+    Returns
+    -------
+
+    tuple : (l, p_qet)
+
+        l       : int
+                The value of l for the input Qet.
+        p_qet   : Qet
+                A  Qet  whose  keys  are  labels  to components of
+                irreducible   reps   and   whose  values  are  the
+                corresponding coefficients. If the component label
+                is  accompanied  by  a  left-superindex  then that
+                number  in  parenthesis  is  indexing which of the
+                basis this component is referring to.
+
+    See Also
+    --------
+    irrepqet_to_lmqet
+
+    Examples
+    --------
+
+    >>> qet = Qet({(2,-1):-1/2, (2,0):1/2, (2,1):1/2})
+    >>> print(lmqet_to_irrepqet('O', qet))
+        (2,
+        Qet({u_{E}  : 1/2,
+             y_{T_2}: -sqrt(2)/2}
+           )
+        )
+    '''
+    group = CPGs.get_group_by_label(group_label)
+    irrep_basis = group.symmetry_adapted_bases
+    irrep_labels = group.irrep_labels
+    # for brevity I will only consider the case where there is a single l represented
+    # in the qet
+    ls = list(set((map(lambda x: x[0],qet.dict.keys()))))
+    assert len(ls) == 1, "qet must be a supersposition of equal values of l"
+    l = ls[0]
+    l_basis = [(l,m) for m in range(-l,l+1)]
+    # pick out all the parts for this value of l
+    this_irrep_basis = {ir: irrep_basis[ir][l] for ir in irrep_labels}
+    # kick out the ones that are empty
+    this_irrep_basis = {k:v for k,v in this_irrep_basis.items() if len(v) != 0}
+    size_of_basis = {k:len(v) for k, v in this_irrep_basis.items()}
+    # convert the qets in the bases to coordinate vectors in the standard basis
+    this_irrep_basis = {(irrep_label,basis_idx):list(map(lambda x: x.vec_in_basis(l_basis), basis)) \
+                   for irrep_label, bases in this_irrep_basis.items() \
+                   for basis_idx, basis in enumerate(bases)}
+    # flatten and grab component labels
+    nice_basis = {}
+
+    for k, basis in this_irrep_basis.items():
+        irrep_label = k[0]
+        basis_idx = k[1]
+        irrep_dim = group.irrep_dims[irrep_label]
+        num_basis_vecs =  size_of_basis[irrep_label]
+        if num_basis_vecs == 1:
+            basis_labels = [(irrep_label,i,basis_idx,(group.component_labels[irrep_label][i])) for i in range((irrep_dim))]
+        else:
+            basis_labels = [(irrep_label,i,basis_idx,sp.Symbol(("{}^{(%d)}%s") % (basis_idx+1,str(group.component_labels[irrep_label][i])))) for i in range((irrep_dim))]
+        nice_basis.update(OrderedDict(zip(basis_labels, basis)))
+    # finally, proyect the qet onto the basis
+    proyected_qet = {}
+    c_qet = qet.vec_in_basis(l_basis)
+    p_qet = {k:sp.Matrix(c_qet).dot(sp.Matrix(v)) for k,v in nice_basis.items()}
+    # clean out bits that are zero, and convert to Qet
+    p_qet = Qet({k[-1]: v for k,v in p_qet.items() if v!=0})
+    if returnbasis:
+        return l, p_qet, list(nice_basis.values())
+    else:
+        return l, p_qet
+
+####################### Irreducible basis transforms ######################
+###########################################################################
+
 
 ###########################################################################
 ############### Calculation of Clebsch-Gordan Coefficients ################
@@ -934,27 +1146,28 @@ def l_splitter(group_num_or_label, l):
     whose  values  are  how many times they are contained in the
     reducible representation of the group.
 
-    ----------
     Parameters
+    ----------
 
     group_num_or_label  :  int  or  str  Index  or  string for a
     crystallographic  point  group.  l  :  int  or  str azimutal
     quantum number (arbitrary) or string character s,p,d,f,g,h,i
 
-    -------
     Examples
+    --------
 
     A  d-electron  in  an  cubic  field  splits into states that
     transform  either  like  E or like T_2. This can be computed
     with this function like so:
 
-    l_splitter('O', 2) -> Qet({E: 1, T_2: 1})
+    >>> print(l_splitter('O', 2))
+        Qet({E: 1, T_2: 1})
 
     An if one were interested in how the states of an f-electron
     split under C_4v symmetry, one could
 
-    l_splitter('C_{4v}',  3)  -> Qet({A_2: 1, B_2: 1, B_1: 1, E:
-    2})
+    >>> print(l_splitter('C_{4v}',  3))
+        Qet({A_2: 1, B_2: 1, B_1: 1, E:2})
 
     '''
     if isinstance(l, str):
