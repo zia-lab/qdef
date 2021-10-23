@@ -23,7 +23,7 @@ from sympy.physics.quantum import Ket, Bra
 from sympy.physics.wigner import gaunt
 
 from collections import OrderedDict
-from itertools import product
+from itertools import product, combinations
 from tqdm.notebook import tqdm
 
 from matplotlib import pyplot as plt
@@ -191,6 +191,7 @@ def real_or_imagined(qet):
     else:
         return valences[0]
 
+RYlm_dict = {}
 def RYlm(l, m, op_params):
     '''
     Given  a group operation (as parametrized with the
@@ -215,13 +216,17 @@ def RYlm(l, m, op_params):
              (2, 2): 1/4})
 
     '''
+    if (l,m,*op_params) in RYlm_dict:
+        return RYlm_dict[(l,m,*op_params)]
     alpha, beta, gamma, detOp = op_params
     Rf = Qet()
     for nn in range(-l,l+1):
         wigD = Wigner_D(l, m, nn, alpha, beta, gamma)
         if wigD != 0:
             Rf = Rf + Qet({(l,nn): wigD})
-    return (sp.S(detOp)**l) * Rf
+    ret = (sp.S(detOp)**l) * Rf
+    RYlm_dict[(l,m,*op_params)] = ret
+    return ret
 
 def flatten_matrix(mah):
     '''
@@ -460,35 +465,17 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
     irreducible   representations  of  the  group  and  whose  values  are
     dictionaries  whose keys are values of l and whose values are lists of
     lists  of  Qets  (in  chunks  of  length  equal  to  the  size  of the
-    correspnding  irrep)  that represent the linear combinations that form
+    corresponding  irrep) that represent the linear combinations that form
     bases  that  transform  according  to  the irreducible representation.
-    These   Qets   (which  represent  linear  combinations  of  Ylms)  are
-    orthonormal.
-
-    The  ordering  of  the components in the resulting lists, matches with
-    the  ordering  implied by the irreducible representation matrices, and
-    that too matches with the labels included in group.component_labels.
+    Word of caution, these   Qets   (which  represent  linear combinations
+    of  Ylms) may not be orthogonal.
 
     An  empty list means that the corresponding irreducible representation
     is not contained in the subspace for the corresponding value of l.
 
-    Parameters
-    ----------
+    --- Example ---
+    symmetry_adapted_basis('O', 3) ->
 
-    group_label : str
-                One of of CPGs.all_group_labels
-    lmax        : int
-                Maximum l to which the bases are computed.
-
-
-    Returns
-    -------
-    symmetry_basis : dict{sp.Symbol : dict{int : list of Qet}}
-
-    Example
-    -------
-
-    >>> print(symmetry_adapted_basis('O', 3))
     {A_1: {0: [[Qet({(0, 0): 1})]],
            1: [],
            2: [],
@@ -573,40 +560,39 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
             # this is necessary to evaluate linear independence, and useful
             # for applying the Gram-Schmidt orthonormalization process.
             coord_vecs = []
-            #    |     | s1
-            #    | t1  | s2
-            # m1 |
-            #    |     | s1
-            #    | t2  | s2
-            for m in range(-l,l+1):
-                for s in range(irrep_dim):
-                    for t in range(irrep_dim):
-                        coord_vecs.append(all_phis[m][(t,s)].vec_in_basis(full_basis))
+            for m,s,t in product(range(-l,l+1),range(irrep_dim),range(irrep_dim)):
+                coord_vecs.append(all_phis[m][(t,s)].vec_in_basis(full_basis))
             if verbose:
                 print("Constructing a big matrix with coordinates in standard basis....")
             bigmatrix = sp.Matrix(coord_vecs)
             num_lin_indep_rows = (bigmatrix.rank())
-            if verbose:
-                print("There are %d linearly independent entries..." % (num_lin_indep_rows))
-                print("Collecting that many, and in groups of %d, from the original set..." % irrep_dim)
-            total_indep_rows = 0
             good_rows = []
-            assert (bigmatrix.rows % irrep_dim) == 0, "No. of indep entries should divide the dim of the irrep."
-            for i in range(bigmatrix.rows // irrep_dim):
-                rows = coord_vecs[i*irrep_dim:i*irrep_dim+irrep_dim]
-                if sp.Matrix(rows).rank() == irrep_dim:
-                    good_rows.append(rows)
-                    total_indep_rows += irrep_dim
-                if total_indep_rows == num_lin_indep_rows:
-                    break
-            if verbose:
-                print("Only %d rows were necessary." % len(good_rows))
-                print("Orthonormalizing ...")
+            if num_lin_indep_rows != 0:
+                if verbose:
+                    print("There are %d linearly independent entries..." % (num_lin_indep_rows))
+                    print("Collecting that many, and in groups of %d, from the original set..." % irrep_dim)
+                assert (bigmatrix.rows % irrep_dim) == 0, "No. of indep entries should divide the dim of the irrep."
+                # determine what groupings have the full rank of the matrix
+                chunks = [(coord_vecs[i*irrep_dim : (i*irrep_dim + irrep_dim)]) for i in range(bigmatrix.rows // irrep_dim)]
+                cycles = num_lin_indep_rows // irrep_dim
+                chunks = [chunk for chunk in chunks if (sp.Matrix(chunk).rank() == irrep_dim)]
+                for bits in combinations(chunks,cycles):
+                    mbits = list(map(lambda x: [sp.Matrix(x)], bits))
+                    tot = sp.Matrix(sp.BlockMatrix(mbits))
+                    if tot.rank() == num_lin_indep_rows:
+                        # a satisfacture subset has been found, exit
+                        break
+                else:
+                    raise Exception("Couldn't find an adequate subset of rows.")
+                for bit in bits:
+                    good_rows.append(bit)
+                if verbose:
+                    print("Orthonormalizing ...")
             # convert the coefficient vectors back to qets
             all_normal_qets = []
             for rows in good_rows:
                 # normalized = list(map(list,sp.GramSchmidt([sp.Matrix(rows).row(i) for i in range(sp.Matrix(rows).rows)],orthonormal=True)))
-                normalized = list(map(list, GramSchmidtFun([sp.Matrix(row) for row in rows],orthonormal=True)))
+                normalized = list(map(list, GramSchmidtFun([sp.Matrix(row) for row in rows], orthonormal=True)))
                 normal_qets = [Qet({k: v for k,v in zip(full_basis,normalized[i]) if v!=0}) for i in range(len(normalized))]
                 all_normal_qets.append(normal_qets)
             if verbose:
