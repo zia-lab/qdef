@@ -467,8 +467,6 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
     lists  of  Qets  (in  chunks  of  length  equal  to  the  size  of the
     corresponding  irrep) that represent the linear combinations that form
     bases  that  transform  according  to  the irreducible representation.
-    Word of caution, these   Qets   (which  represent  linear combinations
-    of  Ylms) may not be orthogonal.
 
     An  empty list means that the corresponding irreducible representation
     is not contained in the subspace for the corresponding value of l.
@@ -580,7 +578,7 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
                     mbits = list(map(lambda x: [sp.Matrix(x)], bits))
                     tot = sp.Matrix(sp.BlockMatrix(mbits))
                     if tot.rank() == num_lin_indep_rows:
-                        # a satisfacture subset has been found, exit
+                        # a satisfactory subset has been found, exit
                         break
                 else:
                     raise Exception("Couldn't find an adequate subset of rows.")
@@ -588,16 +586,26 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
                     good_rows.append(bit)
                 if verbose:
                     print("Orthonormalizing ...")
-            # convert the coefficient vectors back to qets
-            all_normal_qets = []
-            for rows in good_rows:
-                # normalized = list(map(list,sp.GramSchmidt([sp.Matrix(rows).row(i) for i in range(sp.Matrix(rows).rows)],orthonormal=True)))
-                normalized = list(map(list, GramSchmidtFun([sp.Matrix(row) for row in rows], orthonormal=True)))
-                normal_qets = [Qet({k: v for k,v in zip(full_basis,normalized[i]) if v!=0}) for i in range(len(normalized))]
-                all_normal_qets.append(normal_qets)
-            if verbose:
-                print("Finished!")
-            symmetry_basis[group_irrep][l] = all_normal_qets
+                # convert the coefficient vectors back to qets
+                flat_rows = []
+                degeneracy = len(good_rows)
+                for rows in good_rows:
+                    flat_rows.extend(rows)
+                flat_rows = list(map(sp.Matrix,flat_rows))
+                normalized = GramSchmidtFun(flat_rows,orthonormal=True)
+                parts = []
+                for deg in range(degeneracy):
+                    chunk = list(map(list,normalized[deg*irrep_dim:deg*irrep_dim+irrep_dim]))
+                    parts.append(chunk)
+                all_normal_qets = []
+                for part in parts:
+                    normal_qets = [Qet({k: v for k,v in zip(full_basis,part[i]) if v!=0}) for i in range(len(part))]
+                    all_normal_qets.append(normal_qets)
+                if verbose:
+                    print("Finished!")
+                symmetry_basis[group_irrep][l] = all_normal_qets
+            else:
+                symmetry_basis[group_irrep][l] = []
     return symmetry_basis
 
 generic_cf = Qet({(k,q):(sp.Symbol('B_{%d,%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d,%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
@@ -717,11 +725,11 @@ def irrepqet_to_lmqet(group_label, irrep_qet, l, returnbasis=False):
     --------
     import sympy as sp
 
-    >>> irrep_qet = Qet({sp.Symbol('u_{E}'):1/2, sp.Symbol('y_{T_2}'):-sp.sqrt(2)/2})
+    >>> irrep_qet = Qet({sp.Symbol('u_{E}'):sp.sqrt(2)/2, sp.Symbol('y_{T_2}'):-sp.sqrt(2)/2})
     >>> print(irrepqet_to_lmqet('O', irrep_qet, 2))
         (2,
         Qet({(2,-1):-1/2,
-             (2,0) :1/2,
+             (2,0) :sqrt(2)/2,
              (2,1) :1/2})
         )
     '''
@@ -770,10 +778,6 @@ def lmqet_to_irrepqet(group_label, qet, returnbasis=False):
     of l this function determines the representation in terms of
     irreducible basis functions.
 
-    Note    that    the    basis   obtained   from   irreducible
-    representations   may  not  necessarily  be  orthonormal  or
-    complete.
-
     Parameters
     ----------
 
@@ -786,8 +790,7 @@ def lmqet_to_irrepqet(group_label, qet, returnbasis=False):
     returnbasis : bool
                 If  True, the function also returns the list whose
                 elements are the coefficients of the basis vectors
-                used  in  the  decomposition.  This may be used to
-                check if the basis is orthonormal.
+                used  in  the  decomposition.
 
     Returns
     -------
