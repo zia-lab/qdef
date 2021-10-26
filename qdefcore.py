@@ -278,8 +278,71 @@ class PeriodicTable():
     '''
     It basically instantiates all atoms.
     '''
+    pt_group_symbols = {1: ['H', 'Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'],
+                     2: ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'],
+                     3: ['Sc', 'Y', 'Lu', 'Lr'],
+                     4: ['Ti', 'Zr', 'Hf', 'Rf'],
+                     5: ['V', 'Nb', 'Ta', 'Db'],
+                     6: ['Cr', 'Mo', 'W', 'Sg'],
+                     7: ['Mn', 'Tc', 'Re', 'Bh'],
+                     8: ['Fe', 'Ru', 'Os', 'Hs'],
+                     9: ['Co', 'Rh', 'Ir', 'Mt'],
+                     10: ['Ni', 'Pd', 'Pt', 'Ds'],
+                     11: ['Cu', 'Ag', 'Au', 'Rg'],
+                     12: ['Zn', 'Cd', 'Hg', 'Cn'],
+                     13: ['B', 'Al', 'Ga', 'In', 'Tl', 'Nh'],
+                     14: ['C', 'Si', 'Ge', 'Sn', 'Pb', 'Fl'],
+                     15: ['N', 'P', 'As', 'Sb', 'Bi', 'Mc'],
+                     16: ['O', 'S', 'Se', 'Te', 'Po', 'Lv'],
+                     17: ['F', 'Cl', 'Br', 'I', 'At', 'Ts'],
+                     18: ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'],
+                     'Lanthanides': ['La','Ce','Pr','Nd','Pm','Sm',
+                            'Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb'],
+                     'Actinides': ['Ac','Th','Pa','U','Np','Pu','Am',
+                            'Cm','Bk','Cf','Es','Fm','Md','No']}
+    transition_metals = (
+             {4: ['Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn'],
+              5: ['Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd'],
+              6: ['Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg'],
+              7: ['Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn']})
     def __init__(self):
         self.atoms = {i:Atom(i) for i in range(1,119)}
+    def annotated_ptable(self, fig, annotations, line_color = 'white', accent_color = 'red'):
+        ax = fig.add_subplot(1,1,1)
+        margin = 0.02
+        font_multiplier = 2.2
+        num_annotations = True
+        if isinstance(list(annotations.keys())[0],str):
+            num_annotations = False
+        for atom in self.atoms.values():
+            if atom.group != 'f-block':
+                group_loc = int(atom.group)
+                row = -atom.period
+            else:
+                if (57 <= atom.atomic_number <= 70):
+                    group_loc = atom.atomic_number - 57+3
+                    row = -9+0.5
+                else:
+                    group_loc = atom.atomic_number - 89+3
+                    row = -10+0.5
+            color = line_color
+            if not num_annotations:
+                if atom.symbol in annotations.keys():
+                    color = accent_color
+                    plt.text(group_loc+0.5, row-0.8, annotations[atom.symbol], ha='center', va='center', fontsize=4*font_multiplier, color=color)
+            else:
+                if atom.atomic_number in annotations.keys():
+                    color = accent_color
+                    plt.text(group_loc+0.5, row-0.8, annotations[atom.atomic_number], ha='center', va='center', fontsize=4*font_multiplier)
+            plt.text(group_loc+0.5, row-0.375, atom.symbol,ha='center',va='top',fontsize=7*font_multiplier, weight='bold', color = color)
+            plt.text(group_loc+0.5, row-margin-0.1, atom.atomic_number,ha='center',va='top',fontsize=4*font_multiplier)
+            plt.plot([group_loc+margin, group_loc+1-margin, group_loc+1-margin, group_loc+margin, group_loc+margin],
+                    [ row-margin, row-margin, row-1+margin, row-1+margin, row-margin],'-',color=line_color,lw=0.5)
+        ax.set_xlim(0.5,19.5)
+        ax.set_ylim(-11.5,-0.5)
+        ax.axis('off')
+        ax.set_aspect('equal')
+        return fig, ax
 
 class Qet():
     '''
