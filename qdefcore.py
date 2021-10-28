@@ -19,6 +19,7 @@ import pandas as pd
 from sympy.physics.quantum import Ket, Bra
 from sympy.physics.wigner import gaunt
 from collections import OrderedDict
+from itertools import product
 
 module_dir = os.path.dirname(__file__)
 
@@ -644,12 +645,32 @@ class CrystalGroup():
         self.multiplication_table = group_data_dict['multiplication table']
         self.euler_angles = group_data_dict['euler angles']
         self.group_operations = group_data_dict['group operations']
+        self.gen_multiplication_table_dict()
         self.order = len(self.group_operations)
         self.operations_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
         self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
         self.direct_product_table()
         self.component_labels = self.get_component_labels()
         self.symmetry_adapted_bases = symmetry_bases[self.label]
+        self.gen_char_table_dict()
+
+    def gen_char_table_dict(self):
+            self.character_table_dict = {irrep_label: \
+                    {class_label: self.character_table[
+                                  self.irrep_labels.index(irrep_label), \
+                                  self.class_labels.index(class_label)] \
+                                      for class_label in self.class_labels} \
+                                      for irrep_label in self.irrep_labels}
+
+    def gen_multiplication_table_dict(self):
+            multiplication_table_dict = {}
+            group_ops = self.group_operations
+            for op0, op1 in product(group_ops, group_ops):
+                row_idx = group_ops.index(op0)
+                col_idx = group_ops.index(op1)
+                op0op1 = self.multiplication_table[row_idx, col_idx]
+                multiplication_table_dict[(op0,op1)] = op0op1
+            self.multiplication_table_dict = multiplication_table_dict
 
     def get_component_labels(self):
         '''
