@@ -47,6 +47,8 @@ ionization_data  = pickle.load(open(os.path.join(module_dir,'data',
 
 atom_symbs   = list(symb_to_name.keys())
 atom_names   = list(name_to_num.keys())
+GT_CGs = pickle.load(open(os.path.join(module_dir,'data',
+                                            'GT_CG.pkl'),'rb'))
 
 nistdf = pd.read_pickle(os.path.join(module_dir,'data',
                                     'nist_atomic_spectra_database_levels.pkl'))
@@ -652,6 +654,7 @@ class CrystalGroup():
         self.direct_product_table()
         self.component_labels = self.get_component_labels()
         self.symmetry_adapted_bases = symmetry_bases[self.label]
+        self.CG_coefficients = GT_CGs[self.label]
         self.gen_char_table_dict()
 
     def gen_char_table_dict(self):

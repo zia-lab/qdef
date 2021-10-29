@@ -900,7 +900,7 @@ class V_coefficients():
     A_2 : \iota -> a_{A_2}
     E   : \theta -> u_{E} \epsilon -> v_{E}
     T_1 : x -> x_{T_1} y -> y_{T_1} z -> z_{T_1}
-    T_2 : x -> x_{T_2} y -> y_{T_1} z -> z_{T_1}
+    T_2 : x -> x_{T_2} y -> y_{T_2} z -> z_{T_2}
     '''
     def __init__(self):
         self.coeffs = pickle.load(open(vcoeffs_fname,'rb'))
