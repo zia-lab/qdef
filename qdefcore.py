@@ -49,6 +49,8 @@ atom_symbs   = list(symb_to_name.keys())
 atom_names   = list(name_to_num.keys())
 GT_CGs = pickle.load(open(os.path.join(module_dir,'data',
                                             'GT_CG.pkl'),'rb'))
+CG_coeffs_partitioned = pickle.load(open(os.path.join(module_dir,'data',
+                                            'CG_coeffs_partitioned.pkl'),'rb'))
 
 nistdf = pd.read_pickle(os.path.join(module_dir,'data',
                                     'nist_atomic_spectra_database_levels.pkl'))
@@ -349,17 +351,16 @@ class PeriodicTable():
 
 class Qet():
     '''
-    A Qet is a dictionary of  keys  and  values.  Keys
-    correspond to tuples of quantum numbers or symbols
-    and the  values  correspond  to  the  accompanying
-    coefficients.
-    Scalars may be added by using an empty tuple as  a
-    key.
-    A qet may be multiplied by a scalar, in which case
-    all the coefficients are multiplied by it.
-    It may also be multiplied by another qet, in which
-    case  quantum   numbers   are   concatenated   and
-    coefficients multiplied accordingly.
+    A Qet is a dictionary of keys and values. Keys correspond to
+    tuples   of  quantum  numbers  or  symbols  and  the  values
+    correspond to the accompanying coefficients.
+
+    Scalars may be added by using an empty tuple as a key.
+
+    A  qet  may be multiplied by a scalar, in which case all the
+    coefficients are multiplied by it. It may also be multiplied
+    by   another   qet,   in  which  case  quantum  numbers  are
+    concatenated and coefficients multiplied accordingly.
     '''
     def __init__(self, bits=0):
         if bits == 0:
@@ -377,6 +378,14 @@ class Qet():
             else:
                 new_dict[key] = coeff
         return Qet(new_dict)
+
+    def __sub__(self, other):
+        if other == 0:
+            return self
+        return Qet(dict(self.dict)) + (-1)*Qet(dict(other.dict))
+
+    def __neg__(self):
+        return (-1)*Qet(self.dict)
 
     def vec_in_basis(self, basis):
         '''
@@ -655,6 +664,7 @@ class CrystalGroup():
         self.component_labels = self.get_component_labels()
         self.symmetry_adapted_bases = symmetry_bases[self.label]
         self.CG_coefficients = GT_CGs[self.label]
+        self.CG_coefficients_partitioned = CG_coeffs_partitioned[self.label]
         self.gen_char_table_dict()
 
     def gen_char_table_dict(self):

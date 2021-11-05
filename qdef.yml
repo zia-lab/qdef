@@ -46,10 +46,8 @@ dependencies:
   - mpfr=4.0.2=h72d8aaf_1
   - mpmath=1.2.1=pyhd8ed1ab_0
   - ncurses=6.2=h2e338ed_4
-  - numpy=1.20.2=py37h84c02c4_0
   - olefile=0.46=pyh9f0ad1d_1
   - openssl=1.1.1k=h0d85af4_0
-  - pandas=1.2.3=py37hff173d8_0
   - parso=0.8.0=py_0
   - pexpect=4.8.0=py37_0
   - pickleshare=0.7.5=py37_0
@@ -66,9 +64,7 @@ dependencies:
   - pyzmq=19.0.2=py37hb1e8313_1
   - readline=8.1=h05e3726_0
   - setuptools=49.6.0=py37hf985489_3
-  - six=1.15.0=py_0
   - sqlite=3.35.3=h44b9ce1_0
-  - sympy=1.7.1=py37hf985489_1
   - tk=8.6.10=h0419947_1
   - traitlets=5.0.5=py_0
   - wcwidth=0.2.5=py_0
@@ -79,13 +75,21 @@ dependencies:
   - zlib=1.2.11=h7795811_1010
   - zstd=1.4.9=h582d3a0_0
   - pip:
+    - aiohttp==3.7.4.post0
+    - alabaster==0.7.12
     - antlr4-python3-runtime==4.7.2
     - argon2-cffi==20.1.0
     - async-generator==1.10
+    - async-timeout==3.0.1
     - attrs==20.3.0
+    - babel==2.9.1
     - bleach==3.3.0
     - brotli==1.0.9
+    - cached-property==1.5.2
     - cffi==1.14.5
+    - chardet==4.0.0
+    - charset-normalizer==2.0.3
+    - colorama==0.4.4
     - dash==1.20.0
     - dash-bootstrap-components==0.12.0
     - dash-core-components==1.16.0
@@ -94,44 +98,94 @@ dependencies:
     - dash-renderer==1.9.1
     - dash-table==4.11.3
     - defusedxml==0.7.1
+    - docutils==0.17.1
     - entrypoints==0.3
+    - et-xmlfile==1.1.0
     - flask-compress==1.9.0
     - future==0.18.2
-    - importlib-metadata==3.9.1
+    - ghp-import==2.0.1
+    - h5py==3.3.0
+    - idna==3.2
+    - imagesize==1.2.0
+    - importlib-metadata==4.6.1
+    - ipympl==0.7.0
     - ipywidgets==7.6.3
     - jinja2==2.11.3
-    - joblib==1.0.1
+    - joblib==1.1.0
     - jsonschema==3.2.0
+    - jupyter-autotime==1.1.0
     - jupyterlab-pygments==0.1.2
     - jupyterlab-widgets==1.0.0
     - justifytext==0.2.1.post3
+    - livereload==2.6.3
+    - markdown==3.3.4
+    - matminer==0.7.4
+    - mergedeep==1.3.4
     - mistune==0.8.4
+    - monty==2021.8.17
+    - mplcursors==0.4
+    - mpld3==0.5.5
+    - multidict==5.2.0
     - nbclient==0.5.3
     - nbconvert==6.0.7
     - nbformat==5.1.2
     - nest-asyncio==1.5.1
     - networkx==2.5
     - notebook==6.3.0
+    - numpy==1.21.2
+    - oauthlib==3.1.1
+    - openpyxl==3.0.9
     - packaging==20.9
+    - palettable==3.3.0
+    - pandas==1.3.2
     - pandocfilters==1.4.3
+    - pickle5==0.0.11
+    - pint==0.17
     - plotly==4.14.3
     - prometheus-client==0.9.0
     - psutil==5.8.0
     - pycg==0.0.3
     - pycparser==2.20
+    - pyfiglet==0.8.post1
+    - pymatgen==2022.0.12
+    - pymongo==3.12.0
     - pyperclip==1.8.2
     - pyrsistent==0.17.3
+    - pyyaml==5.4.1
+    - pyyaml-env-tag==0.1
+    - requests==2.26.0
     - retrying==1.3.3
-    - scikit-learn==0.24.1
+    - ruamel-yaml==0.17.16
+    - ruamel-yaml-clib==0.2.6
+    - scikit-learn==0.24.2
     - scipy==1.6.2
     - send2trash==1.5.0
+    - six==1.16.0
+    - snowballstemmer==2.1.0
+    - spglib==1.16.1
+    - sphinx==4.1.1
+    - sphinx-autobuild==2021.3.14
+    - sphinxcontrib-applehelp==1.0.2
+    - sphinxcontrib-devhelp==1.0.2
+    - sphinxcontrib-htmlhelp==2.0.0
+    - sphinxcontrib-jsmath==1.0.1
+    - sphinxcontrib-qthelp==1.0.3
+    - sphinxcontrib-serializinghtml==1.1.5
+    - sympy==1.8
+    - tabulate==0.8.9
     - terminado==0.9.4
     - testpath==0.4.4
     - threadpoolctl==2.1.0
     - tornado==6.1
-    - tqdm==4.61.1
+    - tqdm==4.62.2
     - typing-extensions==3.7.4.3
+    - uncertainties==3.1.6
+    - urllib3==1.26.6
+    - watchdog==2.1.3
     - webencodings==0.5.1
     - widgetsnbextension==3.5.1
+    - wolframclient==1.1.7
+    - xlwt==1.3.0
+    - yarl==1.7.0
     - zipp==3.4.1
 prefix: /Users/juan/opt/anaconda3/envs/qdef
