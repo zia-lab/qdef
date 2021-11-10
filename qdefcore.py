@@ -71,9 +71,9 @@ element_groups = {
 # ===================== Load group theory data ================== #
 
 group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
+vcoeffs = pickle.load(open(os.path.join(module_dir,'data','Vcoeffs.pkl'),'rb'))
 group_data = group_dict['group_data']
 metadata = group_dict['metadata']
-vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs.pkl')
 
 # ===================== Load group theory data ================== #
 # =============================================================== #
@@ -334,15 +334,24 @@ class PeriodicTable():
             if not num_annotations:
                 if atom.symbol in annotations.keys():
                     color = accent_color
-                    plt.text(group_loc+0.5, row-0.8, annotations[atom.symbol], ha='center', va='center', fontsize=4*font_multiplier, color=color)
+                    plt.text(group_loc+0.5, row-0.8, annotations[atom.symbol],\
+                    ha='center', va='center', fontsize=4*font_multiplier,\
+                    color=color)
             else:
                 if atom.atomic_number in annotations.keys():
                     color = accent_color
-                    plt.text(group_loc+0.5, row-0.8, annotations[atom.atomic_number], ha='center', va='center', fontsize=4*font_multiplier)
-            plt.text(group_loc+0.5, row-0.375, atom.symbol,ha='center',va='top',fontsize=7*font_multiplier, weight='bold', color = color)
-            plt.text(group_loc+0.5, row-margin-0.1, atom.atomic_number,ha='center',va='top',fontsize=4*font_multiplier)
-            plt.plot([group_loc+margin, group_loc+1-margin, group_loc+1-margin, group_loc+margin, group_loc+margin],
-                    [ row-margin, row-margin, row-1+margin, row-1+margin, row-margin],'-',color=line_color,lw=0.5)
+                    plt.text(group_loc+0.5, row-0.8,\
+                            annotations[atom.atomic_number], ha='center',\
+                            va='center', fontsize=4*font_multiplier)
+            plt.text(group_loc+0.5, row-0.375, atom.symbol, ha='center',\
+                            va='top', fontsize=7*font_multiplier,\
+                            weight='bold', color = color)
+            plt.text(group_loc+0.5, row-margin-0.1, atom.atomic_number,\
+                            ha='center', va='top', fontsize=4*font_multiplier)
+            plt.plot([group_loc+margin, group_loc+1-margin, group_loc+1-margin,\
+                                        group_loc+margin, group_loc+margin],
+                    [row-margin, row-margin, row-1+margin, row-1+margin,\
+                    row-margin], '-',color=line_color,lw=0.5)
         ax.set_xlim(0.5,19.5)
         ax.set_ylim(-11.5,-0.5)
         ax.axis('off')
@@ -493,7 +502,8 @@ class Qet():
             else:
                 if fold_keys:
                     if nice_negatives:
-                        key = tuple(sp.latex(k) if k>=0 else (r'\bar{%s}' % sp.latex(-k)) for k in key)
+                        key = tuple(sp.latex(k) if k>=0 else (r'\bar{%s}'\
+                                                % sp.latex(-k)) for k in key)
                     sympyRep += coeff*Ket(*key)
                 else:
                     sympyRep += coeff*Ket(key)
@@ -631,7 +641,8 @@ class ProductTable():
     def pretty_parse(self):
         '''creates a nice latex representation of the product table'''
         irep_symbols = self.irrep_labels
-        list_o_lists = [[self.odict[(ir0,ir1)] for ir0 in self.irrep_labels] for ir1 in self.irrep_labels]
+        list_o_lists = [[self.odict[(ir0,ir1)] for ir0 in self.irrep_labels]\
+                                                for ir1 in self.irrep_labels]
         rows = [[sp.Symbol(self.grp_label)]+irep_symbols]
         for idx, arow in enumerate(list_o_lists):
             row = [irep_symbols[idx]]
@@ -666,6 +677,10 @@ class CrystalGroup():
         self.CG_coefficients = GT_CGs[self.label]
         self.CG_coefficients_partitioned = CG_coeffs_partitioned[self.label]
         self.gen_char_table_dict()
+        if self.label in vcoeffs.keys():
+            self.V_coefficients = vcoeffs[self.label]
+        else:
+            self.V_coefficients = None
 
     def gen_char_table_dict(self):
             self.character_table_dict = {irrep_label: \

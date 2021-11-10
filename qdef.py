@@ -21,6 +21,9 @@ import math
 from sympy import pi, I
 from sympy.physics.quantum import Ket, Bra
 from sympy.physics.wigner import gaunt
+from sympy.combinatorics.permutations import Permutation
+from itertools import combinations, permutations, combinations_with_replacement
+from functools import reduce
 
 from collections import OrderedDict
 from itertools import product, combinations
@@ -889,7 +892,7 @@ def cg_symbol(comp_1, comp_2, irep_3, comp_3):
     symb_args = (comp_1, comp_2, irep_3, comp_3)
     return sp.Symbol(r"{\langle}%s,%s|%s,%s{\rangle}" % symb_args)
 
-class V_coefficients():
+class V_coefficients_old():
     '''
     This class loads data for the V coefficients for the octahedral group
     as defined in Appendix C of Griffith's book "The  Irreducible  Tensor
@@ -915,6 +918,192 @@ class V_coefficients():
                           ⎝ α β γ ⎠.
         '''
         return self.coeffs[args]
+
+class V_coefficients():
+    vcoeffs_fname = os.path.join(module_dir,'data','Vcoeffs_vanilla.pkl')
+    @classmethod
+    def vanilla(cls):
+        '''
+        This  function  loads  data  for  the V coefficients for the
+        octahedral group as defined in Appendix C of Griffith's book
+        "The   Irreducible  Tensor  Method  for  Molecular  Symmetry
+        Groups".
+
+        In  here  the  labels for the components for the irreducible
+        reps  have  been  matched  in  the  following  way.  This is
+        probably wrong.
+
+        A_1 : \iota -> a_{A_1}
+        A_2 : \iota -> a_{A_2}
+        E   : \theta -> u_{E} \epsilon -> v_{E}
+        T_1 : x -> x_{T_1} y -> y_{T_1} z -> z_{T_1}
+        T_2 : x -> x_{T_2} y -> y_{T_2} z -> z_{T_2}
+        '''
+        return pickle.load(open(cls.vcoeffs_fname,'rb'))
+    @classmethod
+    def type_of_combo(cls, irrep_combo, V_coeff, group):
+        '''
+        Given  a  triple of irreducible representation symbols and a
+        given  set of V coefficients, this function determines which
+        type  of  symmetry  the  given  coefficients  have  for that
+        triple.
+        It does this by evaluating and comparing permutations of the
+        arguments for the given V_coeff. If all values are zero, the
+        triple  is  singular, if all permutations result in the same
+        value, then it has even symmetry, if all signed-permutations
+        result  in  the same value, then it has odd symmetry, and if
+        none of these apply the it is 'neither'.
+
+
+        Parameters
+        ----------
+        irrep_combo (iterable):  three sp.Symbol for three irreps.
+        V_coeff        (dict) :
+                        keys are 6-tuples where the first three values are
+                        symbols  for  irreducible  representations and the
+                        final   three   are   symbols   for  corresponding
+                        components.
+        group  (qdefcore.CrystalGroup): a crystal group.
+
+        Returns
+        -------
+        (dict): {
+                type (str) : one of 'singular', 'even', 'odd', 'neither'
+                even_comparisons (dict):
+                        Keys   are   irrep   triples   (a  permutation  of
+                        irrep_combo)  and  values are lists of OrderedDict
+                        whose  keys  are  V_arg  and  whose values are the
+                        corresponding coefficients.
+                odd_comparisons (dict):
+                        keys   are   irrep   triples   (a  permutation  of
+                        irrep_combo)   and   whose  values  are  lists  of
+                        OrderedDict  whose keys are V_arg and whose values
+                        are  the  corresponding coefficients multiplied by
+                        the sign of the corresponding permutation.
+        }
+        '''
+        trio_types = ['singular', 'even', 'odd', 'neither']
+        irrep_combo = tuple(irrep_combo)
+        # grab the labels for the components of the given irreps
+        all_components = [group.component_labels[ir] for ir in irrep_combo]
+        standard_permutation_signs = [(1-2*Permutation(x).parity()) for x in list(permutations([0,1,2]))]
+        all_values = []
+        even_chunks, even_checks = [], []
+        odd_chunks, odd_checks = [], []
+        # collect all the values in one big list
+        # useful to determine if the given irrep combo is singular
+        for components in product(*all_components):
+            columns = list(zip(irrep_combo, components))
+            column_permutations = list(permutations(columns))
+            for column_permutation in column_permutations:
+                arg_0, arg_1 = list(zip(*column_permutation))
+                V_arg = tuple(arg_0 + arg_1)
+                all_values.append(V_coeff[V_arg])
+        # go across all possible arguments of the V_coefficients
+        for components in product(*all_components):
+            columns = list(zip(irrep_combo, components))
+            column_permutations = list(permutations(columns))
+            signed_permutted_values = []
+            permutted_values = []
+            permutation_signs = list(standard_permutation_signs)
+            even_sector = OrderedDict()
+            odd_sector = OrderedDict()
+            # permutations is agnostic to the columns being equal
+            # if there are two columns or more that are equal
+            # ther permutation signs need to be coerced all to be
+            # zero
+            if len(set(columns)) < 3:
+                    permutation_signs = [1 for x in list(permutations([0,1,2]))]
+            # evaluate the coefficients across permutation of columns
+            # save each comparison in its corresponding dictionary,
+            # either even_sector or odd_sector
+            for column_permutation, perm_sign in zip(column_permutations, permutation_signs):
+                arg_0, arg_1 = list(zip(*column_permutation))
+                V_arg = tuple(arg_0 + arg_1)
+                signed_permutted_values.append(perm_sign*V_coeff[V_arg])
+                permutted_values.append(V_coeff[V_arg])
+                all_values.append(V_coeff[V_arg])
+                even_sector[V_arg] = V_coeff[V_arg]
+                odd_sector[V_arg] = perm_sign*V_coeff[V_arg]
+            odd_chunks.append(odd_sector)
+            even_chunks.append(even_sector)
+            # if only one value remains that means that all
+            # the permutted values have the corresponding symmetry
+            odd_checks.append(len(set(signed_permutted_values)) == 1)
+            even_checks.append(len(set(permutted_values)) == 1)
+        all_values = list(set(all_values))
+        is_singular = (len(all_values) == 1 and all_values[0] == 0)
+        is_even = (all(even_checks) and not is_singular)
+        is_odd = (all(odd_checks) and not is_singular)
+        # in some cases odd and even are exactly the same
+        # this for example when all irreps are equal
+        # if this occurs, then it is defined as even
+        if is_even and is_odd:
+            is_odd = False
+        is_neither = (not is_singular) and (not is_even) and (not is_odd)
+        # at most it is in one of these categories
+        assert sum([is_singular, is_even, is_odd, is_neither]) == 1
+        true_index = [is_singular, is_even, is_odd, is_neither].index(True)
+        the_type = trio_types[true_index]
+        return {'type': the_type, 'even_comparisons': even_chunks, 'odd_comparisons': odd_chunks}
+    @classmethod
+    def V_fixer(cls, V_coeff, sign_changes, group, verbose=False):
+        '''
+        This  function takes a dictionary of sign changes, and a dictionary of
+        V_coefficients.  After  implementing  the  sign  changes  on the given
+        coefficient   it   then   determines   which  triples  of  irreducible
+        representations are even, which are odd, and which are neither.
+
+        Parameters
+        ----------
+
+        V_coeff      (dict):
+                            all V coefficients for the current group.
+        sign_changes (dict):
+                            keys  are  triples  of  irreps  and values are the
+                            associated  multiplier  such  that  every  V_coeff
+                            whose  top  row  is  the key, is multiplied by the
+                            given  multiplier.  In principle this values could
+                            only  be negative, in practice having values which
+                            are +1 may be good for accounting.
+        verbose.     (bool):
+                            Print or not progress messages.
+
+        Returns
+        -------
+
+        (dict):
+            {'V_coeff'     (dict):
+                            The  V  coefficients  as changed by the given sign
+                            changes.
+             'combo_types' (dict):
+                            Keys equal triples of irreps values are type which
+                            it is.
+             'all_permutation_comparison' (dict):
+                            For  each outer key ('even' or 'odd') this gives a
+                            dictionary  whose keys are irrep triples and whose
+                            values  are  lists  of  OrderedDict whose keys are
+                            V_arg  and  whose  values  are  the  corresponding
+                            coefficients.   These  are  useful  to  track  the
+                            evaluation of the type of each irrep triple.
+                             }
+        '''
+        if verbose: print("Performing requested changes of sign ...")
+        for V_arg in V_coeff.keys():
+            head = V_arg[:3]
+            if head in sign_changes.keys():
+                V_coeff[V_arg] = V_coeff[V_arg]*sign_changes[head]
+        if verbose: print("Determining triples of irreducible representations ...")
+        irrep_combos = list(combinations_with_replacement(group.irrep_labels,3))
+        if verbose: print("Making comparisons across permutations of columns...")
+        all_permutation_comparisons = {'even': {}, 'odd': {}}
+        combo_types = {}
+        for irrep_combo in irrep_combos:
+            combify = cls.type_of_combo(irrep_combo, V_coeff, group)
+            combo_types[irrep_combo] = combify['type']
+            all_permutation_comparisons['even'][irrep_combo] = combify['even_comparisons']
+            all_permutation_comparisons['odd'][irrep_combo] = combify['odd_comparisons']
+        return {'V_coeff': V_coeff, 'combo_types': combo_types, 'all_permutation_comparisons':all_permutation_comparisons}
 
 def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False):
     '''

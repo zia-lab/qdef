@@ -145,7 +145,8 @@ def antisymmetrize_sym(qet):
         {Qnums(*k[split:], *k[:split]): v for k, v in qet.dict.items()})
     asym_qet = sp.S(1)/sp.S(2)*(qet - biz_qet)
     final_qet = Qet(
-        {AntiQnums(tuple(sorted([k[0], k[2]])), tuple(sorted([k[1], k[3]]))): v for k, v in asym_qet.dict.items()})
+        {AntiQnums(tuple(sorted([k[0], k[2]])), tuple(sorted([k[1], k[3]]))): \
+                                    v for k, v in asym_qet.dict.items()})
     return final_qet
 
 
@@ -216,24 +217,30 @@ def Lz_total(qnums, coeff, l1, l2):
 
 def Lplus_total(qnums, coeff, l1, l2):
     ml1, ms1, ml2, ms2 = qnums.ml1, qnums.ms1, qnums.ml2, qnums.ms2
-    J1 = coeff * Qet({Qnums(ml1+1, ms1, ml2, ms2): sp.sqrt(l1*(l1+1)-ml1*(ml1+1)),
-                     Qnums(ml1, ms1, ml2+1, ms2): sp.sqrt(l2*(l2+1)-ml2*(ml2+1))})
+    J1 = coeff * Qet({Qnums(ml1+1, ms1, ml2, ms2): \
+                                                sp.sqrt(l1*(l1+1)-ml1*(ml1+1)),
+                     Qnums(ml1, ms1,  ml2+1, ms2): \
+                                                sp.sqrt(l2*(l2+1)-ml2*(ml2+1))})
     return J1
 
 
 def Lminus_total(qnums, coeff, l1, l2):
     ml1, ms1, ml2, ms2 = qnums
-    J1 = coeff * Qet({Qnums(ml1-1, ms1, ml2, ms2): sp.sqrt(l1*(l1+1)-ml1*(ml1-1)),
-                     Qnums(ml1, ms1, ml2-1, ms2): sp.sqrt(l2*(l2+1)-ml2*(ml2-1))})
+    J1 = coeff * Qet({Qnums(ml1-1, ms1, ml2, ms2): \
+                                                sp.sqrt(l1*(l1+1)-ml1*(ml1-1)),
+                     Qnums(ml1, ms1, ml2-1, ms2): \
+                                                sp.sqrt(l2*(l2+1)-ml2*(ml2-1))})
     return J1
 
 
 def Lx_total(qnums, coeff, l1, l2):
-    return sp.S(1)/2*(Lplus_total(qnums, coeff, l1, l2) + Lminus_total(qnums, coeff, l1, l2))
+    return sp.S(1)/2*(Lplus_total(qnums, coeff, l1, l2) + \
+                                        Lminus_total(qnums, coeff, l1, l2))
 
 
 def Ly_total(qnums, coeff, l1, l2):
-    return -sp.I*sp.S(1)/2*(Lplus_total(qnums, coeff, l1, l2) + (-1)*Lminus_total(qnums, coeff, l1, l2))
+    return -sp.I*sp.S(1)/2*(Lplus_total(qnums, coeff, l1, l2) + \
+                                        (-1)*Lminus_total(qnums, coeff, l1, l2))
 
 
 def L_total_squared(qet, l):
@@ -287,15 +294,18 @@ def S_total_squared(qet, l):
 
 
 def Jz_total(qnums, coeff, l1, l2, s1, s2):
-    return Lz_total(qnums, coeff, l1, l2) + Sz_total(qnums, coeff, s1, s2)
+    return Lz_total(qnums, coeff, l1, l2) + \
+                                        Sz_total(qnums, coeff, s1, s2)
 
 
 def Jplus_total(qnums, coeff, l1, l2, s1, s2):
-    return Lplus_total(qnums, coeff, l1, l2) + Splus_total(qnums, coeff, s1, s2)
+    return Lplus_total(qnums, coeff, l1, l2) + \
+                                        Splus_total(qnums, coeff, s1, s2)
 
 
 def Jminus_total(qnums, coeff, l1, l2, s1, s2):
-    return Lminus_total(qnums, coeff, l1, l2) + Sminus_total(qnums, coeff, s1, s2)
+    return Lminus_total(qnums, coeff, l1, l2) + \
+                                        Sminus_total(qnums, coeff, s1, s2)
 
 
 def Jx_total(qnums, coeff, l1, l2, s1, s2):
