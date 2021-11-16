@@ -358,6 +358,35 @@ class PeriodicTable():
         ax.set_aspect('equal')
         return fig, ax
 
+class Term():
+    '''
+    To  represent  a  term,  this  object  holds the states that
+    correspond  to  it,  and offers a few methods in to view the
+    enclosed wave functions.
+    '''
+    def __init__(self, init_dict):
+        for k,v in init_dict.items():
+            setattr(self, k, v)
+        self.term_prototype = sp.Symbol(r'{{}}^{{{M}}}{ir}')
+        self.state_label_prototype = sp.Symbol(r'\Psi({α}, {S}, {{{Γ}}}, {M_s}, {γ})')
+    def term_symbol(self):
+        return sp.Symbol(str(self.term_prototype).format(M=str(2*self.S+1),ir=str(sp.latex(self.irrep))))
+    def make_state_symbols(self):
+        state_symbols = []
+        for qet, state_key in zip(self.states, self.state_keys):
+            (Γ1, Γ2, Γ3, γ3, S, mSz) = state_key
+            ket = qet.as_ket(fold_keys=True)
+            ket_symbol = sp.latex(ket).replace('\\right\\rangle','\\right|')
+            α = Γ1*Γ2
+            term_symb = self.term_symbol()
+            state_symbol = '\\Psi(%s,%s,M\!=\!%d,%s)' % (sp.latex(α).lower(), term_symb, mSz, sp.latex(γ3))
+            state_symbols.append((state_symbol, ket_symbol))
+        return state_symbols
+    def __str__(self):
+        return (self.term_symbol())
+    def __repr__(self):
+        return '%s: %d states' % (str(self.term_symbol()), len(self.states))
+
 class Qet():
     '''
     A Qet is a dictionary of keys and values. Keys correspond to
