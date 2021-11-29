@@ -3,9 +3,71 @@
 import pickle
 import os, re
 import numpy as np
-from textwrap import wrap 
+from textwrap import wrap
+from time import time
 
 module_dir = os.path.dirname(__file__)
+
+def latex_eqn_to_png(tex_code, timed=True, figname=None, outfolder=os.path.join(module_dir,'images')):
+    '''
+    Parse a given equation into a png and pdf formats.
+    
+    Requires a local installation of pdflatex and convert.
+    
+    Parameters
+    ----------
+    
+    tex_code  (str): An equation, including $$, \[\] or LaTeX equation environment.
+    time     (bool): If True then the filename includes a timestamp.
+    figname   (str): If given, filenams for png and pdf have that root.
+    outfolder (str): Directory name where the images will be stored.
+    
+    Example
+    -------
+    
+    tex_code = r"""\begin{equation}
+    x+y
+    \end{equation}"""
+    
+    latex_eqn_to_png(tex_code, True, 'simple_eqn', outfolder = '/Users/juan/')
+    
+    --> creates /Users/juan/simple_eqn.pdf and /Users/juan/simple_eqn.npg
+    
+    Nov-24 2021-11-24 14:39:28
+    '''
+    now = int(time())
+    temp_folder = '/Users/juan/Temp/'
+    if outfolder == None:
+        outfolder = temp_folder
+    temp_latex = os.path.join(temp_folder,'texeqn.tex')
+    header = r'''\documentclass[border=2pt]{standalone}
+    \usepackage{amsmath}
+    \usepackage{varwidth}
+    \begin{document}
+    \begin{varwidth}{\linewidth}'''
+    footer = '''\end{varwidth}
+    \end{document}'''
+    texcode = "%s\n%s\n%s" % (header, tex_code, footer)
+    open(temp_latex,'w').write(texcode)
+    os.system('cd "%s"; /Library/TeX/texbin/pdflatex "%s"' % (temp_folder,temp_latex))
+    os.system('cd "%s"; /opt/homebrew/bin/convert -density 300 texeqn.pdf -quality 90 texeqn.png' % (temp_folder))
+    os.system(('cd "%s";' % (temp_folder)) + '/opt/homebrew/bin/convert texeqn.png -fuzz 1\% -trim +repage texeqn.png')
+    os.system('cd "%s"; rm texeqn.log  texeqn.tex texeqn.aux' % (temp_folder))
+    if timed and figname == None:
+        out_pdf_fname = os.path.join(outfolder,"texeqn-%d.pdf" % now)
+        out_png_fname = os.path.join(outfolder,"texeqn-%d.png" % now)
+    elif timed and figname != None:
+        out_pdf_fname = os.path.join(outfolder,"%s-%d.pdf" % (figname,now))
+        out_png_fname = os.path.join(outfolder,"%s-%d.png" % (figname,now))
+    elif not timed and figname == None:
+        out_pdf_fname = os.path.join(outfolder,"texeqn.pdf")
+        out_png_fname = os.path.join(outfolder,"texeqn.png")
+    elif not timed and figname != None:
+        out_pdf_fname = os.path.join(outfolder,"%s.pdf" % (figname))
+        out_png_fname = os.path.join(outfolder,"%s.png" % (figname))
+    print(out_pdf_fname)
+    os.system('cd "%s"; mv texeqn.pdf "%s"' % (temp_folder, out_pdf_fname))
+    os.system('cd "%s"; mv texeqn.png "%s"' % (temp_folder, out_png_fname))
 
 def fixwidth(words,w):
     '''

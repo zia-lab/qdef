@@ -20,6 +20,7 @@ from sympy.physics.quantum import Ket, Bra
 from sympy.physics.wigner import gaunt
 from collections import OrderedDict
 from itertools import product
+from matplotlib import pyplot as plt
 
 module_dir = os.path.dirname(__file__)
 
@@ -961,7 +962,8 @@ class Anm():
     '''
     Anmkeys = [('params',dict), # a dictionary of dictionaries
                ('refs',list)]
-    AnmGoodKeys = ['mono','self-i','dipole','total', 'unit'] # this are the allowed keys for a specific Anm
+    # this are the allowed keys for a specific Anm
+    AnmGoodKeys = ['mono','self-i','dipole','total', 'unit']
     def __init__(self, Anmdict):
         for k in self.Anmkeys:
             attr_name, attr_type = k

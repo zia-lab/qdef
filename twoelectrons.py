@@ -26,7 +26,6 @@
 import sympy as sp
 import numpy as np
 import time
-from scipy.special import sph_harm as Ynm_num
 from qdef import *
 from misc import *
 from itertools import product
@@ -45,6 +44,8 @@ new_labels = pickle.load(open('./data/components_rosetta.pkl','rb'))
 
 latex_output_dir = '/Users/juan/Library/Mobile Documents/com~apple~CloudDocs/iCloudFiles/Theoretical Division/'
 latex_output_fname = os.path.join(latex_output_dir,'termwaves.tex')
+
+progressprint = print
 
 if not os.path.exists(latex_output_dir):
     print("Inexistent output directory for LaTeX output, please edit.")
@@ -93,7 +94,7 @@ def composite_symbol(x):
 
 def coulomb_energy_matrices(group_label, verbose = False):
     '''
-    version 1637708720
+    version: 1637708720
     '''
     start_time = time.time()
     group = CPGs.get_group_by_label(group_label)
@@ -104,11 +105,11 @@ def coulomb_energy_matrices(group_label, verbose = False):
     components = group.component_labels
     ir_arrays = group.irrep_arrays
     generators = group.generators
-    if verbose:
-        progress = display('',display_id=True)
+    # if verbose:
+    #     progress = display('',display_id=True)
     if verbose:
         msg = group_label + " Computing the symbolic expression for the configuration matrices ..."
-        progress.update(msg)
+        progressprint(msg)
     configs = {}
     config_supplement = {}
     for term_key, term in terms.items():
@@ -167,7 +168,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Computing non-redundant quadruples of irrep symbols ..."
-        progress.update(msg)
+        progressprint(msg)
 
     combos_4 = set()
     for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
@@ -220,7 +221,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Computing 4-symbol identities ..."
-        progress.update(msg)
+        progressprint(msg)
 
     if group_label in ['T_{h}', 'O_{h}', 'D_{6h}']:
         out = (Parallel(n_jobs = 1)(delayed(four_symb_ids)(combo) for combo in combos_4))
@@ -255,7 +256,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Assuming real basis functions and computing corresponding identities ..."
-        progress.update(msg)
+        progressprint(msg)
     real_var_simplifiers = {irc:[] for irc in great_identities}
     kprimes = set()
     # this has to run over all the quadruples of irs
@@ -285,7 +286,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Simplifying systems of equations ..."
-        progress.update(msg)
+        progressprint(msg)
 
     def identity_solver(ircombo, these_ids, these_zeros):
         problem_vars = list(set(sum([list(identity.dict.keys()) for identity in these_ids],[])))
@@ -335,7 +336,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Simplifying configuration matrices ..."
-        progress.update(msg)
+        progressprint(msg)
 
     simple_config_matrices = {k:{} for k in config_matrices}
     for ir1ir2 in config_matrices.keys():
@@ -346,7 +347,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     twotuplerecovery = tuplerecovery
     if verbose:
         msg = group_label + " Creating all 2-symbol identities ..."
-        progress.update(msg)
+        progressprint(msg)
 
     # this   integral_identities  dictionary  will  have  as  keys
     # 2-tuples  of  irreps  and  its  values  will  be lists whose
@@ -391,7 +392,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     # to have everything on one side of the equation.
     if verbose:
         msg = group_label + " Creating set of 2 symbol identities ..."
-        progress.update(msg)
+        progressprint(msg)
     identities_2 = {}
 
     for ircombo in integral_identities_2:
@@ -407,7 +408,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     # that immediately means that that term is zero.
     if verbose:
         msg = group_label + " Finding trivial zeros ..."
-        progress.update(msg)
+        progressprint(msg)
 
     # first determine which ones have to be zero
     better_identities_2 = {irc:[] for irc in identities_2}
@@ -424,7 +425,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     # use them to simplify things.
     if verbose:
         msg = group_label + " Using them to simplify things ..."
-        progress.update(msg)
+        progressprint(msg)
 
     great_identities_2 = {irc:[] for irc in identities_2}
     for ircombo in better_identities_2:
@@ -444,7 +445,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     # functions are assumed to be real-valued.
     if verbose:
         msg = group_label + " Creating reality identities ..."
-        progress.update(msg)
+        progressprint(msg)
     real_var_simplifiers_2 = {irc:[] for irc in great_identities_2}
     # this has to run over all the quadruples of irs
     kprimes = set()
@@ -481,7 +482,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Solving for independent 2-symbol brakets ..."
-        progress.update(msg)
+        progressprint(msg)
     all_sols_2 = {irc:[] for irc in great_identities_2}
 
     for ircombo in great_identities_2:
@@ -514,7 +515,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
     # a symbolic expression.
     if verbose:
         msg = group_label + " Creating a dictionary with all the 2-symbol replacements ..."
-        progress.update(msg)
+        progressprint(msg)
 
     super_solution_2 = {}
     for ircombo in all_sols_2:
@@ -554,13 +555,13 @@ def coulomb_energy_matrices(group_label, verbose = False):
                         problem_vars = list(set(sum([list(identity.dict.keys()) for identity in more_ids[e_config]],[])))
     if verbose:
         msg = group_label + " Simplifying numeric values of qets ..."
-        progress.update(msg)
+        progressprint(msg)
 
     more_ids = {e_config:list(filter(lambda x: len(x.dict) > 0,list(map(simplify_qet,more_ids[e_config])))) for e_config in more_ids}
 
     if verbose:
         msg = group_label + " Solving for dependent vars in terms of independent ones ..."
-        progress.update(msg)
+        progressprint(msg)
 
     all_sols_2_4 = {irc:[] for irc in more_ids}
 
@@ -592,7 +593,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
         fab_solution_2_4.update(all_sols_2_4[e_config])
     if verbose:
         msg = group_label + (" There are %d less independent variables ..." % len(fab_solution_2_4))
-        progress.update(msg)
+        progressprint(msg)
 
     def simplifier_f(qet):
         true_qet = Qet({})
@@ -612,7 +613,7 @@ def coulomb_energy_matrices(group_label, verbose = False):
 
     if verbose:
         msg = group_label + " Making final simplifications ..."
-        progress.update(msg)
+        progressprint(msg)
 
     final_config_matrices = {k:{} for k in config_matrices}
     for ir1ir2 in config_matrices.keys():
@@ -623,27 +624,13 @@ def coulomb_energy_matrices(group_label, verbose = False):
     time_taken = time.time() - start_time
     if verbose:
         msg = group_label + (" Finished in %.1f s." % time_taken)
-        progress.update(msg)
+        progressprint(msg)
 
     return final_config_matrices
 
 def simplify_qet_values(qet):
     sqetdict = {k:sp.simplify(v) for k,v in qet.dict.items()}
     return Qet(sqetdict)
-
-all_matrices = {}
-for group_label in CPGs.all_group_labels:
-    all_matrices[group_label] = coulomb_energy_matrices(group_label, True)
-
-term_energies_for_printout = {}
-for group_label, term_energies in all_matrices.items():
-    for e_config, terms  in term_energies.items():
-        for term_key, term_matrix in terms.items():
-            term_energy = term_matrix[0][0]
-            term_energy = simplify_qet_values(term_energy)
-            term_energies_for_printout[(group_label, e_config, term_key)] = term_energy
-
-pickle.dump(term_energies_for_printout, open('./Data/term_energies_for_printout.pkl','wb'))
 
 def det_simplify(qet):
     '''
@@ -728,182 +715,200 @@ def format_empheq(qet):
 \end{empheq}''' % lqets
         return nice_output
 
-all_final_outputs = []
-tally_waves = {}
-single_col_groups = ['C_{1}','C_{2}']
-num_multicols = {group_label:2 for group_label in CPGs.all_group_labels}
-for scg in single_col_groups:
-    num_multicols[scg] = 1
-archival_terms = {}
-progress = display('',display_id=True)
-for group_counter, group_label in enumerate(CPGs.all_group_labels):
-    msg = "Working on group %s ..." % group_label
-    progress.update(msg)
-    group = CPGs.get_group_by_label(group_label)
-    s1, s2 = sp.S(1)/2, sp.S(1)/2
-    Ss  = [0,1]
-    m1s = [-sp.S(1)/2, sp.S(1)/2]
-    m2s = [-sp.S(1)/2, sp.S(1)/2]
-    group_CGs = group.CG_coefficients
-    flat_labels = dict(sum([list(l.items()) for l in list(new_labels[group_label].values())],[]))
-    group_CGs = {(flat_labels[k[0]], flat_labels[k[1]], flat_labels[k[2]]):v for k,v in group_CGs.items()}
-    summands = OrderedDict()
-    group.new_component_labels = OrderedDict([(ir, list(new_labels[group_label][ir].values())) for ir in group.irrep_labels])
-    for Γ1, Γ2, Γ3, m1, m2, S in product(group.irrep_labels,
-                                     group.irrep_labels,
-                                     group.irrep_labels,
-                                     m1s,
-                                     m2s,
-                                     Ss):
-        for γ1, γ2, γ3 in product(group.new_component_labels[Γ1],
-                                  group.new_component_labels[Γ2],
-                                  group.new_component_labels[Γ3]):
-            for mSz in range(S,-S-1,-1):
-                sCG = ClebschG(s1, s2, S, m1, m2, mSz)
-                if (γ1, γ2, γ3) not in group_CGs.keys():
-                    continue
-                else:
-                    gCG = group_CGs[(γ1, γ2, γ3)]
-                coeff = sCG*gCG
-                key = (Γ1, Γ2, Γ3, γ3, S, mSz)
-                if (Γ2,m2,γ2) == (Γ1,m1,γ1):
-                    continue
-                if coeff!=0:
-                    if key not in summands.keys():
-                        summands[key] = []
-                    summands[key].append(Qet({(Γ1,γ1,m1,Γ2,γ2,m2):coeff}))
-    total_qets = OrderedDict([(k, sum(v,Qet({}))) for k,v in summands.items()])
-    best_qets = OrderedDict([(k, det_simplify(v)) for k,v in total_qets.items()])
-    best_qets = OrderedDict([(k, v) for k,v in best_qets.items() if len(v.dict)!=0])
-    terms = OrderedDict()
-    done_keys = []
-    for k, v in best_qets.items():
-        (Γ1, Γ2, Γ3, γ3, S, mSz) = k
-        equiv_key = (Γ2, Γ1, Γ3, γ3, S, mSz)
-        term_pair = (Γ3, S)
-        if term_pair not in terms.keys():
-            terms[term_pair] = OrderedDict()
-        if equiv_key in done_keys:
-            continue
-        terms[term_pair][k] = v
-        done_keys.append(k)
-    final_terms = OrderedDict()
-    for term in terms:
-        ir, S = term
-        states = terms[term]
-        one_term = Term({'irrep': ir, 'S': S, 'states': states})
-        final_terms[term] = one_term
-#     print("Manufacturing latex output ....")
-    max_counter = 3
-    if group_counter == 0:
-        print_outs = ['\n\\newpage\n\n\\section{Terms and wave functions}\n\\subsection{Group $%s$}\n\n\\begin{center} \\underline{Component labels} \n\\vspace{0.2cm}\n' % group_label]
-    else:
-        print_outs = ['\n\\doublerulefill\n\\subsection{Group $%s$} \n\n\\begin{center}\n\n\\underline{Component labels} \n\\vspace{0.2cm}\n' % group_label]
-    for running_idx, irrep_symbol in enumerate(group.irrep_labels):
-        components_for_printing = ','.join(list(map(sp.latex, group.new_component_labels[irrep_symbol])))
-        if running_idx < (len(group.irrep_labels)-1):
-            print_outs.append('$%s:\\{%s\\}$ || ' % (sp.latex(irrep_symbol), components_for_printing))
+if __name__=='__main__':
+    all_matrices = {}
+    for group_label in CPGs.all_group_labels:
+        all_matrices[group_label] = coulomb_energy_matrices(group_label, True)
+    
+    term_energies_for_printout = {}
+    for group_label, term_energies in all_matrices.items():
+        for e_config, terms  in term_energies.items():
+            for term_key, term_matrix in terms.items():
+                term_energy = term_matrix[0][0]
+                term_energy = simplify_qet_values(term_energy)
+                term_energies_for_printout[(group_label, e_config, term_key)] = term_energy
+    
+    pickle.dump(term_energies_for_printout, open('./Data/term_energies_for_printout.pkl','wb'))
+    
+    all_final_outputs = []
+    tally_waves = {}
+    single_col_groups = ['C_{1}','C_{2}']
+    num_multicols = {group_label:2 for group_label in CPGs.all_group_labels}
+    for scg in single_col_groups:
+        num_multicols[scg] = 1
+    archival_terms = {}
+    # progress = display('',display_id=True)
+    for group_counter, group_label in enumerate(CPGs.all_group_labels):
+        msg = "Working on group %s ..." % group_label
+        progressprint(msg)
+        group = CPGs.get_group_by_label(group_label)
+        s1, s2 = sp.S(1)/2, sp.S(1)/2
+        Ss  = [0,1]
+        m1s = [-sp.S(1)/2, sp.S(1)/2]
+        m2s = [-sp.S(1)/2, sp.S(1)/2]
+        group_CGs = group.CG_coefficients
+        flat_labels = dict(sum([list(l.items()) for l in list(new_labels[group_label].values())],[]))
+        group_CGs = {(flat_labels[k[0]], flat_labels[k[1]], flat_labels[k[2]]):v for k,v in group_CGs.items()}
+        summands = OrderedDict()
+        group.new_component_labels = OrderedDict([(ir, list(new_labels[group_label][ir].values())) for ir in group.irrep_labels])
+        for Γ1, Γ2, Γ3, m1, m2, S in product(group.irrep_labels,
+                                         group.irrep_labels,
+                                         group.irrep_labels,
+                                         m1s,
+                                         m2s,
+                                         Ss):
+            for γ1, γ2, γ3 in product(group.new_component_labels[Γ1],
+                                      group.new_component_labels[Γ2],
+                                      group.new_component_labels[Γ3]):
+                for mSz in range(S,-S-1,-1):
+                    sCG = ClebschG(s1, s2, S, m1, m2, mSz)
+                    if (γ1, γ2, γ3) not in group_CGs.keys():
+                        continue
+                    else:
+                        gCG = group_CGs[(γ1, γ2, γ3)]
+                    coeff = sCG*gCG
+                    key = (Γ1, Γ2, Γ3, γ3, S, mSz)
+                    if (Γ2,m2,γ2) == (Γ1,m1,γ1):
+                        continue
+                    if coeff!=0:
+                        if key not in summands.keys():
+                            summands[key] = []
+                        summands[key].append(Qet({(Γ1,γ1,m1,Γ2,γ2,m2):coeff}))
+        total_qets = OrderedDict([(k, sum(v,Qet({}))) for k,v in summands.items()])
+        best_qets = OrderedDict([(k, det_simplify(v)) for k,v in total_qets.items()])
+        best_qets = OrderedDict([(k, v) for k,v in best_qets.items() if len(v.dict)!=0])
+        terms = OrderedDict()
+        done_keys = []
+        for k, v in best_qets.items():
+            (Γ1, Γ2, Γ3, γ3, S, mSz) = k
+            equiv_key = (Γ2, Γ1, Γ3, γ3, S, mSz)
+            term_pair = (Γ3, S)
+            if term_pair not in terms.keys():
+                terms[term_pair] = OrderedDict()
+            if equiv_key in done_keys:
+                continue
+            terms[term_pair][k] = v
+            done_keys.append(k)
+        final_terms = OrderedDict()
+        for term in terms:
+            ir, S = term
+            states = terms[term]
+            one_term = Term({'irrep': ir, 'S': S, 'states': states})
+            final_terms[term] = one_term
+    #     print("Manufacturing latex output ....")
+        max_counter = 3
+        if group_counter == 0:
+            print_outs = ['\n\\newpage\n\n\\section{Terms and wave functions}\n\\subsection{Group $%s$}\n\n\\begin{center} \\underline{Component labels} \n\\vspace{0.2cm}\n' % group_label]
         else:
-            print_outs.append('$%s:\\{%s\\}$' % (sp.latex(irrep_symbol), components_for_printing))
-    if num_multicols[group_label] == 1:
-        print_outs.append('\\end{center}\n\n')
-    else:
-        print_outs.append('\\end{center}\n\n\\begin{multicols}{%d}\n\n' % num_multicols[group_label])
-    supreme_states = {}
-    total_waves = 0
-    end_terms = {}
-    for one_term_k, one_term in final_terms.items():
-        term_symb = r'{{}}^{{{M}}}\!{ir}'.format(M=(2*one_term_k[1]+1), ir = sp.latex(one_term_k[0]))
-        term_symb = sp.Symbol(term_symb)
-        print_outs.append('\n\\hrulefill\n\\subsubsection{$%s$}\n\\vspace{0.25cm}\n \\begin{center} \n' % sp.latex(term_symb))
-        counter = 0
-        prev_α = ''
-        end_terms[one_term_k] = []
-        origins = []
-        for state_key, state in one_term.states.items():
-            (Γ1, Γ2, Γ3, γ3, S, mSz) = state_key
-            αl = sp.Symbol(sp.latex(Γ1).lower())*sp.Symbol(sp.latex(Γ2).lower())
-            α = Γ1 * Γ2
-            multiplicity = 2*S+1
-            term_symb = r'{{}}^{{{M}}}\!{ir}'.format(M=(2*S+1), ir = sp.latex(Γ3))
-            state_symbol = '\\Psi_{%d}(%s,%s,M\!=\!%d,%s)' % (counter+1, sp.latex(α).lower(), term_symb, mSz, sp.latex(γ3))
-            state_symbol = sp.Symbol(state_symbol)
-            v_simple = Qet({(k[1],k[2],k[4],k[5]):v for k,v in state.dict.items()})
-            v_det, q_qet = as_determinantal_ket(v_simple)
-            end_terms[one_term_k].append(q_qet)
-            origins.append(state_key)
-            sup_key = α
-            if sup_key not in supreme_states.keys():
-                supreme_states[sup_key] = []
-            supreme_states[sup_key].append(v_det)
-            pout = "$\\textcolor{blue}{%s} = %s$\\vspace{0.1cm}\n" % (sp.latex(state_symbol), sp.latex(v_det))
-            pout = sp.Symbol(pout)
-            if prev_α != α:
-                if prev_α == '':
-                    print_outs.append('\n\n $\\textcolor{red}{%s}$ \n\n' % (sp.latex(α).lower()))
+            print_outs = ['\n\\doublerulefill\n\\subsection{Group $%s$} \n\n\\begin{center}\n\n\\underline{Component labels} \n\\vspace{0.2cm}\n' % group_label]
+        for running_idx, irrep_symbol in enumerate(group.irrep_labels):
+            components_for_printing = ','.join(list(map(sp.latex, group.new_component_labels[irrep_symbol])))
+            if running_idx < (len(group.irrep_labels)-1):
+                print_outs.append('$%s:\\{%s\\}$ || ' % (sp.latex(irrep_symbol), components_for_printing))
+            else:
+                print_outs.append('$%s:\\{%s\\}$' % (sp.latex(irrep_symbol), components_for_printing))
+        if num_multicols[group_label] == 1:
+            print_outs.append('\\end{center}\n\n')
+        else:
+            print_outs.append('\\end{center}\n\n\\begin{multicols}{%d}\n\n' % num_multicols[group_label])
+        supreme_states = {}
+        total_waves = 0
+        end_terms = {}
+        for one_term_k, one_term in final_terms.items():
+            term_symb = r'{{}}^{{{M}}}\!{ir}'.format(M=(2*one_term_k[1]+1), ir = sp.latex(one_term_k[0]))
+            term_symb = sp.Symbol(term_symb)
+            print_outs.append('\n\\hrulefill\n\\subsubsection{$%s$}\n\\vspace{0.25cm}\n \\begin{center} \n' % sp.latex(term_symb))
+            counter = 0
+            prev_α = ''
+            end_terms[one_term_k] = []
+            origins = []
+            for state_key, state in one_term.states.items():
+                (Γ1, Γ2, Γ3, γ3, S, mSz) = state_key
+                αl = sp.Symbol(sp.latex(Γ1).lower())*sp.Symbol(sp.latex(Γ2).lower())
+                α = Γ1 * Γ2
+                multiplicity = 2*S+1
+                term_symb = r'{{}}^{{{M}}}\!{ir}'.format(M=(2*S+1), ir = sp.latex(Γ3))
+                state_symbol = '\\Psi_{%d}(%s,%s,M\!=\!%d,%s)' % (counter+1, sp.latex(α).lower(), term_symb, mSz, sp.latex(γ3))
+                state_symbol = sp.Symbol(state_symbol)
+                v_simple = Qet({(k[1],k[2],k[4],k[5]):v for k,v in state.dict.items()})
+                v_det, q_qet = as_determinantal_ket(v_simple)
+                end_terms[one_term_k].append(q_qet)
+                origins.append(state_key)
+                sup_key = α
+                if sup_key not in supreme_states.keys():
+                    supreme_states[sup_key] = []
+                supreme_states[sup_key].append(v_det)
+                pout = "$\\textcolor{blue}{%s} = %s$\\vspace{0.1cm}\n" % (sp.latex(state_symbol), sp.latex(v_det))
+                pout = sp.Symbol(pout)
+                if prev_α != α:
+                    if prev_α == '':
+                        print_outs.append('\n\n $\\textcolor{red}{%s}$ \n\n' % (sp.latex(α).lower()))
+                    else:
+                        print_outs.append('\n\\vspace{0.25cm}\n\n $\\textcolor{red}{%s}$ \n\n' % (sp.latex(α).lower()))
+                    term_energy = term_energies_for_printout[(group_label, αl, one_term_k[-1::-1])]
+                    print_outs.append('\n\n %s \n\n' % (format_empheq(term_energy)))
+                prev_α = α
+                print_outs.append(sp.latex(pout))
+                counter += 1
+                total_waves += 1
+                done_keys.append(state_key)
+            end_terms[one_term_k] = Term({'irrep': one_term_k[0], 'S': one_term_k[1], 'states': end_terms[one_term_k], 'state_keys': origins})
+            print_outs.append('\n\\end{center}\n')
+        archival_terms[group_label] = end_terms
+        if num_multicols[group_label] != 1:
+            print_outs.append('\n\\end{multicols}\n')
+        irrep_combos = list(combinations_with_replacement(group.irrep_labels,2))
+        total_waves_groundtruth = sum([num_waves(ir0,ir1) for ir0, ir1 in irrep_combos])
+        tally_waves[group_label] = (total_waves,total_waves_groundtruth,full_waves())
+        all_wavefunctions = '\n'.join(print_outs)
+        all_wavefunctions = all_wavefunctions.replace("^'","^{'}").replace("^''","^{''}")
+        all_final_outputs.append(all_wavefunctions)
+    print("Saving LaTeX output to file ...")
+    super_final_output = '\n'.join(all_final_outputs)
+    open(latex_output_fname,'w').write(super_final_output)
+    print("Saving to pickle ...")
+    pickle.dump(archival_terms, open('./Data/2e-terms.pkl','wb'))
+    
+    # with new labels
+    group_chunks = []
+    for group_label in CPGs.all_group_labels:
+        group = CPGs.get_group_by_label(group_label)
+        all_spin_combos = OrderedDict()
+        spin_states = [sp.Symbol(r'\alpha'), sp.Symbol(r'\beta')]
+        group.new_component_labels = {ir:list(new_labels[group_label][ir].values()) for ir in group.irrep_labels}
+        for irrep in group.irrep_labels:
+            spin_orbitals = []
+            for component0, component1 in product(group.new_component_labels[irrep],group.new_component_labels[irrep]):
+                for s0, s1 in product(spin_states,spin_states):
+                    spin_orbital = (component0, component1, s0, s1)
+                    if (component1, component0, s1, s0) not in spin_orbitals:
+                        if (component1, s1) != (component0, s0):
+                            spin_orbitals.append(spin_orbital)
+            spin_orbital_symbols = {}
+            for spin_orbital in spin_orbitals:
+                component0, component1, s0, s1 = spin_orbital
+                if s0 == spin_states[0]:
+                    cstar0 = sp.latex(component0)
                 else:
-                    print_outs.append('\n\\vspace{0.25cm}\n\n $\\textcolor{red}{%s}$ \n\n' % (sp.latex(α).lower()))
-                term_energy = term_energies_for_printout[(group_label, αl, one_term_k[-1::-1])]
-                print_outs.append('\n\n %s \n\n' % (format_empheq(term_energy)))
-            prev_α = α
-            print_outs.append(sp.latex(pout))
-            counter += 1
-            total_waves += 1
-            done_keys.append(state_key)
-        end_terms[one_term_k] = Term({'irrep': one_term_k[0], 'S': one_term_k[1], 'states': end_terms[one_term_k], 'state_keys': origins})
-        print_outs.append('\n\\end{center}\n')
-    archival_terms[group_label] = end_terms
-    if num_multicols[group_label] != 1:
-        print_outs.append('\n\\end{multicols}\n')
-    irrep_combos = list(combinations_with_replacement(group.irrep_labels,2))
-    total_waves_groundtruth = sum([num_waves(ir0,ir1) for ir0, ir1 in irrep_combos])
-    tally_waves[group_label] = (total_waves,total_waves_groundtruth,full_waves())
-    all_wavefunctions = '\n'.join(print_outs)
-    all_wavefunctions = all_wavefunctions.replace("^'","^{'}").replace("^''","^{''}")
-    all_final_outputs.append(all_wavefunctions)
-print("Saving LaTeX output to file ...")
-super_final_output = '\n'.join(all_final_outputs)
-open(latex_output_fname,'w').write(super_final_output)
-print("Saving to pickle ...")
-pickle.dump(archival_terms, open('./Data/2e-terms.pkl','wb'))
+                    cstar0 = r'\overline{%s}' % sp.latex(component0)
+                if s1 == spin_states[0]:
+                    cstar1 = sp.latex(component1)
+                else:
+                    cstar1 = r'\overline{%s}' % sp.latex(component1)
+                spin_orbital_symbols[spin_orbital] = sp.Symbol(r'$|%s%s|$' % (cstar0, cstar1))
+            all_slater_symbols = []
+            for s in list(spin_orbital_symbols.values()):
+                all_slater_symbols.append(sp.latex(s))
+            all_slater_symbols = ', '.join(all_slater_symbols)
+            all_slater_symbols = '\\begin{center}\n%s\n\\end{center}' % all_slater_symbols
+            all_slater_symbols = ('\\begin{center}\n $%s{\\cdot}%s:$ \n\\end{center}\n\n' % (sp.latex(irrep),sp.latex(irrep))) + all_slater_symbols
+            all_spin_combos[irrep] = all_slater_symbols
+        final_output = '\n\n'.join(all_spin_combos.values())
+        final_output = ('\\hrulefill \n \\begin{center} Group $%s$ \\end{center} \n' % group_label) + final_output
+        group_chunks.append(final_output)
+    super_output = '\n'.join(group_chunks)
+    super_output = super_output.replace("^'","^{'}").replace("^''","^{''}")
+    open(os.path.join(latex_output_dir,'spin-orbitals.tex'),'w').write(super_output)
 
-# with new labels
-group_chunks = []
-for group_label in CPGs.all_group_labels:
-    group = CPGs.get_group_by_label(group_label)
-    all_spin_combos = OrderedDict()
-    spin_states = [sp.Symbol(r'\alpha'), sp.Symbol(r'\beta')]
-    group.new_component_labels = {ir:list(new_labels[group_label][ir].values()) for ir in group.irrep_labels}
-    for irrep in group.irrep_labels:
-        spin_orbitals = []
-        for component0, component1 in product(group.new_component_labels[irrep],group.new_component_labels[irrep]):
-            for s0, s1 in product(spin_states,spin_states):
-                spin_orbital = (component0, component1, s0, s1)
-                if (component1, component0, s1, s0) not in spin_orbitals:
-                    if (component1, s1) != (component0, s0):
-                        spin_orbitals.append(spin_orbital)
-        spin_orbital_symbols = {}
-        for spin_orbital in spin_orbitals:
-            component0, component1, s0, s1 = spin_orbital
-            if s0 == spin_states[0]:
-                cstar0 = sp.latex(component0)
-            else:
-                cstar0 = r'\overline{%s}' % sp.latex(component0)
-            if s1 == spin_states[0]:
-                cstar1 = sp.latex(component1)
-            else:
-                cstar1 = r'\overline{%s}' % sp.latex(component1)
-            spin_orbital_symbols[spin_orbital] = sp.Symbol(r'$|%s%s|$' % (cstar0, cstar1))
-        all_slater_symbols = []
-        for s in list(spin_orbital_symbols.values()):
-            all_slater_symbols.append(sp.latex(s))
-        all_slater_symbols = ', '.join(all_slater_symbols)
-        all_slater_symbols = '\\begin{center}\n%s\n\\end{center}' % all_slater_symbols
-        all_slater_symbols = ('\\begin{center}\n $%s{\\cdot}%s:$ \n\\end{center}\n\n' % (sp.latex(irrep),sp.latex(irrep))) + all_slater_symbols
-        all_spin_combos[irrep] = all_slater_symbols
-    final_output = '\n\n'.join(all_spin_combos.values())
-    final_output = ('\\hrulefill \n \\begin{center} Group $%s$ \\end{center} \n' % group_label) + final_output
-    group_chunks.append(final_output)
-super_output = '\n'.join(group_chunks)
-super_output = super_output.replace("^'","^{'}").replace("^''","^{''}")
-open(os.path.join(latex_output_dir,'spin-orbitals.tex','w').write(super_output)
+
+    

@@ -1063,7 +1063,7 @@ class V_coefficients():
                             keys  are  triples  of  irreps  and values are the
                             associated  multiplier  such  that  every  V_coeff
                             whose  top  row  is  the key, is multiplied by the
-                            given  multiplier.  In principle this values could
+                            given  multiplier. In principle these values could
                             only  be negative, in practice having values which
                             are +1 may be good for accounting.
         verbose.     (bool):
