@@ -1419,7 +1419,7 @@ if os.path.exists(regen_fname):
     CPGs = pickle.load(open(os.path.join(module_dir,'data','CPGs.pkl'),'rb'))
 else:
     print("%s not found, regenerating ..." % regen_fname)
-    CPGs = CPGroups(group_data)
+    CPGs = CPGroups(group_data, double_group_data)
     pickle.dump(CPGs, open(os.path.join(module_dir,'data','CPGs.pkl'),'wb'))
 
 ################################## Others #################################

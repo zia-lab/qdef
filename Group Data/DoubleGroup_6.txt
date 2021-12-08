@@ -1,0 +1,10 @@
+6,D2
+\Gamma^1,\Gamma^2,\Gamma^3,\Gamma^4,\Gamma^5
+1,1,1,1,2
+1,2,2,2,1
+{Ee},\bar{C}_{2y},{C}_{2y},\bar{C}_{2x},{C}_{2x},\bar{C}_{2z},{C}_{2z},{\bar{E}e}
+1{Ee},2\bar{C}_{2y},2\bar{C}_{2x},2\bar{C}_{2z},1{\bar{E}e}
+{Ee},{\bar{E}e},\bar{C}_{2y},\bar{C}_{2x},{C}_{2x},{C}_{2y},\bar{C}_{2z},{C}_{2z}
+0,0,0,1,0,0,0,i,0,\pi,0,i,0,\pi,\pi,i,0,\pi,\pi,1,0,\pi,0,1,0,0,-\pi,i,0,0,-\pi,1
+1,1,1,1,1,1,-1,-1,1,1,1,-1,1,-1,1,1,1,-1,-1,1,2,0,0,0,-2
+{Ee},{\bar{E}e},\bar{C}_{2y},\bar{C}_{2x},{C}_{2x},{C}_{2y},\bar{C}_{2z},{C}_{2z},{\bar{E}e},{Ee},{C}_{2y},{C}_{2x},\bar{C}_{2x},\bar{C}_{2y},{C}_{2z},\bar{C}_{2z},\bar{C}_{2y},{C}_{2y},{\bar{E}e},{C}_{2z},\bar{C}_{2z},{Ee},\bar{C}_{2x},{C}_{2x},\bar{C}_{2x},{C}_{2x},\bar{C}_{2z},{\bar{E}e},{Ee},{C}_{2z},{C}_{2y},\bar{C}_{2y},{C}_{2x},\bar{C}_{2x},{C}_{2z},{Ee},{\bar{E}e},\bar{C}_{2z},\bar{C}_{2y},{C}_{2y},{C}_{2y},\bar{C}_{2y},{Ee},\bar{C}_{2z},{C}_{2z},{\bar{E}e},{C}_{2x},\bar{C}_{2x},\bar{C}_{2z},{C}_{2z},{C}_{2x},\bar{C}_{2y},{C}_{2y},\bar{C}_{2x},{\bar{E}e},{Ee},{C}_{2z},\bar{C}_{2z},\bar{C}_{2x},{C}_{2y},\bar{C}_{2y},{C}_{2x},{Ee},{\bar{E}e}

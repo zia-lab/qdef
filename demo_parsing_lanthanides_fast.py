@@ -27,7 +27,7 @@ base_rep=[
 ('B56',sp.Symbol('B_{5,6}')),('B66',sp.Symbol('B_{6,6}')),
 ('E0',sp.Symbol('E_{0}')),('E1',sp.Symbol('E_{1}')),
 ('E2',sp.Symbol('E_{2}')),('E3',sp.Symbol('E_{3}')),
-('eOrbitalRad',sp.Symbol(r'\epsilon')),('gI',sp.Symbol('g_{I}')),
+('eOrbitalRad',sp.Symbol(r'\epsilon_r')),('gI',sp.Symbol('g_{I}')),
 ('gs',sp.Symbol('g_{s}')),('M0',sp.Symbol('M_{0}')),
 ('M2',sp.Symbol('M_{2}')),('M4',sp.Symbol('M_{4}')),
 ('P2',sp.Symbol('P_{2}')),('P4',sp.Symbol('P_{4}')),
@@ -53,9 +53,7 @@ session=WolframLanguageSession()
 session.evaluate(r'''vars = {B02, B04, B06, B0x, B0y, B0z, B12, B14, B16, B22, B24, B26, 
    B34, B36, B44, B46, B56, B66, E0, E1, E2, E3, eOrbitalRad, gI, gs, 
    M0, M2, M4, P2, P4, P6, S12, S14, S16, S22, S24, S26, S34, S36, 
-   S44, S46, S56, 
-   S66, \[Alpha], \[Beta], \[Beta]BohrMag, \[Beta]n, \[Gamma], \
-\[Zeta]};
+   S44, S46, S56, S66, \[Alpha], \[Beta], \[Beta]BohrMag, \[Beta]n, \[Gamma], \[Zeta]};
 svars = Table[
    ToExpression[SubscriptBox["x", ToString[i]]], {i, 1, Length[vars]}];
 reps = (#[[1]] -> #[[2]]) & /@ Transpose[{vars, svars}];
@@ -198,5 +196,5 @@ if __name__ == '__main__':
         print("Saving to pickle...")
         pickle.dump(parsed_table,open(pickle_fname,'wb'))
         print("Pickle saved!")
-    print("Time elapsed = %d s" % int(time.time() - start_time))
+    print("Time elapsed = %.1f s" % (time.time() - start_time))
     session.stop()

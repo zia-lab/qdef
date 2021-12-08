@@ -1,0 +1,10 @@
+1,C1
+\Gamma^1,\Gamma^2
+1,1
+1,1
+{Ee},{\bar{E}e}
+1{Ee},1{\bar{E}e}
+{Ee},{\bar{E}e}
+0,0,0,1,0,0,0,i
+1,1,1,-1
+{Ee},{\bar{E}e},{\bar{E}e},{Ee}

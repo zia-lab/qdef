@@ -21,6 +21,7 @@ from sympy.physics.wigner import gaunt
 from collections import OrderedDict
 from itertools import product
 from matplotlib import pyplot as plt
+from misc import double_group_matrix_inverse, fmt_table
 
 module_dir = os.path.dirname(__file__)
 
@@ -72,9 +73,12 @@ element_groups = {
 # ===================== Load group theory data ================== #
 
 group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata.pkl'),'rb'))
+double_group_dict = pickle.load(open(os.path.join(module_dir,'data','gtpackdata_double_groups.pkl'),'rb'))
 vcoeffs = pickle.load(open(os.path.join(module_dir,'data','Vcoeffs.pkl'),'rb'))
 group_data = group_dict['group_data']
+double_group_data = double_group_dict['group_data']
 metadata = group_dict['metadata']
+double_group_metadata = double_group_dict['metadata']
 
 # ===================== Load group theory data ================== #
 # =============================================================== #
@@ -684,7 +688,7 @@ class CrystalGroup():
     '''
     Class for a point symmetry group.
     '''
-    def __init__(self, group_data_dict):
+    def __init__(self, group_data_dict, double_group_data_dict: None):
         self.index = group_data_dict['index']
         self.label = group_data_dict['group label']
         self.classes = group_data_dict['classes']
@@ -701,7 +705,7 @@ class CrystalGroup():
         self.order = len(self.group_operations)
         self.operations_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
         self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
-        self.direct_product_table()
+        self.product_table = self.direct_product_table(self.irrep_labels, self.character_table, self.character_table_inverse, self.label )
         self.component_labels = self.get_component_labels()
         self.symmetry_adapted_bases = symmetry_bases[self.label]
         self.CG_coefficients = GT_CGs[self.label]
@@ -711,6 +715,21 @@ class CrystalGroup():
             self.V_coefficients = vcoeffs[self.label]
         else:
             self.V_coefficients = None
+        if double_group_dict:
+            self.double_classes = double_group_data_dict['classes']
+            self.double_irrep_labels = double_group_data_dict['irrep labels']
+            self.double_character_table = double_group_data_dict['character table']
+            self.double_character_table_inverse = double_group_matrix_inverse(double_group_data_dict['character table'], self.label)
+            self.double_class_labels = double_group_data_dict['class labels']
+            self.double_multiplication_table = double_group_data_dict['multiplication table']
+            self.double_euler_angles = double_group_data_dict['euler angles']
+            self.double_group_operations = double_group_data_dict['group operations']
+            self.double_order = len(self.double_group_operations)
+            self.double_operations_matrices = {k: orthogonal_matrix(v) for k, v in self.double_euler_angles.items()}
+            self.double_irrep_dims = {k : self.double_character_table[self.double_irrep_labels.index(k),0] for k in self.double_irrep_labels}
+            self.double_product_table = self.direct_product_table(self.double_irrep_labels, self.double_character_table, self.double_character_table_inverse, self.label )
+            # self.double_component_labels = self.get_component_labels()
+            # self.double_symmetry_adapted_bases = double_symmetry_bases[self.label]
 
     def gen_char_table_dict(self):
             self.character_table_dict = {irrep_label: \
@@ -758,7 +777,7 @@ class CrystalGroup():
             components[irrep_label] = c_labels
         return components
 
-    def direct_product(self, ir0, ir1):
+    def direct_product(self, ir0, ir1, group_irreps, group_chartable, char_table_inverse):
         '''
         Given the label for a cpg and  labels for  two
         of its irreducible  representations, determine
@@ -768,21 +787,18 @@ class CrystalGroup():
         to the integer coefficients.
         '''
         # grab group classes, irrep names, and character table
-        group_classes = self.classes
-        group_irreps = self.irrep_labels
-        group_chartable = self.character_table
         assert ir0 in group_irreps, 'irrep not in %s' % str(group_irreps)
         assert ir1 in group_irreps, 'irrep not in %s' % str(group_irreps)
         chars_0, chars_1 = [group_chartable.row(group_irreps.index(ir)) for ir in [ir0, ir1]]
         chars = sp.Matrix([char0*char1 for char0, char1 in zip(chars_0, chars_1)])
-        partition = (self.character_table_inverse*chars)
+        partition = (char_table_inverse*chars)
         qet = Qet()
         for element, ir in zip(partition, group_irreps):
             el = int(sp.N(element,1,chop=True))
             qet = qet + Qet({ir:el})
         return qet.basis()
 
-    def direct_product_table(self):
+    def direct_product_table(self, group_irreps, char_table, char_table_inverse, group_label):
         '''
         This creates the complete set of  binary
         products of irreducible  representations
@@ -790,19 +806,36 @@ class CrystalGroup():
         The result is saved as  an attribute  in
         the group.
         '''
-        if hasattr(self, 'product_table'):
-            return self.product_table
-        group_classes = self.classes
-        group_irreps = self.irrep_labels
         product_table = OrderedDict()
         for ir0 in group_irreps:
             for ir1 in group_irreps:
                 if (ir1,ir0) in product_table.keys():
                     product_table[(ir0,ir1)] = product_table[(ir1,ir0)]
                 else:
-                    product_table[(ir0,ir1)] = self.direct_product(ir0, ir1)#.as_symbol_sum()
-        self.product_table = ProductTable(product_table, group_irreps, self.label)
-        return self.product_table
+                    product_table[(ir0,ir1)] = self.direct_product(ir0, ir1, group_irreps, char_table, char_table_inverse )#.as_symbol_sum()
+        return ProductTable(product_table, group_irreps, group_label)
+
+    # def direct_product_table(self):
+    #     '''
+    #     This creates the complete set of  binary
+    #     products of irreducible  representations
+    #     for the given group.
+    #     The result is saved as  an attribute  in
+    #     the group.
+    #     '''
+    #     if hasattr(self, 'product_table'):
+    #         return self.product_table
+    #     group_classes = self.classes
+    #     group_irreps = self.irrep_labels
+    #     product_table = OrderedDict()
+    #     for ir0 in group_irreps:
+    #         for ir1 in group_irreps:
+    #             if (ir1,ir0) in product_table.keys():
+    #                 product_table[(ir0,ir1)] = product_table[(ir1,ir0)]
+    #             else:
+    #                 product_table[(ir0,ir1)] = self.direct_product(ir0, ir1)#.as_symbol_sum()
+    #     self.product_table = ProductTable(product_table, group_irreps, self.label)
+    #     return self.product_table
 
     def __str__(self):
         return self.label
@@ -814,7 +847,7 @@ class CPGroups():
     '''
     Class to hold all crystallographic point groups.
     '''
-    def __init__(self, groups):
+    def __init__(self, groups, doublegroups):
         self.all_group_labels = [
             'C_{1}', 'C_{i}', 'C_{2}', 'C_{s}',
             'C_{2h}', 'D_{2}', 'C_{2v}', 'D_{2h}',
@@ -824,7 +857,10 @@ class CPGroups():
             'C_{6}', 'C_{3h}', 'C_{6h}', 'D_{6}',
             'C_{6v}', 'D_{3h}', 'D_{6h}', 'T',
             'T_{h}', 'O', 'T_{d}', 'O_{h}']
-        self.groups = {k: CrystalGroup(v) for k, v in groups.items()}
+        self.groups = {}
+        for k in groups:
+            print('Parsing %s ...' % self.all_group_labels[k-1])
+            self.groups[k] = CrystalGroup(groups[k], doublegroups[k])
         self.metadata = metadata
     def get_group_by_label(self, label):
         if '{' not in label:

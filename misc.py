@@ -5,8 +5,160 @@ import os, re
 import numpy as np
 from textwrap import wrap
 from time import time
+from math import floor,log10
+import sympy as sp
 
 module_dir = os.path.dirname(__file__)
+
+def rational_approx(x, N, min=0):
+    '''
+    Given  a number x this function returns a fraction
+    that approximates it with a denominator that could
+    be as large as N.
+    '''
+    if abs(x) <= min:
+        return sp.S(0)
+    if (int(x) == x):
+        return sp.S(int(x))
+    sign = 1
+    if x < 0:
+        sign = -1
+        x = -x
+    if x > 1:
+        ix, dx = int(x), x - int(x)
+    else:
+        ix = 0
+        dx = x
+    exponent = -floor(log10(float(dx)))
+    tens_multiplier = int(exponent-1)
+    dx = dx*(10**tens_multiplier)
+    divider = 1/(sp.S(10)**(sp.S(tens_multiplier)))
+    sign = sign
+    a, b = 0, 1
+    c, d = 1, 1
+    while (b <= N and d <= N):
+        mediant = float(a+c)/(b+d)
+        if dx == mediant:
+            if b + d <= N:
+                return sign*(sp.S(ix)+divider*sp.S(a+c)/sp.S(b+d))
+            elif d > b:
+                return sign*(sp.S(ix)+divider*sp.S(c)/sp.S(d))
+            else:
+                return sign*(sp.S(ix)+divider*sp.S(a)/sp.S(b))
+        elif dx > mediant:
+            a, b = a+c, b+d
+        else:
+            c, d = a+c,b+d
+    if (b > N):
+        return sign*(divider*sp.S(c)/sp.S(d) + sp.S(ix))
+    else:
+        return sign*(divider*sp.S(a)/sp.S(b) + sp.S(ix))
+
+def rational_simplify(sympy_expr, N=10000):
+    '''
+    Given a sympy expression this function takes it and
+    finds rational  approximations (perhaps including a
+    square root).
+
+    Example
+    -------
+
+    >> rational_simplify(2.31099*sp.Symbol('x') - 1.14)
+    >>> 9 * sqrt(546) * x / 91 - sqrt(130)/10
+    '''
+    sympy_dict = sympy_expr.as_coefficients_dict()
+    for k,v in sympy_dict.items():
+        if isinstance(v, sp.core.numbers.Float):
+            n = N
+            simpler = rational_approx(v, n)
+            # If the thing was approximated to zero
+            # escalate the precision.
+            while simpler == 0:
+                n = 10*n
+                simpler = rational_approx(v, n)
+            sympy_dict[k] = simpler
+    total = sum([k*v for k,v in sympy_dict.items()])
+    return total
+
+def square_rational_approx(x, N,min=0):
+    '''
+    Given a number x this algorithm finds the best  rational
+    approximation to its square, and then returns the signed
+    square root of that.
+    '''
+    if x < 0:
+        sign = -1
+        x = -x
+    else:
+        sign = 1
+    y = x*x
+    squared_approx = sign*sp.sqrt(rational_approx(y,N,min))
+    return squared_approx
+
+def double_group_matrix_inverse(double_group_chartable, group_label):
+    '''
+    Sympy's matrix inversion routine fails or stalls for some of
+    the  groups.  This  is  a workaround by using numpy's matrix
+    inversion  plus some simplifications to coerce every element
+    of the matrix inverse to have a square that is rational.
+
+    This  approximation  returns  an  exact matrix inverse as is
+    guaranteed by the assert statement before the return line.
+    '''
+    # manual magical fix
+    if group_label == 'O_{h}':
+        N = 10000
+    else:
+        N = 1000
+    chartable = double_group_chartable.T
+    num_rows = chartable.rows
+    num_cols = chartable.cols
+    chararray = np.array(chartable).astype(np.complex128)
+    chararrayinverse = np.linalg.inv(chararray)
+    charinverse = sp.N(sp.Matrix(chararrayinverse),chop=True)
+    simple_inverse = []
+    num_rows = charinverse.rows
+    num_cols = charinverse.cols
+    for row_idx in range(num_rows):
+        row = [sp.I*square_rational_approx(sp.im(charinverse[row_idx,col_idx]),N,1e-6) + square_rational_approx(sp.re(charinverse[row_idx,col_idx]),N,1e-6) for col_idx in range(num_cols)]
+        simple_inverse.append(row)
+    simple_inverse = sp.Matrix(simple_inverse)
+    check = simple_inverse*chartable
+    check = sp.re(check) + sp.I * sp.im(check)
+    check = sp.N(check, chop=True)
+    elements = (set(list(check)))
+    # this guarantees that the matrix inverse is exact:
+    unit_check = (len(elements) == min(2, num_rows) and (list(sorted(list(elements))) == [0,1]))
+    assert unit_check, "ERROR in matrix inversion"
+    return simple_inverse
+
+def fmt_table(data, center_data=False, add_row_nums=False):
+    '''Create a LaTeX table from a given list of lists'''
+    buf='''
+\\newcommand\\T{\\Rule{0pt}{1em}{.3em}}
+\\begin{array}{%s}
+'''
+    max_cols = max(len(r) for r in data)
+    column_spec = '|' + '|'.join(['c']*max_cols) + '|'
+    buf = buf % column_spec
+    row_idx = 0
+    for row_data in data:
+        row = ''
+        if add_row_nums and row_idx > 0:
+            row += str(row_idx) + " & "
+        if center_data and row_idx > 0:
+            to_add = ceil( (max_cols - len(row_data))/2 )
+            row += ' & '.join([''] * to_add)
+        row += ' & '.join([sp.latex(thing) for thing in row_data])
+        if row_idx == 0:
+            row = '''\\hline ''' + row + '''\\\\\hline '''
+        else:
+            row += '''\\\\\hline '''
+        row += "\n"
+        buf +=row
+        row_idx += 1
+    buf += '''\\end{array}'''
+    return buf
 
 def latex_eqn_to_png(tex_code, timed=True, figname=None, outfolder=os.path.join(module_dir,'images')):
     '''
