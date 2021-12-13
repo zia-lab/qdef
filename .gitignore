@@ -143,3 +143,4 @@ Parameter Tables/.DS_Store
 docs/Makefile
 docs/make.bat
 data/mp_2018.pkl
+clean_vscode_empties.py

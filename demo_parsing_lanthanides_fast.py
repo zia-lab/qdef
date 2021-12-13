@@ -12,6 +12,8 @@ import time
 
 table_fname = './data/lanthanide_tables/HFEnergyMatrixTables'
 pickle_fname = './data/lanthanide_tables/HFEnergyMatrixTables.pkl'
+table_fname = './data/lanthanide_tables/tab1'
+pickle_fname = './data/lanthanide_tables/tab1.pkl'
 save_to_pickle = True
 pretty_vars = False # whether the vars are standard or nice
 

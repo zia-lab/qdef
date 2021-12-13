@@ -35,6 +35,7 @@ from IPython.display import display, HTML, Math
 
 from misc import *
 from qdefcore import *
+from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
 
 
 module_dir = os.path.dirname(__file__)
@@ -1264,35 +1265,6 @@ def lmbasis(lmax):
     '''
 
 
-def fmt_table(data, center_data=False, add_row_nums=False):
-    '''Create a LaTeX table from a given list of lists'''
-    buf='''
-\\newcommand\\T{\\Rule{0pt}{1em}{.3em}}
-\\begin{array}{%s}
-'''
-    max_cols = max(len(r) for r in data)
-    column_spec = '|' + '|'.join(['c']*max_cols) + '|'
-    buf = buf % column_spec
-    row_idx = 0
-    for row_data in data:
-        row = ''
-        if add_row_nums and row_idx > 0:
-            row += str(row_idx) + " & "
-        if center_data and row_idx > 0:
-            to_add = ceil( (max_cols - len(row_data))/2 )
-            row += ' & '.join([''] * to_add)
-        row += ' & '.join([sp.latex(thing) for thing in row_data])
-        if row_idx == 0:
-            row = '''\\hline ''' + row + '''\\\\\hline '''
-        else:
-            row += '''\\\\\hline '''
-        row += "\n"
-        buf +=row
-        row_idx += 1
-    buf += '''\\end{array}'''
-    return buf
-
-
 def threeHarmonicIntegral(l1, m1, l2, m2, l3, m3):
     '''
     Returns the value of the three spherical harmonics integral,
@@ -1315,9 +1287,9 @@ def l_splitter(group_num_or_label, l):
     from   the   irreducible  representation  of  the  continous
     rotation group as represented by the set of Y_{l,m}.
 
-    More simply stated it returns how states that transform like
-    a  given  l  would split into states that would transform as
-    the irreducible representations of the given group.
+    More  simply  stated,  it  returns how states that transform
+    like  a given l would split into states that would transform
+    as the irreducible representations of the given group.
 
     The   function  returns  a  Qet  whose  keys  correspond  to
     irreducible  representation  symbols  of the given group and
@@ -1328,8 +1300,10 @@ def l_splitter(group_num_or_label, l):
     ----------
 
     group_num_or_label  :  int  or  str  Index  or  string for a
-    crystallographic  point  group.  l  :  int  or  str azimutal
-    quantum number (arbitrary) or string character s,p,d,f,g,h,i
+    crystallographic  point  group.  
+    
+    l : int or str azimutal quantum number (arbitrary) or string
+    character s,p,d,f,g,h,i
 
     Examples
     --------
