@@ -36,6 +36,7 @@ from IPython.display import display, HTML, Math
 from misc import *
 from qdefcore import *
 from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
+from sympy import Eijk as εijk
 
 
 module_dir = os.path.dirname(__file__)
@@ -45,6 +46,7 @@ module_dir = os.path.dirname(__file__)
 
 morrison_loc = os.path.join(module_dir,'data','morrison.pkl')
 morrison = pickle.load(open(morrison_loc,'rb'))
+new_labels = pickle.load(open('./Data/components_rosetta.pkl','rb'))
 
 # =========================== Load others ======================= #
 # =============================================================== #
@@ -1249,6 +1251,491 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
 ###########################################################################
 
 ###########################################################################
+######################### MultiElectron Foundry ###########################
+
+from collections import namedtuple
+from functools import reduce
+Ψ = namedtuple('Ψ',['electrons','terms','γ','S','M']) 
+
+class CrystalElectronsSCoupling():
+    '''
+    Couple electrons in sequence, adding one at a time.
+    '''
+    def __init__(self, group_label, Γs):
+        '''
+        Parameters
+        ----------
+        group_label (str): a string representing a point gropu
+        Γs     (iterable): with irrep symbols
+        '''
+        self.Γs = Γs
+        self.group_label = group_label
+        self.group = CPGs.get_group_by_label(self.group_label)
+        self.group_CGs = self.group.CG_coefficients
+        self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
+        self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
+        self.irreps = self.group.irrep_labels
+        self.ms = [-sp.S(1)/2,sp.S(1)/2]
+        self.s_half = sp.S(1)/2
+        self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        self.inequiv_waves = self.elec_aggregate(self.Γs)
+        if len(self.Γs) == 1:
+            self.equiv_waves = self.inequiv_waves
+        else:
+            self.equiv_waves = self.to_equiv_electrons()
+
+    def qet_divide(self, qet0, qet1):
+        '''
+        Given   two   qets,   assumed   to   be   superpositions  of
+        determinantal states. Determine if they are collinear and if
+        they are, provide their ratio.
+
+        Parameters
+        ----------
+        qet0    (qdef.Qet) : a qet with determinantal keys.
+        qet1    (qdef.Qet) : a qet with determinantal keys.
+
+        Returns
+        -------
+        ratio (num): 0 if qets are not collinear, otherwise equal to
+        qet0/qet1.
+
+
+        '''
+        if len(qet0.dict) != len(qet1.dict):
+            return 0
+        set0 = frozenset(map(frozenset,qet0.dict.keys()))
+        set1 = frozenset(map(frozenset,qet1.dict.keys()))
+        num_parts = len(qet0.dict)
+        # a necessary condition for them to be possibly collinear
+        # is that they should have have the same sets of quantum
+        # numbers.
+        if set0 != set1:
+            return 0
+        else:
+            ratios = []
+            # iterate over the quantum nums of the first qet
+            for qet_key_0, qet_val_0 in qet0.dict.items():
+                set0 = set(qet_key_0)
+                # and determine the ratio that it has
+                # to all of the parts of the other qet
+                # allowing for reaarangmenets valid
+                # under determinantal state rules
+                for qet_key_1, qet_val_1 in qet1.dict.items():
+                    set1 = set(qet_key_1)
+                    if set0 == set1:
+                        ordering = [qet_key_0.index(qk) for qk in qet_key_1]
+                        sign = εijk(*ordering)
+                        ratios.append(sign * qet_val_0/qet_val_1)
+                        continue
+        if ratios == []:
+            return 0
+        else:
+            # if all of the ratios are equal
+            # then the ratio of the two qets
+            # is well defined
+            if len(set(ratios)) == 1 and len(ratios) == num_parts:
+                return ratios[0]
+            else:
+                return 0
+
+    def det_qet_simplify(self, qet):
+        '''
+        Juggle with symbols to simplify a qet composed of determinantal
+        states.
+        '''
+        equivalent_parts = {}
+        standard_order = {} # this holds the standard order to which all the other list members will be referred to
+        for ket_part_key, ket_part_coeff in qet.dict.items():
+            set_ket = frozenset(ket_part_key)
+            if set_ket not in equivalent_parts:
+                equivalent_parts[set_ket] = []
+                standard_order[set_ket] = ket_part_key
+            equivalent_parts[set_ket].append((ket_part_key, ket_part_coeff))
+        # once I've grouped them together into pices of equivalent parts
+        # i then need to rearrange and properly sign the rearrangements
+        det_simple = []
+        for equivalent_key in equivalent_parts:
+            base_order = standard_order[equivalent_key]
+            total_coeff = 0
+            equiv_parts = equivalent_parts[equivalent_key]
+            for equiv_part in equiv_parts:
+                ordering = [base_order.index(part) for part in equiv_part[0]]
+                sign = εijk(*ordering)
+                total_coeff += sign*equiv_part[1]
+            final = (base_order, total_coeff)
+            if total_coeff != 0:
+                det_simple.append(final)
+        return det_simple
+
+    def adder(self, ψ_12s, Γ3):
+        '''
+        This function gets a dictionary of wave functions
+        and an additional electron that needs to be added
+        to them.
+        '''
+        #>2 this is called with Γ3
+        ψ_123s = {}
+        comps_3 = self.component_labels[Γ3]
+        s3 = sp.S(1)/2
+
+        for ψ_12, qet_12 in ψ_12s.items():
+            electrons = ψ_12.electrons
+            terms = ψ_12.terms
+            Γ12 = terms[-1][1]
+            γ12 = ψ_12.γ
+            S12, M12 = ψ_12.S, ψ_12.M
+            S123s = lrange(S12, s3)
+            Γ123s = self.group.product_table.odict[(Γ12, Γ3)] # these are the possible Γs from Γ12XΓ3
+            for Γ123, S123 in product(Γ123s, S123s):
+                M123s = mrange(S123)
+                γ123s = self.component_labels[Γ123]
+                for γ123, m3, γ3, M123 in product(γ123s, self.ms, comps_3, M123s):
+                    sCG2 = clebschG.eva(S12, s3, S123, M12, m3, M123)
+                    # coupling a γ12, γ3 to get a final γ
+                    gCG2 = self.group_CGs.setdefault((γ12, γ3, γ123), 0)
+                    coeff = sCG2 * gCG2
+                    if coeff == 0:
+                        continue
+                    ψ_123 = Ψ(electrons = electrons + (Γ3,),
+                                terms = terms + ((S123,Γ123),),
+                                    γ = γ123,
+                                    S = S123,
+                                    M = M123
+                            )
+                    if ψ_123 not in ψ_123s:
+                        ψ_123s[ψ_123] = Qet({})
+                    γ3f = (γ3 if (m3 > 0) else bar_symbol(γ3))
+                    ψ_123s[ψ_123] = ψ_123s[ψ_123] + (qet_12 * Qet({(γ3f,): coeff}))
+        return ψ_123s
+
+    def elec_aggregate(self, Γs):
+        '''
+        Add them electrons one at a time.
+        '''
+        if len(Γs) == 0:
+            return {}
+        elif len(Γs) == 1:
+            Γ1 = Γs[0]
+            S = self.s_half
+            ms = mrange(S)
+            comps_1 = self.component_labels[Γ1]
+            ψs = {}
+            for m, γ in product(ms, comps_1):
+                ψ = Ψ(electrons = (Γ1,),
+                        terms = ((S,Γ1),),
+                        γ = γ,
+                        S = S,
+                        M = m
+                        )
+                γf = (γ if (m > 0) else bar_symbol(γ))
+                total_ket_part_key = (γf,)
+                if ψ not in ψs:
+                    ψs[ψ] = {}
+                if total_ket_part_key not in ψs[ψ]:
+                    ψs[ψ][total_ket_part_key] = 0
+                ψs[ψ][total_ket_part_key] = 1
+            ψs = {k : Qet(v) for k,v in ψs.items()} 
+            return ψs
+        elif len(Γs) == 2:
+            s1, s2 = self.s_half, self.s_half
+            Γ1, Γ2 = Γs
+            comps_1, comps_2 = [self.component_labels[ir] for ir in [Γ1, Γ2]]
+            # the intermediate irreps belong to the reduction of Γ1 X Γ2
+            Γ12s = self.group.product_table.odict[(Γ1, Γ2)] 
+            # this is just [0,1] as for the total angular momentum of the intermediate states
+            S12s = lrange(s1,s2) 
+            ψ_12s = {}
+
+            for γ1, γ2, m1, m2, Γ12, S12 in product(comps_1, comps_2, self.ms, self.ms, Γ12s, S12s):
+                comps_12 = self.component_labels[Γ12]
+                M12s = mrange(S12)
+                for γ12, M12 in product(comps_12, M12s):
+                    ψ = Ψ(electrons = (Γ1, Γ2),
+                        terms = ((s1,Γ1),(s2,Γ2),(S12,Γ12)),
+                        γ = γ12,
+                        S = S12,
+                        M = M12
+                        )
+                    # summing s1 and s2 to yield S12
+                    sCG1 = clebschG.eva(s1, s2, S12, m1, m2, M12)
+                    # coupling a γ1, γ2 to get a γ12
+                    gCG1 = self.group_CGs.setdefault((γ1, γ2, γ12), 0)
+                    coeff = sCG1 * gCG1
+                    if coeff == 0:
+                        continue
+                    # collect in the dictionary all the parts that correspond to the sums
+                    if ψ not in ψ_12s:
+                        ψ_12s[ψ] = {}
+                    γ1f = (γ1 if (m1 > 0) else bar_symbol(γ1))
+                    γ2f = (γ2 if (m2 > 0) else bar_symbol(γ2))
+                    total_ket_part_key = (γ1f, γ2f)
+                    if total_ket_part_key not in ψ_12s[ψ]:
+                        ψ_12s[ψ][total_ket_part_key] = 0
+                    ψ_12s[ψ][total_ket_part_key] += coeff
+            ψ_12s = {k : Qet(v) for k,v in ψ_12s.items()} 
+            return ψ_12s
+        else:
+            Γ_train, Γ_last = Γs[:-1], Γs[-1]
+            # decimate until only two electrons are added
+            ψ_totals = self.adder(
+                            self.elec_aggregate(Γ_train),
+                            Γ_last
+                                 )
+            return ψ_totals
+        
+    def to_equiv_electrons(self):
+        '''
+        To  account  for  electrons  being equivalent it suffices to
+        interpret  each  tuple of symbols under the keys of each qet
+        to  be  a slater determinant in turn this allows simplifying
+        the  qets  to  account  for the symmetries under exchange of
+        symbols/electrons inside the keys
+        '''
+
+        ψ_totals = self.inequiv_waves
+        simplified_kets = {}
+        for ψ_123, qet_123 in ψ_totals.items():
+            qet_simplified = self.det_qet_simplify(qet_123)
+            if len(qet_simplified) != 0:
+                    simplified_kets[ψ_123] = Qet(dict(qet_simplified))
+                    the_normalizer = 1/simplified_kets[ψ_123].norm()
+                    simplified_kets[ψ_123] = the_normalizer*simplified_kets[ψ_123]
+
+        # The same qet might have been arrived at by different paths, the only
+        # difference begin an overall phase.
+        # This last step only keeps the qets that are non-equivalent.
+
+        full_det_qets = []
+        qsymbs = []
+        for total_ket_key_0, simple_ket_0 in simplified_kets.items():
+            ratios = []
+            for simple_ket_1 in full_det_qets:
+                divvy = self.qet_divide(simple_ket_0, simple_ket_1)
+                ratios.append(divvy==0)
+            ratios = sum(ratios)
+            if ratios == len(full_det_qets):
+                full_det_qets.append(simple_ket_0)
+                qsymbs.append(total_ket_key_0)
+        full_det_qets = dict(zip(qsymbs, full_det_qets))
+        return full_det_qets
+
+class CrystalElectronsLLcoupling():
+    '''
+    Couple two groups of electrons in one fell swoop.
+    '''
+    def __init__(self, group_label, Γ1s, Γ2s):
+        '''
+        group_label (str): label for a crystallographic point group
+        Γ1s    (2-tuple): (irrep_symbol (sp.Symbol), num_electrons (int))
+        Γ2s    (2-tuple): (irrep_symbol (sp.Symbol), num_electrons (int))
+        '''
+        if len(Γ1s) == 0:
+            self.Γ1s = []
+        else:
+            self.Γ1s = [Γ1s[0] for _ in range(Γ1s[1])]
+        if len(Γ2s) == 0:
+            self.Γ2s = []
+        else:
+            self.Γ2s = [Γ2s[0] for _ in range(Γ2s[1])]
+        self.crystalelectron0 = CrystalElectronsSCoupling(group_label, self.Γ1s)
+        self.crystalelectron1 = CrystalElectronsSCoupling(group_label, self.Γ2s)
+        self.group_label = group_label
+        self.group = CPGs.get_group_by_label(self.group_label)
+        self.group_CGs = self.group.CG_coefficients
+        self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
+        self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
+        self.irreps = self.group.irrep_labels
+        self.ms = [-sp.S(1)/2,sp.S(1)/2]
+        self.s_half = sp.S(1)/2
+        self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        self.equiv_waves = self.wave_muxer(self.crystalelectron0.equiv_waves,
+                                     self.crystalelectron1.equiv_waves)
+        self.equiv_waves = self.to_equiv_electrons(self.equiv_waves)
+
+    def __repr__(self):
+        return 'group %s: %s^%d X %s^%d (%d qets)' % (self.group_label, self.Γ1s[0], len(self.Γ1s), self.Γ2s[0], len(self.Γ2s), len(self.equiv_waves))
+    
+    def wave_muxer(self, ψ_12s, ψ_34s):
+        '''
+        Takes two dictionaries of wavefunctions and couples them.
+        For reference, see STK equation (3.20).
+
+        Parameters
+        ----------
+        ψ_12s (dict): whose keys are ψ namedtuples and whose values are qets.
+        ψ_34s (dict): whose keys are ψ namedtuples and whose values are qets.
+
+        Returns
+        -------
+        ψ_1234s (dict): whose keys are ψ namedtuples and whose values are qets.
+
+        '''
+
+        if len(ψ_34s)== 0:
+            return ψ_12s
+        if len(ψ_12s) == 0:
+            return ψ_34s
+        ψ_1234s = {}
+        for ψ_12, qet_12 in ψ_12s.items():
+            electrons12 = ψ_12.electrons
+            terms12 = ψ_12.terms
+            Γ12 = terms12[-1][1]
+            γ12 = ψ_12.γ
+            S12, M12 = ψ_12.S, ψ_12.M
+            for ψ_34, qet_34 in ψ_34s.items():
+                electrons34 = ψ_34.electrons
+                terms34 = ψ_34.terms
+                Γ34 = terms34[-1][1]
+                γ34 = ψ_34.γ
+                S34, M34 = ψ_34.S, ψ_34.M
+                S1234s = lrange(S12, S34)
+                Γ1234s = self.group.product_table.odict[(Γ12, Γ34)]
+                for Γ1234, S1234 in product(Γ1234s, S1234s):
+                    M1234s = mrange(S1234)
+                    γ1234s = self.component_labels[Γ1234]
+                    for γ1234, M1234 in product(γ1234s, M1234s):
+                        sCG2 = clebschG.eva(S12, S34, S1234, M12, M34, M1234)
+                        # coupling a γ12, γ34 to get a final γ1234
+                        gCG2 = self.group_CGs.setdefault((γ12, γ34, γ1234), 0)
+                        coeff = sCG2 * gCG2
+                        if coeff == 0:
+                            continue
+                        ψ_1234 = Ψ(electrons = electrons12 + electrons34,
+                                    terms = (terms12[-1], terms34[-1], (S1234, Γ1234)),
+                                        γ = γ1234,
+                                        S = S1234,
+                                        M = M1234
+                                )
+                        if ψ_1234 not in ψ_1234s:
+                            ψ_1234s[ψ_1234] = Qet({})
+                        # γ3f = (γ3 if (m3 > 0) else bar_symbol(γ3))
+                        ψ_1234s[ψ_1234] = ψ_1234s[ψ_1234] + coeff* (qet_12 * qet_34)
+        return ψ_1234s
+
+    def qet_divide(self, qet0, qet1):
+        '''
+        Given   two   qets,   assumed   to   be   superpositions  of
+        determinantal states. Determine if they are collinear and if
+        they are, provide their ratio.
+
+        Parameters
+        ----------
+        qet0    (qdef.Qet) : a qet with determinantal keys.
+        qet1    (qdef.Qet) : a qet with determinantal keys.
+
+        Returns
+        -------
+        ratio (num): 0 if qets are not collinear, otherwise equal to
+        qet0/qet1.
+
+        '''
+        if len(qet0.dict) != len(qet1.dict):
+            return 0
+        set0 = frozenset(map(frozenset,qet0.dict.keys()))
+        set1 = frozenset(map(frozenset,qet1.dict.keys()))
+        num_parts = len(qet0.dict)
+        # a necessary condition for them to be possibly collinear
+        # is that they should have have the same sets of quantum
+        # numbers.
+        if set0 != set1:
+            return 0
+        else:
+            ratios = []
+            # iterate over the quantum nums of the first qet
+            for qet_key_0, qet_val_0 in qet0.dict.items():
+                set0 = set(qet_key_0)
+                # and determine the ratio that it has
+                # to all of the parts of the other qet
+                # allowing for reaarangmenets valid
+                # under determinantal state rules
+                for qet_key_1, qet_val_1 in qet1.dict.items():
+                    set1 = set(qet_key_1)
+                    if set0 == set1:
+                        ordering = [qet_key_0.index(qk) for qk in qet_key_1]
+                        sign = εijk(*ordering)
+                        ratios.append(sign * qet_val_0/qet_val_1)
+                        continue
+        if ratios == []:
+            return 0
+        else:
+            # if all of the ratios are equal
+            # then the ratio of the two qets
+            # is well defined
+            if len(set(ratios)) == 1 and len(ratios) == num_parts:
+                return ratios[0]
+            else:
+                return 0
+
+    def det_qet_simplify(self, qet):
+        '''
+        When a qet is composed of determinantal quantum symbols one may
+        juggle the ordering to simplify their corresponding qets.
+        '''
+        equivalent_parts = {}
+        standard_order = {} # this holds the standard order to which all the other list members will be referred to
+        for ket_part_key, ket_part_coeff in qet.dict.items():
+            set_ket = frozenset(ket_part_key)
+            if set_ket not in equivalent_parts:
+                equivalent_parts[set_ket] = []
+                standard_order[set_ket] = ket_part_key
+            equivalent_parts[set_ket].append((ket_part_key, ket_part_coeff))
+        # once I've grouped them together into pices of equivalent parts
+        # i then need to rearrange and properly sign the rearrangements
+        det_simple = []
+        for equivalent_key in equivalent_parts:
+            base_order = standard_order[equivalent_key]
+            total_coeff = 0
+            equiv_parts = equivalent_parts[equivalent_key]
+            for equiv_part in equiv_parts:
+                ordering = [base_order.index(part) for part in equiv_part[0]]
+                sign = εijk(*ordering)
+                total_coeff += sign*equiv_part[1]
+            final = (base_order, total_coeff)
+            if total_coeff != 0:
+                det_simple.append(final)
+        return det_simple
+
+    def to_equiv_electrons(self, waves):
+        '''
+        To  account  for  electrons  being equivalent it suffices to
+        interpret  each  tuple of symbols under the keys of each qet
+        to  be  a slater determinant in turn this allows simplifying
+        the  qets  to  account  for the symmetries under exchange of
+        symbols/electrons inside the keys
+        '''
+
+        ψ_totals = waves
+        simplified_kets = {}
+        for ψ_123, qet_123 in ψ_totals.items():
+            qet_simplified = self.det_qet_simplify(qet_123)
+            if len(qet_simplified) != 0:
+                    simplified_kets[ψ_123] = Qet(dict(qet_simplified))
+                    the_normalizer = 1/simplified_kets[ψ_123].norm()
+                    simplified_kets[ψ_123] = the_normalizer*simplified_kets[ψ_123]
+
+        # The same qet might have been arrived at by different paths, the only
+        # difference begin an overall phase.
+        # This last step only keeps the qets that are non-equivalent.
+
+        full_det_qets = []
+        qsymbs = []
+        for total_ket_key_0, simple_ket_0 in simplified_kets.items():
+            ratios = []
+            for simple_ket_1 in full_det_qets:
+                divvy = self.qet_divide(simple_ket_0, simple_ket_1)
+                ratios.append(divvy==0)
+            ratios = sum(ratios)
+            if ratios == len(full_det_qets):
+                full_det_qets.append(simple_ket_0)
+                qsymbs.append(total_ket_key_0)
+        full_det_qets = dict(zip(qsymbs, full_det_qets))
+        return full_det_qets
+
+######################### MultiElectron Foundry ###########################
+###########################################################################
+
+###########################################################################
 ################################## Others #################################
 
 def mbasis(l):
@@ -1395,6 +1882,78 @@ else:
     print("%s not found, regenerating ..." % regen_fname)
     CPGs = CPGroups(group_data, double_group_data)
     pickle.dump(CPGs, open(os.path.join(module_dir,'data','CPGs.pkl'),'wb'))
+
+class clebschG():
+    '''
+    A memory-full version of the Clebsch Gordan coefficients.
+    '''
+    remember = {}
+
+    @classmethod
+    def eva(cls, *args):
+        if args in cls.remember.keys():
+            return cls.remember[args]
+        else:
+            acg = clebsch_gordan(*args)
+            cls.remember[args] = acg
+            return acg
+    @classmethod
+    def clear(cls):
+        cls.remember = {}
+
+def mrange(j):
+    '''
+    Give a j get a list with corresponding mj.
+
+    Parameters
+    ----------
+    j  (int or half-int): angular momentum
+
+    Returns
+    -------
+    (list) [-j, -j+1, ..., j-1, j]
+    '''
+    # returns ranges that work for half integers
+    assert int(j*2) == 2*j, "j should be integer or half-integer"
+    assert j>=0, "j should be non-negative"
+    j = sp.S(int(2*j))/2
+    return list(-j+i for i in range(2*j+1))
+
+def lrange(j1,j2):
+    '''
+    When adding j1, and j2, return range of possible total
+    angular momenta.
+    
+    Parameters
+    ----------
+    j1   (int or half-int) and positive
+
+    Returns
+    -------
+    (list) [|j1-j2|,|j1-j2|+1, ..., j1+j2]
+    '''
+    assert j1>=0, "j1 should be non-negative"
+    assert j2>=0, "j1 should be non-negative"
+    assert int(j1*2) == 2*j1, "j1 should be integer or half-integer"
+    assert int(j2*2) == 2*j2, "j1 should be integer or half-integer"
+    j1 = sp.S(int(2*j1))/2
+    j2 = sp.S(int(2*j2))/2
+    return list(abs(j1-j2) + i for i in range((j1+j2)-abs(j1-j2)+1))
+
+def bar_symbol(symb):
+    '''
+    Get a symbol and enclose it in a bar.
+
+    Parameters
+    ----------
+    symb    (sp.Symbol)
+
+    Returns
+    -------
+    barsymb (sp.Symbol)
+    '''
+    barsymb = sp.Symbol(r'\bar{%s}' % sp.latex(symb))
+    return barsymb
 
 ################################## Others #################################
 ###########################################################################

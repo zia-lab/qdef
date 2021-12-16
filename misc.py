@@ -54,6 +54,23 @@ def rational_approx(x, N, min=0):
     else:
         return sign*(divider*sp.S(a)/sp.S(b) + sp.S(ix))
 
+def as_det_ket(qet):
+    '''
+    Parameters
+    ----------
+    qet (qdef.Qet)
+
+    Returns
+    -------
+    detQet : a sympy expression that presents the quantum symbols in qet
+             as determinantal states
+    '''
+    detket = sp.S(0)
+    for k,v in qet.dict.items():
+        symb = sp.Symbol((r'|%s|' % str(k)).replace('(','').replace(')','').replace(',',''))
+        detket += symb * v
+    return detket
+
 def rational_simplify(sympy_expr, N=10000):
     '''
     Given a sympy expression this function takes it and

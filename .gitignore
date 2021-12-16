@@ -113,6 +113,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+Ignore/
 ENV/
 env.bak/
 venv.bak/
@@ -144,3 +145,4 @@ docs/Makefile
 docs/make.bat
 data/mp_2018.pkl
 clean_vscode_empties.py
+Random.ipynb
