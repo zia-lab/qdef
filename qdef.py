@@ -1732,6 +1732,742 @@ class CrystalElectronsLLcoupling():
         full_det_qets = dict(zip(qsymbs, full_det_qets))
         return full_det_qets
 
+def config_layout(group_label, orbital_l, num_electrons):
+    '''
+    Given  a  group label and a given number of electrons in the
+    given    orbital,    determine    which   crystal   electron
+    configurations are allowed.
+
+    Parameters
+    ----------
+    group_label   (str)
+    orbita_l      (int)
+    num_electrons (int)
+
+    Returns
+    -------
+    configs  (list):  a list with two-tuples whose first element
+    is  a  label  for  an  irreducible  representation and whose
+    second  element  gives  how  many electrons would be in that
+    irrep.  If  the  irrep  may  appear  more than once then the
+    irreducible representation symbols are decorated by a number
+    of diamond symbols.
+
+    At a maximum each crystal-orbital may host as many electrons
+    as  twice  the  dimension  of  the corresponding irreducible
+    representation, this because of the electron's spin.
+
+    Example
+    -------
+    C_1  has  a  single  irrep,  which is singly degenerate, and
+    which  would  figure  3  times  for  an  l=1  splitting. Two
+    electrons   may  be  configured  in  six  different  crystal
+    configurations.
+
+    >>  config_layout('C_{1}', 1, 2)
+
+    >>  [[(A^{\diamond\diamond\diamond}, 2)],
+        [(A^{\diamond\diamond}, 1), (A^{\diamond\diamond\diamond}, 1)],
+        [(A^{\diamond\diamond}, 2)],
+        [(A^{\diamond}, 1), (A^{\diamond\diamond\diamond}, 1)],
+        [(A^{\diamond}, 1), (A^{\diamond\diamond}, 1)],
+        [(A^{\diamond}, 2)]]
+    '''
+    cf_splits = l_splitter(group_label,orbital_l).dict
+    group = CPGs.get_group_by_label(group_label)
+    irrep_replicas = []
+    cf_splits = l_splitter(group_label, orbital_l).dict
+    irrep_dims = {}
+    for k,v in cf_splits.items():
+        if v > 1:
+            for replica in range(v):
+                replic = sp.Symbol(sp.latex(k)+'^{%s}'%(r'\diamond'*(replica+1)))
+                irrep_dims[replic] = group.irrep_dims[k]
+                irrep_replicas.append(replic)
+        else:
+            irrep_replicas.append(k)
+            irrep_dims[k] = group.irrep_dims[k]
+    splits = []
+    max_electrons = {irrep: 2*irrep_dims[irrep] for irrep in irrep_replicas}
+    iters = [list(range(max_electrons[irrep]+1)) for irrep in irrep_replicas]
+    for nums in product(*iters):
+        if sum(nums) == num_electrons:
+            splits.append(nums)
+    configs = []
+    for split in splits:
+        config = [(irrep,mult) for mult, irrep in zip(split, irrep_replicas) if mult !=0]
+        if len(config) > 0:
+            configs.append(config)
+    return configs
+
+def as_braket_with_operator(qet):
+    '''
+    Construct a symbol for a braket that has an intermediate
+    symbol interpreted as an operator
+    '''
+    tot = 0
+    assert len(list(qet.dict.keys())[0]) % 2 == 1
+    for k,v in qet.dict.items():
+        bra = ''.join(list(map(sp.latex, k[:len(k)//2])))
+        ket = ''.join(list(map(sp.latex, k[len(k)//2+1:])))
+        op = sp.latex(k[len(k)//2])
+        p = v*sp.Symbol(r'\langle{%s}|\hat{%s}|{%s}\rangle' % (bra, op, ket))
+        tot += p
+    return tot
+
+def strip_spin(qet):
+    '''
+    Removes bars from all symbols in the keys for the given qet.
+    '''
+    qet_dict = qet.dict
+    fun = lambda x: sp.Symbol(re.sub(r'\\bar{(.*)}',r'\1',sp.latex(x)))
+    new_qet_dict = {}
+    for k,v in qet_dict.items():
+        sk = tuple(map(fun,k))
+        if sk not in new_qet_dict:
+            new_qet_dict[sk] = 0
+        new_qet_dict[sk] += v
+    return Qet(new_qet_dict)
+
+def simplify_qet(qet):
+    new_dict = {k:sp.simplify(v) for k,v in qet.dict.items()}
+    return Qet(new_dict)
+
+def braket_identities(group_label, verbose=True):
+    '''
+    Given  a  group  many  two-electron  operator brakets yield equivalent
+    results for a spherically symmetric operator.
+
+    Returns
+    -------
+    +  real_var_full_simplifier : if the basis functions are real, one may
+    swap  symbols  from  the bra side over to the ket side and vice-versa.
+    super_solution_4 : the keys in this dictionary represent dependent
+
+    +  four-symbol brakets, and the corresponding values represent to what
+    they  equal in terms of the smallest possible set of independent four-
+    symbol brakets.
+
+    +  real_var_simplifiers_2  :  if the basis functions are real, one may
+    swap symbols from the bra side over to the ket side and vice-versa.
+
+    +  super_solution_2  : the keys in this dictionary represent dependent
+    two-symbol  brakets,  and  the  corresponding values represent to what
+    they  equal  in terms of the smallest possible set of independent two-
+    symbol brakets.
+    
+    '''
+    group = CPGs.get_group_by_label(group_label)
+    component_labels = {k:list(v.values()) for k,v in new_labels[group_label].items()}
+
+    def overlinesqueegee(s):
+        '''
+        Going back from the overline shorthand for spin down,
+        acting on a single set of quantum numbers.
+        '''
+        if 'overline' in str(s):
+            spin = -sp.S(1)/2
+            comp = sp.Symbol(str(s).replace('\\overline{','')[:-1])
+        else:
+            spin = sp.S(1)/2
+            comp = s
+        return (comp, spin)
+    def spin_restoration(qet):
+        '''
+        Going back from the overline shorthand for spin down,
+        acting on a qet.
+        '''
+        new_dict = {}
+        for k,v in qet.dict.items():
+            k = (*overlinesqueegee(k[0]),*overlinesqueegee(k[1]))
+            new_dict[k] = v
+        return Qet(new_dict)
+
+    def composite_symbol(x):
+        return sp.Symbol('(%s)'%(','.join(list(map(sp.latex,x)))))
+    def fourtuplerecovery(ft):
+        '''the inverse of composite_symbol'''
+        return tuple(map(sp.Symbol,sp.latex(ft)[1:-1].split(',')))
+    
+    if verbose:
+        msg = group_label + " Creating all 4-symbol identities ..."
+        print(msg)
+
+    # this   integral_identities  dictionary  will  have  as  keys
+    # 4-tuples  of  irreps  and  its  values  will  be lists whose
+    # elements  are  2-tuples whose first elements are 4-tuples of
+    # irrep  components  and  whose values are qets whose keys are
+    # 4-tuples  of  irrep components and whose values are numeric.
+    # These 4-tuples represent a braket with the Coulomb repulsion
+    # operator in between.
+
+    integral_identities = {}
+    ir_mats = group.irrep_matrices
+    for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
+        # To simplify calculations this part
+        # may only be done over quadruples in a standard
+        # order.
+        # Whatever is missed here is then brough back in
+        # by the reality relations.
+        altorder1 = (ir3, ir2, ir1, ir4)
+        altorder2 = (ir1, ir4, ir3, ir2)
+        altorder3 = (ir3, ir4, ir1, ir2)
+        if (altorder1 in integral_identities) or\
+           (altorder2 in integral_identities) or\
+           (altorder3 in integral_identities):
+            continue
+        integral_identity_sector = []
+        components = [component_labels[ir] for ir in [ir1, ir2, ir3, ir4]]
+        comp_to_idx = [{c: idx for idx, c in enumerate(component_labels[ir])} for ir in [ir1, ir2, ir3, ir4]]
+        for R in group.generators:
+            R_id = {}
+            for γ1, γ2, γ3, γ4 in product(*components):
+                for γ1p, γ2p, γ3p, γ4p in product(*components):
+                        val = sp.conjugate(ir_mats[ir1][R][comp_to_idx[0][γ1],comp_to_idx[0][γ1p]]) *\
+                              sp.conjugate(ir_mats[ir2][R][comp_to_idx[1][γ2],comp_to_idx[1][γ2p]]) *\
+                              ir_mats[ir3][R][comp_to_idx[2][γ3],comp_to_idx[2][γ3p]] *\
+                              ir_mats[ir4][R][comp_to_idx[3][γ4],comp_to_idx[3][γ4p]]
+                        if val== 0:
+                            continue
+                        key = (γ1, γ2, γ3, γ4)
+                        if key not in R_id.keys():
+                            R_id[key] = []
+                        R_id[key].append( Qet({(γ1p,γ2p,γ3p,γ4p): val}) )
+            R_id_total = [(key, sum(R_id[key], Qet({}))) for key in R_id.keys()]
+            R_id_total = [q for q in R_id_total if len(q[1].dict)>0]
+            integral_identity_sector.extend(R_id_total)
+        integral_identities[(ir1,ir2,ir3,ir4)] = integral_identity_sector
+
+    # For solving the linear system it is convenient
+    # to have everything on one side of the equation.
+    if verbose:
+        msg = group_label + " Refining set of identities ..."
+        print(msg)
+    
+    identities = {}
+    for ircombo in integral_identities:
+        these_ids = []
+        for v in integral_identities[ircombo]:
+            lhs, rhs = v
+            diff = Qet({lhs:1}) - rhs
+            if len(diff.dict) > 0:
+                these_ids.append(diff)
+        identities[ircombo] = these_ids
+
+    # If an equation has only one key, then
+    # that immediately means that that braket is zero.
+    if verbose:
+        msg = group_label + " Finding trivial zeros ..."
+        print(msg)
+    
+    # first determine which ones have to be zero
+    better_identities = {irc:[] for irc in identities}
+    all_zeros = {}
+    for ircombo in identities:
+        zeros = []
+        for identity in identities[ircombo]:
+            if len(identity.dict) == 1:
+                zeros.append((list(identity.dict.keys())[0]))
+            else:
+                better_identities[ircombo].append(identity)
+        all_zeros[ircombo] = zeros
+
+    # use them to simplify things.
+    if verbose:
+        msg = group_label + " Using them to simplify things ..."
+        print(msg)
+    
+    great_identities = {irc:[] for irc in identities}
+    for ircombo in better_identities:
+        for identity in better_identities[ircombo]:
+            new_qet = Qet({})
+            for k,v in identity.dict.items():
+                if k in all_zeros[ircombo]:
+                    continue
+                else:
+                    new_qet+= Qet({k: v})
+            if len(new_qet.dict) == 0:
+                continue
+            great_identities[ircombo].append(new_qet)
+
+    # Inside of a four-symbol braket one may do three exchanges
+    # that must result in the same value. That if the wave
+    # functions are assumed to be real-valued.
+    
+    if verbose:
+        msg = group_label + " Creating reality identities ..."
+        print(msg)
+    
+    real_var_simplifiers = {irc:[] for irc in great_identities}
+    kprimes = set()
+    # this has to run over all the quadruples of irs
+    for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
+        real_var_simplifier = {}
+        ircombo = (ir1, ir2, ir3, ir4)
+        components = [component_labels[ir] for ir in ircombo]
+        for γ1, γ2, γ3, γ4 in product(*components):
+            k = (γ1, γ2, γ3, γ4)
+            kalt1 = (γ3, γ2, γ1, γ4)
+            kalt2 = (γ1, γ4, γ3, γ2)
+            kalt3 = (γ3, γ4, γ1, γ2)
+            if kalt1 in kprimes:
+                real_var_simplifier[k] = kalt1
+            elif kalt2 in kprimes:
+                real_var_simplifier[k] = kalt2
+            elif kalt3 in kprimes:
+                real_var_simplifier[k] = kalt3
+            else:
+                real_var_simplifier[k] = k
+                kprimes.add(k)
+        real_var_simplifiers[ircombo] = real_var_simplifier
+
+    real_var_full_simplifier = {}
+    for ircombo in real_var_simplifiers:
+        real_var_full_simplifier.update(real_var_simplifiers[ircombo])
+
+    # For each 4-tuple of irreps
+    # create a system of symbolic solutions
+    # and let sympy solve that.
+    # For each 4-tuple of irreps
+    # the end result is a dictionary
+    # whose keys represent the dependent
+    # brakets and whose values are the
+    # relation that those dependent values
+    # have with the independent brakets.
+    # As such, when these dictionaries are
+    # used on an expression, everything should
+    # then be given in terms of indepedent brakets.
+
+    if verbose:
+        msg = group_label + " Solving for independent 4-symbol brakets ..."
+        print(msg)
+    
+    all_sols = {irc:[] for irc in great_identities}
+    for ircombo in great_identities:
+        zeros = all_zeros[ircombo]
+        problem_vars = list(set(sum([list(identity.dict.keys()) for identity in great_identities[ircombo]],[])))
+        big_ma = [awe.vec_in_basis(problem_vars) for awe in great_identities[ircombo]] 
+        big_mat = sp.Matrix(big_ma)
+        big_mat = sp.re(big_mat) + sp.I*sp.im(big_mat)
+        rref_mat, pivots = big_mat.rref()
+        num_rows = rref_mat.rows
+        num_cols = rref_mat.cols
+        rref_ma_non_zero = [rref_mat[row,:] for row in range(num_rows) if (sum(np.array(rref_mat[row,:])[0] == 0) != num_cols)]
+        rref_mat_non_zero = sp.Matrix(rref_ma_non_zero)
+        varvec = sp.Matrix(list(map(composite_symbol,problem_vars)))
+        eqns = rref_mat_non_zero*varvec
+        ssol = sp.solve(list(eqns), dict=True)
+        all_sols[ircombo] = ssol
+        assert len(ssol) in [0,1]
+        if len(ssol) == 0:
+            sol_dict = {}
+        else:
+            sol_dict = ssol[0]
+        zero_addendum = {k:{} for k in all_zeros[ircombo]}
+        sol_dict = {fourtuplerecovery(k):{fourtuplerecovery(s):v.coeff(s) for s in v.free_symbols} for k,v in sol_dict.items()}
+        sol_dict.update(zero_addendum)
+        all_sols[ircombo] = sol_dict
+
+    # This final dictionary is unnecessary but
+    # simplifies calling the replacements onto
+    # a symbolic expression.
+    if verbose:
+        msg = group_label + " Creating a dictionary with all the 4-symbol replacements ..."
+        print(msg)
+    
+    super_solution = {}
+    for ircombo in all_sols:
+        super_solution.update(all_sols[ircombo])
+
+    twotuplerecovery = fourtuplerecovery
+    if verbose:
+        msg = group_label + " Creating all 2-symbol identities ..."
+        print(msg)
+
+    # this   integral_identities  dictionary  will  have  as  keys
+    # 2-tuples  of  irreps  and  its  values  will  be lists whose
+    # elements  are  2-tuples whose first elements are 2-tuples of
+    # irrep  components  and  whose values are qets whose keys are
+    # 2-tuples  of  irrep components and whose values are numeric.
+    # These 2-tuples represent a braket with the an invariant operator
+    # operator in between.
+
+    integral_identities_2 = {}
+    ir_mats = group.irrep_matrices
+    for ir1, ir2 in product(*([group.irrep_labels]*2)):
+        # To simplify calculations this part
+        # can only be done over quadruples in a standard
+        # order.
+        # Whatever is missed here is then brough back in
+        # by the reality relations.
+        altorder1 = (ir2, ir1, ir1, ir4)
+        if (altorder1 in integral_identities_2):
+            continue
+        integral_identity_sector = []
+        components = [component_labels[ir] for ir in [ir1, ir2]]
+        comp_to_idx = [{c: idx for idx, c in enumerate(component_labels[ir])} for ir in [ir1, ir2]]
+        for R in group.generators:
+            R_id = {}
+            for γ1, γ2 in product(*components):
+                for γ1p, γ2p in product(*components):
+                        val = sp.conjugate(ir_mats[ir1][R][comp_to_idx[0][γ1],comp_to_idx[0][γ1p]]) *\
+                              ir_mats[ir2][R][comp_to_idx[1][γ2],comp_to_idx[1][γ2p]]
+                        if val== 0:
+                            continue
+                        key = (γ1, γ2)
+                        if key not in R_id.keys():
+                            R_id[key] = []
+                        R_id[key].append( Qet({(γ1p,γ2p): val}) )
+            R_id_total = [(key, sum(R_id[key], Qet({}))) for key in R_id.keys()]
+            R_id_total = [q for q in R_id_total if len(q[1].dict)>0]
+            integral_identity_sector.extend(R_id_total)
+        integral_identities_2[(ir1,ir2)] = integral_identity_sector
+
+    # For solving the linear system it is convenient
+    # to have everything on one side of the equation.
+    if verbose:
+        msg = group_label + " Creating set of 2 symbol identities ..."
+        print(msg)
+    
+    identities_2 = {}
+    
+    for ircombo in integral_identities_2:
+        these_ids = []
+        for v in integral_identities_2[ircombo]:
+            lhs, rhs = v
+            diff = Qet({lhs:1}) - rhs
+            if len(diff.dict) > 0:
+                these_ids.append(diff)
+        identities_2[ircombo] = these_ids
+
+    # If an equation has only one term, then
+    # that immediately means that that term is zero.
+    if verbose:
+        msg = group_label + " Finding trivial zeros ..."
+        print(msg)
+    
+    # first determine which ones have to be zero
+    better_identities_2 = {irc:[] for irc in identities_2}
+    all_zeros_2 = {}
+    for ircombo in identities_2:
+        zeros = []
+        for identity in identities_2[ircombo]:
+            if len(identity.dict) == 1:
+                zeros.append((list(identity.dict.keys())[0]))
+            else:
+                better_identities_2[ircombo].append(identity)
+        all_zeros_2[ircombo] = zeros
+
+    # use them to simplify things.
+    if verbose:
+        msg = group_label + " Using them to simplify things ..."
+        print(msg)
+    
+    great_identities_2 = {irc:[] for irc in identities_2}
+    for ircombo in better_identities_2:
+        for identity in better_identities_2[ircombo]:
+            new_qet = Qet({})
+            for k,v in identity.dict.items():
+                if k in all_zeros_2[ircombo]:
+                    continue
+                else:
+                    new_qet+= Qet({k: v})
+            if len(new_qet.dict) == 0:
+                continue
+            great_identities_2[ircombo].append(new_qet)
+
+    # Inside of a two-symbol braket one may do three exchanges
+    # that must result in the same value. That if the wave
+    # functions are assumed to be real-valued.
+    if verbose:
+        msg = group_label + " Creating reality identities ..."
+        print(msg)
+    real_var_simplifiers_2 = {irc:[] for irc in great_identities_2}
+    # this has to run over all the quadruples of irs
+    kprimes = set()
+    for ir1, ir2 in product(*([group.irrep_labels]*2)):
+        real_var_simplifier = {}
+        ircombo = (ir1, ir2)
+        components = [component_labels[ir] for ir in ircombo]
+        for γ1, γ2 in product(*components):
+            k = (γ1, γ2)
+            kalt = (γ2, γ1)
+            # If for a given key I find that its
+            # switched version has already been seen
+            # Then that key has to be mapped to be
+            # mapped to the key already present.
+            if kalt in kprimes:
+                real_var_simplifier[k] = kalt
+            else:
+                real_var_simplifier[k] = k
+                kprimes.add(k)
+        real_var_simplifiers_2[ircombo] = real_var_simplifier
+
+    # For each 2-tuple of irreps
+    # create a system of symbolic solutions
+    # and let sympy solve that.
+    # For each 2-tuple of irreps
+    # the end result is a dictionary
+    # whose keys represent the dependent
+    # brakets and whose values are the
+    # relation that those dependent values
+    # have with the independent brakets.
+    # As such, when these dictionaries are
+    # used on an expression, everything should
+    # then be given in terms of indepedent brakets.
+    if verbose:
+        msg = group_label + " Solving for independent 2-symbol brakets ..."
+        print(msg)
+    all_sols_2 = {irc:[] for irc in great_identities_2}
+    
+    for ircombo in great_identities_2:
+        zeros = all_zeros_2[ircombo]
+        problem_vars = list(set(sum([list(identity.dict.keys()) for identity in great_identities_2[ircombo]],[])))
+        big_ma = [awe.vec_in_basis(problem_vars) for awe in great_identities_2[ircombo]] 
+        big_mat = sp.Matrix(big_ma)
+        big_mat = sp.re(big_mat)+sp.I*sp.im(big_mat)
+        rref_mat, pivots = big_mat.rref()
+        num_rows = rref_mat.rows
+        num_cols = rref_mat.cols
+        rref_ma_non_zero = [rref_mat[row,:] for row in range(num_rows) if (sum(np.array(rref_mat[row,:])[0] == 0) != num_cols)]
+        rref_mat_non_zero = sp.Matrix(rref_ma_non_zero)
+        varvec = sp.Matrix(list(map(composite_symbol,problem_vars)))
+        eqns = rref_mat_non_zero*varvec
+        ssol = sp.solve(list(eqns), dict=True)
+        all_sols[ircombo] = ssol
+        assert len(ssol) in [0,1]
+        if len(ssol) == 0:
+            sol_dict = {}
+        else:
+            sol_dict = ssol[0]
+        zero_addendum = {k:{} for k in all_zeros_2[ircombo]}
+        sol_dict = {twotuplerecovery(k):{twotuplerecovery(s):v.coeff(s) for s in v.free_symbols} for k,v in sol_dict.items()}
+        sol_dict.update(zero_addendum)
+        all_sols_2[ircombo] = sol_dict
+
+    # This final dictionary is unnecessary but
+    # simplifies calling the replacements onto
+    # a symbolic expression.
+    if verbose:
+        msg = group_label + " Creating a dictionary with all the 2-symbol replacements ..."
+        print(msg)
+    
+    super_solution_2 = {}
+    for ircombo in all_sols_2:
+        super_solution_2.update(all_sols_2[ircombo])
+
+    return real_var_full_simplifier, super_solution, real_var_simplifiers_2, super_solution_2
+
+def double_electron_braket(qet0, qet1, erase_spin=True):
+    '''
+    Given  two  qets,  which  are  assumed to be composed of determinantal
+    states, and a two electron operator op, return value of the braket
+
+      <qet0| \sum_{i>j=1}^N f_i,j |qet1> 
+    
+    in terms of brakets of double electron orbitals.
+
+    Spin is assumed to be integrated in the notation for the symbols where
+    a  symbol  that  is  adorned with an upper bar is assumed to have spin
+    down and one without to have spin up.
+
+    This function assumes that the operator does not act on spin.
+
+    Parameters
+    ----------
+    qet0    (qdefcore.Qet): a qet of determinantal states
+    qet1    (qdefcore.Qet): a qet of determinantal states
+    strip_spin      (bool): if True then spin bars are removed in output
+
+    Returns
+    -------
+    full_braket  (qdefcore.Qet):  with each key having five symbols, first
+    two equal to a two electron orbitals, middle one equal to the provided
+    double  electron  operator,  and the last two equal to another pair of
+    two  single  electron  orbitals;  interpreted as <φi, φj | (op)* | φk,
+    φl>. 
+    
+    *  The  operator  is omitted and is assumed to be in the middle of the
+    four symbols.
+
+    References
+    ----------
+    -   "Multiplets of Transition-Metal Ions in Crystals", Chapter 3
+        Sugano, Tanabe, and Kamimura
+    '''
+
+    full_braket = []
+    for det0, coeff0 in qet0.dict.items():
+        num_electrons = len(det0)
+        set0 = set(det0)
+        for det1, coeff1 in qet1.dict.items():
+            # before giving a value to the braket it is necessary to align the symbols 
+            # in the determinantal states and keep track of the reordering sign
+            set1 = set(det1)
+            common_symbs = list(set0.intersection(set1))
+            different_symbs0 = [x for x in det0 if x not in common_symbs]
+            different_symbs1 = [x for x in det1 if x not in common_symbs]
+            # there are no repeat symbols in any determinantal state
+            newdet0 = different_symbs0 + common_symbs
+            newdet1 = different_symbs1 + common_symbs
+            ordering0 = [det0.index(x) for x in newdet0]
+            ordering1 = [det1.index(x) for x in newdet1]
+            extra_sign = εijk(*ordering0) * εijk(*ordering1)
+            total_coeff = extra_sign * coeff0 * coeff1
+            odet0, odet1 = newdet0, newdet1
+            double_brakets = []
+            comparisons = list(map(lambda x: x[0]==x[1], zip(odet0, odet1)))
+            if all(comparisons):
+                # CASE I
+                # print(1)
+                for i in range(num_electrons):
+                    spin_up_0_i = 'bar' not in str(odet0[i])
+                    for j in range(i+1,num_electrons):
+                        # print(i,j)
+                        spin_up_0_j = 'bar' not in str(odet0[j])
+                        double_brakets.append(((odet0[i], odet0[j],
+                                                odet0[i], odet0[j]),
+                                                total_coeff))
+                        if (spin_up_0_i == spin_up_0_j): 
+                            double_brakets.append(((odet0[i], odet0[j],
+                                                    odet0[j], odet0[i]),
+                                                    -total_coeff))
+                # print(double_brakets)
+            elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
+                # CASE II
+                # print(2)
+                spin_up_0_0 = ('bar' not in str(odet0[0]))
+                spin_up_1_0 = ('bar' not in str(odet1[0]))
+                for j in range(1,num_electrons):
+                    spin_up_0_j = ('bar' not in str(odet0[j]))
+                    if (spin_up_0_0 == spin_up_1_0):
+                        double_brakets.append(((odet0[0], odet0[j],
+                                                odet1[0], odet0[j]),
+                                                total_coeff))
+                    if (spin_up_0_0 == spin_up_0_j) and (spin_up_0_j == spin_up_1_0): 
+                        double_brakets.append(((odet0[0], odet0[j],
+                                                odet0[j], odet1[0]),
+                                                -total_coeff))
+            elif (odet0[0] != odet1[0]) and (odet0[1] != odet1[1]) and all(comparisons[2:]): 
+                # CASE III
+                # print(3)
+                spin_up_0_0 = ('bar' not in str(odet0[0]))
+                spin_up_0_1 = ('bar' not in str(odet0[1]))
+                spin_up_1_0 = ('bar' not in str(odet1[0]))
+                spin_up_1_1 = ('bar' not in str(odet1[1]))
+                if (spin_up_0_0 == spin_up_1_0) and (spin_up_0_1 == spin_up_1_1):
+                    double_brakets.append(((odet0[0], odet0[1],
+                                            odet1[0], odet1[1]),
+                                            total_coeff))
+                if (spin_up_0_0 == spin_up_1_1) and (spin_up_0_1 == spin_up_1_0):
+                    double_brakets.append(((odet0[0], odet0[1],
+                                            odet1[1], odet1[0]),
+                                            -total_coeff))
+            elif not any(comparisons[:3]):
+                # CASE IV
+                # print(4)
+                double_brakets = []
+            else:
+                raise Exception("Ooops, This case shouldn't occur")
+            # print("Yielded %d terms" % len(double_brakets))
+            full_braket.extend(double_brakets)
+    # full_braket = Qet(dict(full_braket))
+    # print("full_braket len = ",len(full_braket))
+    # for k in full_braket:
+    #     print(k)
+    # print(full_braket)
+    full_braket = sum([Qet({k:v}) for k,v in full_braket],Qet({}))
+    if erase_spin:  
+        return strip_spin(full_braket)
+    else:
+        return full_braket
+
+def single_electron_braket(qet0, qet1, erase_spin=True):
+    '''
+    Given  two qets, assumed to be composed of determinantal states, and a
+    single-electron operator return the value of the braket
+    
+      <qet0| \sum_1^N op_i |qet1>
+
+    in terms of brakets of single electron orbitals.
+
+    Spin is assumed to be integrated in the notation for the symbols where
+    a  symbol  that  is  adorned with an upper bar is assumed to have spin
+    down and one without to have spin up.
+
+    This function assumes that the operator does not act on spin.
+
+    Parameters
+    ----------
+    qet0       (qdefcore.Qet): another qet
+    qet1       (qdefcore.Qet): a qet
+    erase_spin (bool)        : if True then spin bars are removed in output
+
+    Returns
+    -------
+    full_braket  (qdefcore.Qet): with each key having three symbols, first
+    one  equal  to  a  single  electron  orbital,  second one equal to the
+    provided  single electron operator, and the third one equal to another
+    single electron orbital. Interpreted as <φi | (op)* | φj>.
+
+    *  The  operator  is omitted and is assumed to be in the middle of the
+    two symbols.
+
+    References
+    ----------
+    -   "Multiplets of Transition-Metal Ions in Crystals", Chapter 3
+        Sugano, Tanabe, and Kamimura
+    '''
+    full_braket = []
+    for det0, coeff0 in qet0.dict.items():
+        num_electrons = len(det0)
+        for det1, coeff1 in qet1.dict.items():
+            # before  given  value to the braket it is necessary
+            # to  align  the symbols in the determinantal states
+            # and keep track of the reordering sign
+            set0 = set(det0)
+            set1 = set(det1)
+            # there should be no repeat symbols in any determinantal state
+            assert len(set0) == len(det0) and len(set1) == len(det1), "There's something funny here ..."
+            common_symbs = list(set0.intersection(set1))
+            different_symbs0 = [x for x in det0 if x not in common_symbs]
+            different_symbs1 = [x for x in det1 if x not in common_symbs]
+            newdet0 = different_symbs0 + common_symbs
+            newdet1 = different_symbs1 + common_symbs
+            ordering0 = [det0.index(x) for x in newdet0]
+            ordering1 = [det1.index(x) for x in newdet1]
+            extra_sign = εijk(*ordering0) * εijk(*ordering1)
+            total_coeff = coeff0 * coeff1 * extra_sign
+            odet0 = newdet0
+            odet1 = newdet1
+            comparisons = list(map(lambda x: x[0]==x[1], zip(odet0, odet1)))
+            if all(comparisons):
+                # CASE I
+                single_brakets = [((φ, φ), total_coeff) for φ in odet0]
+            elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
+                # CASE II
+                spin_up_0_0 = 'bar' in str(det0[0])
+                spin_up_1_0 = 'bar' in str(det1[0])
+                if spin_up_0_0 == spin_up_1_0:
+                    single_brakets = [((odet0[0],
+                                        odet1[0]), total_coeff)]
+                else:
+                    single_brakets = []
+            elif (odet0[0] != odet1[0]) and (odet0[1] != odet1[1]):
+                # CASE III
+                single_brakets = []
+            else:
+                raise Exception("Ooops, This case shouldn't occur")
+            full_braket.extend(single_brakets)
+    full_braket = Qet(dict(full_braket))
+    if erase_spin:
+        return strip_spin(full_braket)
+    else:
+        return full_braket
+
+
+
+
 ######################### MultiElectron Foundry ###########################
 ###########################################################################
 
