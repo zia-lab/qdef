@@ -88,16 +88,30 @@ def orthogonal_matrix(euler_params):
     For a given symmetry operation as parametrized by Euler angles
     α, β, γ, and by its  determinant  det (±1).  The corresponding
     orthogonal matrix is returned.
+
+    The  notation  used  here matches the notation used in Bradley
+    and Cracknell page 52.
+
+    This corresponds to the  following sequence of rotations about
+    fixed axes z-y-z:
+
+    - A first rotation about the z-axis by α,
+    - a second rotation about the y-axis by β,
+    - and final rotation about the z-axis by γ.
+
+    R_z(γ) * R_y(β) * R_z(α)
+
     '''
     α, β, γ, det = euler_params
+
     row_0 = [-sp.sin(α)*sp.sin(γ) + sp.cos(α)*sp.cos(β)*sp.cos(γ),
-             -sp.sin(α)*sp.cos(γ) - sp.sin(γ)*sp.cos(α)*sp.cos(β),
-              sp.sin(β)*sp.cos(α)]
-    row_1 = [sp.sin(α)*sp.cos(β)*sp.cos(γ) + sp.sin(γ)*sp.cos(α),
+             -sp.cos(α)*sp.sin(γ) - sp.cos(γ)*sp.sin(α)*sp.cos(β),
+              sp.sin(β)*sp.cos(γ)]
+    row_1 = [sp.cos(α)*sp.cos(β)*sp.sin(γ) + sp.cos(γ)*sp.sin(α),
             -sp.sin(α)*sp.sin(γ)*sp.cos(β) + sp.cos(α)*sp.cos(γ),
-            sp.sin(α)*sp.sin(β)]
-    row_2 = [-sp.sin(β)*sp.cos(γ),
-             sp.sin(β)*sp.sin(γ),
+            sp.sin(γ)*sp.sin(β)]
+    row_2 = [-sp.cos(α)*sp.sin(β),
+             sp.sin(α)*sp.sin(β),
              sp.cos(β)]
     mat = det*sp.Matrix([row_0,row_1,row_2])
     return mat

@@ -37,6 +37,7 @@ from misc import *
 from qdefcore import *
 from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
 from sympy import Eijk as εijk
+import warnings
 
 
 module_dir = os.path.dirname(__file__)
@@ -113,98 +114,138 @@ def SubSubSymbol(radix,ll,mm):
 def kronecker(i,j):
     return 0 if i!=j else 1
 
-def Wigner_d(l, n, m, beta):
-    k_min = max([0,m-n])
-    k_max = min([l-n,l+m])
-    Wig_d_prefact = sp.sqrt((sp.factorial(l+n)
-                          *sp.factorial(l+m)
-                          *sp.factorial(l-n)
-                          *sp.factorial(l-m)))
+def Wigner_d(l, n, m, β):
+    '''
+    Morrison and Parker 1987.
+    '''
+    k_min = max(0, m-n)
+    k_max = min(l-n, l+m)
+    Wig_d_prefact = sp.sqrt((sp.factorial(l + n)
+                          *sp.factorial(l + m)
+                          *sp.factorial(l - n)
+                          *sp.factorial(l - m)))
     Wig_d_summands = [((-sp.S(1))**(k - m + n)
-                      * sp.cos(beta/2)**(2*l+m-n-2*k)
-                      * sp.sin(beta/2)**(2*k+n-m)
-                      / sp.factorial(l - n -k)
+                      * sp.cos(β/2)**(2*l + m - n - 2*k)
+                      * sp.sin(β/2)**(2*k + n - m)
+                      / sp.factorial(l - n - k)
                       / sp.factorial(l + m - k)
                       / sp.factorial(k)
-                      / sp.factorial(k-m+n)
+                      / sp.factorial(k - m + n)
                       )
                       for k in range(k_min,k_max+1)]
     Wig_d = (Wig_d_prefact*sum(Wig_d_summands)).doit()
     return Wig_d
 
 def Wigner_D(l, n, m, alpha, beta, gamma):
+    '''
+    Bradley and Cracknell 2.1.4
+    '''
     args = (l, n, m, alpha, beta, gamma)
     if args in Wigner_D.values.keys():
       return Wigner_D.values[args]
     if beta == 0:
-      Wig_D = sp.exp(-I*m*alpha-I*m*gamma) * kronecker(n,m)
       if n == m:
-        Wig_D = (sp.cos(-m*alpha-m*gamma)+I*sp.sin(-m*alpha-m*gamma))
+        Wig_D = (sp.cos(-m*alpha-m*gamma) - I * sp.sin(m*alpha + m*gamma))
       else:
         Wig_D = 0
     elif beta == pi:
       if n == -m:
-        Wig_D = (-1)**l * (sp.cos(-m*alpha + m*gamma)+I*sp.sin(-m*alpha + m*gamma))
+        if l % 2 == 0:
+          Wig_D = (sp.cos(-m*alpha + m*gamma) + I * sp.sin(-m*alpha + m*gamma))
+        else:
+          Wig_D = - (sp.cos(-m*alpha + m*gamma) + I * sp.sin(-m*alpha + m*gamma))
       else:
         Wig_D = 0
     else:
-      Wig_D_0 = I**(abs(n)+n-abs(m)-m)
-      Wig_D_1 = (sp.cos(-n*gamma-m*alpha) \
-                 + I*sp.sin(-n*gamma-m*alpha)) * Wigner_d(l,n,m,beta)
+      Wig_D_0 = I**(abs(n) + n - abs(m) - m)
+      Wig_D_1 = (sp.cos(-n*gamma - m*alpha) \
+                 + I * sp.sin(-n * gamma - m * alpha)) * Wigner_d(l,n,m,beta)
       Wig_D = Wig_D_0 * Wig_D_1
-      Wig_D = Wig_D
+    Wigner_D.values[args] = Wig_D
     return Wig_D
 Wigner_D.values = {}
 
 def real_or_imagined(qet):
     '''
-    For  a given superposition of spherical harmonics,
-    determine  if  the total has a pure imaginary (i),
-    pure  real (r), or mixed character (m), it assumes
-    that the coefficients in the superposition are all
-    real.
-    '''
-    chunks = dict(qet.dict)
-    valences = []
-    for key in list(chunks.keys()):
-        if key not in chunks.keys():
-            continue
-        l, m = key
-        chunk = chunks[key]
-        if (l,-m) in chunks:
-            partner = chunks[(l,-m)]
-            if abs(partner) == abs(chunk):
-                if sp.sign(partner) == sp.sign(chunk):
-                    if m%2 == 0:
-                        valences.append("r")
-                    else:
-                        valences.append("i")
-                else:
-                    if m%2 == 0:
-                        valences.append("i")
-                    else:
-                        valences.append("r")
-            else:
-                valences.append("m")
-            chunks.pop((l,-m))
-        else:
-            valences.append("m")
-        if m!=0: # if equal to zero this would have been done already
-            chunks.pop(key)
-    valences = list(set(valences))
-    if len(valences) > 1:
-        return "m"
-    else:
-        return valences[0]
+    For  a given superposition of spherical harmonics, determine
+    if the total is just shy from being real except for a global
+    complex phase.
 
-RYlm_dict = {}
+    Parameters
+    ----------
+    qet (qdefcore.Qet)
+
+    Returns
+    -------
+    (3-tuple) qet_type, final_qet, phase
+     If qet_type == 'phased' then the returned qet is real, and the
+     phase is the global phase that was divided out.
+     If qet_type == 'mixed' the returned qet is the original one, and 
+     phase is equal to None.
+
+    '''
+    lvalues = list(set([x[0] for x in qet.dict.keys()]))
+    assert len(lvalues) == 1, "Only valid for a single value of l."
+    qet_l = lvalues[0]
+    mvalues = [x[1] for x in qet.dict.keys()]
+    mabs = set(map(abs, mvalues))
+    msymkeys = all([mab in mvalues and -mab in mvalues for mab in mabs])
+    if not msymkeys:
+        warnings.warn("Mixed qet.")
+        return 'mixed', qet, None
+    else:
+        # valences = []
+        hashes = []
+        for mab in mabs:
+            minus_coeff = qet.dict[(qet_l, -mab)]
+            plus_coeff = qet.dict[(qet_l, mab)]
+            if abs(minus_coeff) != abs(plus_coeff):
+                return 'mixed', qet, None
+            else:
+                if mab % 2 == 0:
+                    phaser_sign = 1
+                else:
+                    phaser_sign = -1
+                hashed = plus_coeff*(1+mab*sp.I) + phaser_sign*minus_coeff*(1-mab*sp.I)
+                hashes.append(hashed)
+    # try dividing all the hashes by the first one
+    pivot_hash = sp.simplify(hashes[0])
+    # see if all of them are real
+    pencil = [sp.im(hashed/pivot_hash) == 0 for hashed in hashes]
+    if all(pencil):
+        # the phase shouldn't modify the norm
+        pivot_hash = pivot_hash/abs(pivot_hash)
+        pivot_hash = sp.simplify(pivot_hash)
+        if sp.im(pivot_hash) == 0:
+            return 'phased', qet, 1
+        final_qet = (sp.S(1)/pivot_hash) * qet
+        return 'phased', final_qet, pivot_hash
+    else:
+        warnings.warn("Mixed qet.")
+        return 'mixed', qet, None
+
+def real_or_imagined_global(qets):
+    '''
+    At times the phase has to be global among a set
+    of qets.
+    '''
+    phased_qets = list(map(real_or_imagined, qets))
+    phases = set(list(map(lambda x: x[-1], phased_qets)))
+    if len(phases) == 1:
+        return list(map(lambda x: x[1], phased_qets))
+    else:
+        # print(phased_qets)
+        # print("no global acceptable phase")
+        warnings.warn("no global acceptable phase found")
+        return qets
+
 def RYlm(l, m, op_params):
     '''
     Given  a group operation (as parametrized with the
     iterable  op_params which contains Euler angles α,
     β,  γ  and  the determinant of the operation) this
-    function   returns   the  effect  that  that  this
-    operation has on the sperical harmonic Y_lm.
+    function  returns  the  effect that this operation
+    has on the sperical harmonic Y_lm.
 
     The  result  is  a  qet  whose  keys correspond to
     values   of   (l,m)   and  whose  values  are  the
@@ -214,16 +255,19 @@ def RYlm(l, m, op_params):
     Examples
     --------
 
-    >>> print(RYlm(1,0,(pi, pi/2, pi, 1))
+    >>> print(RYlm(2,2,(pi, pi/2, pi, 1)))
         Qet({(2, -2): 1/4,
              (2, -1): 1/2,
              (2, 0): sqrt(6)/4,
              (2, 1): -1/2,
              (2, 2): 1/4})
 
+    Reference
+    ---------
+    - Bradley and Cracknell 2.1.3
     '''
-    if (l,m,*op_params) in RYlm_dict:
-        return RYlm_dict[(l,m,*op_params)]
+    if (l,m,*op_params) in RYlm.dict:
+        return RYlm.dict[(l,m,*op_params)]
     alpha, beta, gamma, detOp = op_params
     Rf = Qet()
     for nn in range(-l,l+1):
@@ -231,8 +275,9 @@ def RYlm(l, m, op_params):
         if wigD != 0:
             Rf = Rf + Qet({(l,nn): wigD})
     ret = (sp.S(detOp)**l) * Rf
-    RYlm_dict[(l,m,*op_params)] = ret
+    RYlm.dict[(l,m,*op_params)] = ret
     return ret
+RYlm.dict = {}
 
 def flatten_matrix(mah):
     '''
@@ -427,7 +472,6 @@ def basis_check(group_label, irrep_symbol, qets, full_output = False):
         irrep_symbol = sp.Symbol(irrep_symbol)
     if len(qets) != group.irrep_dims[irrep_symbol]:
         print("A basis needs to have as many entries as the size of the irrep!")
-    the_one_ways = []
     irrep_way = []
     irrep_matrices = group.irrep_matrices[irrep_symbol]
     irrep_dim = group.irrep_dims[irrep_symbol]
@@ -460,7 +504,7 @@ def basis_check(group_label, irrep_symbol, qets, full_output = False):
     else:
         return all_good
 
-def symmetry_adapted_basis(group_label, lmax, verbose=False):
+def symmetry_adapted_basis_v5(group_label, lmax, verbose=False):
     '''
     This function takes a  label  for a crystallographic point group and a
     maximum  value for l, and it constructs the symmetry adapted bases for
@@ -476,59 +520,59 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
 
     An  empty list means that the corresponding irreducible representation
     is not contained in the subspace for the corresponding value of l.
-
+    
     --- Example ---
     symmetry_adapted_basis('O', 3) ->
-
-    {A_1: {0: [[Qet({(0, 0): 1})]],
-           1: [],
-           2: [],
+    
+    {A_1: {0: [[Qet({(0, 0): 1})]], 
+           1: [], 
+           2: [], 
            3: []},
-     A_2: {0: [],
-           1: [],
-           2: [],
-           3: [[Qet({(3, -2): sqrt(2)/2,
-                     (3,  2): -sqrt(2)/2})]]},
-     E: {0: [],
-         1: [],
-         2: [[Qet({(2,  0): 1}),
-              Qet({(2, -2): sqrt(2)/2,
-                   (2,  2): sqrt(2)/2})]],
-         3: []},
-     T_1: {0: [],
-           1: [[Qet({(1, -1): sqrt(2)/2,
-                      (1, 1): -sqrt(2)/2}),
-                Qet({(1,  0): I}),
-                Qet({(1, -1): sqrt(2)*I/2,
-                     (1,  1): sqrt(2)*I/2})]],
-           2: [],
-           3: [[Qet({(3, -3): sqrt(5)/4,
-                     (3, -1): sqrt(3)/4,
-                     (3,  1): -sqrt(3)/4,
-                     (3,  3): -sqrt(5)/4}),
-                Qet({(3,  0): -I}),
-                Qet({(3, -3): -sqrt(5)*I/4,
-                     (3, -1): sqrt(3)*I/4,
-                     (3,  1): sqrt(3)*I/4,
-                     (3,  3): -sqrt(5)*I/4})]]},
-     T_2: {0: [],
-           1: [],
-           2: [[Qet({(2, -2): sqrt(2)/2,
-                     (2,  2): -sqrt(2)/2}),
-                Qet({(2, -1): sqrt(2)/2,
-                     (2,  1): -sqrt(2)/2}),
-                Qet({(2, -1): sqrt(2)*I/2,
-                     (2,  1): sqrt(2)*I/2})]],
-           3: [[Qet({(3, -2): -sqrt(2)/2,
-                     (3,  2): -sqrt(2)/2}),
-                Qet({(3, -3): sqrt(3)/4,
-                     (3, -1): sqrt(5)/4,
-                     (3,  1): sqrt(5)/4,
-                     (3,  3): sqrt(3)/4}),
-                Qet({(3, -3): -sqrt(3)*I/4,
-                     (3, -1): sqrt(5)*I/4,
-                     (3,  1): -sqrt(5)*I/4,
-                     (3,  3): sqrt(3)*I/4})]]}}
+    A_2: {0: [],
+          1: [],
+          2: [],
+          3: [[Qet({(3, -2): sqrt(2)*I/2,
+                     (3, 2): -sqrt(2)*I/2})]]},
+    E: {0: [],
+        1: [],
+        2: [[Qet({(2, 0): 1}),
+             Qet({(2, -2): sqrt(2)/2, 
+                   (2, 2): sqrt(2)/2})]],
+        3: []},
+    T_1: {0: [],
+          1: [[Qet({(1, -1): sqrt(2)/2, 
+                     (1, 1): -sqrt(2)/2}),
+               Qet({(1, 0): I}),
+               Qet({(1, -1): sqrt(2)*I/2, 
+                     (1, 1): sqrt(2)*I/2})]],
+          2: [],
+          3: [[Qet({(3, -3): sqrt(5)/4, 
+                    (3, -1): sqrt(3)/4, 
+                    (3, 1): -sqrt(3)/4, 
+                    (3, 3): -sqrt(5)/4}),
+               Qet({(3, 0): -I}),
+               Qet({(3, -3): -sqrt(5)*I/4, 
+                    (3, -1): sqrt(3)*I/4, 
+                     (3, 1): sqrt(3)*I/4, 
+                     (3, 3): -sqrt(5)*I/4})]]},
+    T_2: {0: [],
+          1: [],
+          2: [[Qet({(2, -2): sqrt(2)/2, 
+                     (2, 2): -sqrt(2)/2}),
+               Qet({(2, -1): sqrt(2)/2, 
+                     (2, 1): -sqrt(2)/2}),
+               Qet({(2, -1): sqrt(2)*I/2, 
+                     (2, 1): sqrt(2)*I/2})]],
+          3: [[Qet({(3, -2): -sqrt(2)/2, 
+                     (3, 2): -sqrt(2)/2}),
+               Qet({(3, -3): sqrt(3)/4, 
+                    (3, -1): sqrt(5)/4, 
+                     (3, 1): sqrt(5)/4, 
+                     (3, 3): sqrt(3)/4}),
+               Qet({(3, -3): -sqrt(3)*I/4, 
+                    (3, -1): sqrt(5)*I/4, 
+                     (3, 1): -sqrt(5)*I/4, 
+                     (3, 3): sqrt(3)*I/4})]]}}
     '''
     # The GramSchmidt routine from sympy fails in an odd case,
     # because of this I had to replace it with a custom version.
@@ -544,7 +588,7 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
         symmetry_basis[group_irrep] = {}
         irrep_matrices = group.irrep_matrices[group_irrep]
         for l in range(lmax+1):
-            full_basis = [(l,m) for m in range(-l,l+1)]
+            full_basis = [(l,m) for m in range(-l,l+1)] 
             all_phis = {}
             for m in range(-l,l+1):
                 phis = {}
@@ -569,6 +613,7 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
             if verbose:
                 print("Constructing a big matrix with coordinates in standard basis....")
             bigmatrix = sp.Matrix(coord_vecs)
+            # display(bigmatrix)
             num_lin_indep_rows = (bigmatrix.rank())
             good_rows = []
             if num_lin_indep_rows != 0:
@@ -598,10 +643,10 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
                 for rows in good_rows:
                     flat_rows.extend(rows)
                 flat_rows = list(map(sp.Matrix,flat_rows))
-                normalized = GramSchmidtFun(flat_rows,orthonormal=True)
+                normalized = GramSchmidtFun(flat_rows, orthonormal=True)
                 parts = []
                 for deg in range(degeneracy):
-                    chunk = list(map(list,normalized[deg*irrep_dim:deg*irrep_dim+irrep_dim]))
+                    chunk = list(map(list,normalized[deg*irrep_dim : deg*irrep_dim + irrep_dim]))
                     parts.append(chunk)
                 all_normal_qets = []
                 for part in parts:
@@ -609,7 +654,8 @@ def symmetry_adapted_basis(group_label, lmax, verbose=False):
                     all_normal_qets.append(normal_qets)
                 if verbose:
                     print("Finished!")
-                symmetry_basis[group_irrep][l] = all_normal_qets
+                all_real_qets = [real_or_imagined_global(norm_qets) for norm_qets in all_normal_qets]
+                symmetry_basis[group_irrep][l] = all_real_qets
             else:
                 symmetry_basis[group_irrep][l] = []
     return symmetry_basis
@@ -1265,7 +1311,7 @@ class CrystalElectronsSCoupling():
         '''
         Parameters
         ----------
-        group_label (str): a string representing a point gropu
+        group_label (str): a string representing a point group
         Γs     (iterable): with irrep symbols
         '''
         self.Γs = Γs
