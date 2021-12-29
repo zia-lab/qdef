@@ -36,6 +36,7 @@ from IPython.display import display, HTML, Math
 from misc import *
 from qdefcore import *
 from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
+from sympy.physics.quantum.dagger import Dagger
 from sympy import Eijk as εijk
 import warnings
 
@@ -116,7 +117,10 @@ def kronecker(i,j):
 
 def Wigner_d(l, n, m, β):
     '''
-    Morrison and Parker 1987.
+
+    Reference
+    ---------
+    - Bradley and Cracknell 2.1.6
     '''
     k_min = max(0, m-n)
     k_max = min(l-n, l+m)
@@ -138,6 +142,11 @@ def Wigner_d(l, n, m, β):
 
 def Wigner_D(l, n, m, alpha, beta, gamma):
     '''
+    This is for Euler angles referenced against fixed axes in the z-y-z
+    convention.
+    
+    Reference
+    ---------
     Bradley and Cracknell 2.1.4
     '''
     args = (l, n, m, alpha, beta, gamma)
@@ -145,19 +154,19 @@ def Wigner_D(l, n, m, alpha, beta, gamma):
       return Wigner_D.values[args]
     if beta == 0:
       if n == m:
-        Wig_D = (sp.cos(-m*alpha-m*gamma) - I * sp.sin(m*alpha + m*gamma))
+        Wig_D = (sp.cos(m*alpha + m*gamma) - I * sp.sin(m*alpha + m*gamma))
       else:
         Wig_D = 0
     elif beta == pi:
       if n == -m:
         if l % 2 == 0:
-          Wig_D = (sp.cos(-m*alpha + m*gamma) + I * sp.sin(-m*alpha + m*gamma))
+          Wig_D =   (sp.cos(-m*alpha + m*gamma) + I * sp.sin(-m*alpha + m*gamma))
         else:
           Wig_D = - (sp.cos(-m*alpha + m*gamma) + I * sp.sin(-m*alpha + m*gamma))
       else:
         Wig_D = 0
     else:
-      Wig_D_0 = I**(abs(n) + n - abs(m) - m)
+      Wig_D_0 = I**(abs(n) + n - abs(m) - m) # this always evaluates to a real number
       Wig_D_1 = (sp.cos(-n*gamma - m*alpha) \
                  + I * sp.sin(-n * gamma - m * alpha)) * Wigner_d(l,n,m,beta)
       Wig_D = Wig_D_0 * Wig_D_1
@@ -210,6 +219,7 @@ def real_or_imagined(qet):
                 hashes.append(hashed)
     # try dividing all the hashes by the first one
     pivot_hash = sp.simplify(hashes[0])
+    pivot_hash = abs(sp.re(pivot_hash)) + sp.I*abs(sp.im(pivot_hash))
     # see if all of them are real
     pencil = [sp.im(hashed/pivot_hash) == 0 for hashed in hashes]
     if all(pencil):
@@ -223,6 +233,27 @@ def real_or_imagined(qet):
     else:
         warnings.warn("Mixed qet.")
         return 'mixed', qet, None
+
+def real_or_imagined_global_unitary(qets):
+    '''
+    For a set of qets, this function checks to see if all of them
+    can be brought to be real by a set of unimodular complex numbers.
+    If this is the case, then the resulting set of qets transform
+    as an equivalent irreducible representation.
+    '''
+    if len(qets) == 0:
+        return qets, None, None
+    phased_qets = list(map(real_or_imagined, qets))
+    all_phases = list(map(lambda x: x[-1], phased_qets))
+    phases = set(list(map(lambda x: x[-1], phased_qets)))
+    if None in phases:
+        warnings.warn("no global acceptable phase found.")
+        return qets, 0, None
+    elif all(list(map(lambda x: abs(x) == 1,phases))) or len(phases) == 1:
+        return list(map(lambda x: x[1], phased_qets)), 1, all_phases
+    else:
+        warnings.warn("no acceptable diagonal unitary transform found")
+        return qets, 2, all_phases
 
 def real_or_imagined_global(qets):
     '''
