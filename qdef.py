@@ -1355,11 +1355,42 @@ class CrystalElectronsSCoupling():
         self.ms = [-sp.S(1)/2,sp.S(1)/2]
         self.s_half = sp.S(1)/2
         self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
-        self.inequiv_waves = self.elec_aggregate(self.Γs)
-        if len(self.Γs) == 1:
+        # if its an aggregate of the same irrep
+        same_irrep = len(set(self.Γs)) == 1
+        if len(self.Γs) != 0:
+            full_orbital = self.group.irrep_dims[self.Γs[0]]*2 == len(self.Γs)
+        else:
+            full_orbital = False
+        if same_irrep and full_orbital:
+            Γ = self.Γs[0]
+            self.inequiv_waves = self.filled_shell(Γ)
             self.equiv_waves = self.inequiv_waves
         else:
-            self.equiv_waves = self.to_equiv_electrons()
+            self.inequiv_waves = self.elec_aggregate(self.Γs)
+            if len(self.Γs) == 1:
+                self.equiv_waves = self.inequiv_waves
+            else:
+                self.equiv_waves = self.to_equiv_electrons()
+
+    def __repr__(self):
+        return 'group %s: %s (%d qets)' % (self.group_label, str(self.Γs), len(self.equiv_waves))
+
+    def filled_shell(self, Γ):
+        num_shell_es = self.group.irrep_dims[Γ]*2
+        terms = tuple((None, Γ) for i in range(num_shell_es-1)) + ((0, sp.Symbol('A_1')),)
+        the_single_ψ = Ψ(electrons = tuple(Γ for _ in range(num_shell_es)),
+                        terms = terms,
+                        γ = self.component_labels[sp.Symbol('A_1')][0],
+                        S = 0,
+                        M = 0
+                        )
+        the_single_qet_key = []
+        for γ in self.component_labels[Γ]:
+            the_single_qet_key.append(γ)
+            the_single_qet_key.append(bar_symbol(γ))
+        the_single_qet_key = tuple(the_single_qet_key)
+        the_single_qet = Qet({the_single_qet_key: 1})
+        return {the_single_ψ: the_single_qet}
 
     def qet_divide(self, qet0, qet1):
         '''
@@ -1451,7 +1482,6 @@ class CrystalElectronsSCoupling():
         and an additional electron that needs to be added
         to them.
         '''
-        #>2 this is called with Γ3
         ψ_123s = {}
         comps_3 = self.component_labels[Γ3]
         s3 = sp.S(1)/2
@@ -1597,7 +1627,7 @@ class CrystalElectronsSCoupling():
         full_det_qets = dict(zip(qsymbs, full_det_qets))
         return full_det_qets
 
-class CrystalElectronsLLcoupling():
+class CrystalElectronsLLCoupling():
     '''
     Couple two groups of electrons in one fell swoop.
     '''
@@ -1631,7 +1661,12 @@ class CrystalElectronsLLcoupling():
         self.equiv_waves = self.to_equiv_electrons(self.equiv_waves)
 
     def __repr__(self):
-        return 'group %s: %s^%d X %s^%d (%d qets)' % (self.group_label, self.Γ1s[0], len(self.Γ1s), self.Γ2s[0], len(self.Γ2s), len(self.equiv_waves))
+        if len(self.Γ1s) == 0:
+            return 'group %s: %s^%d (%d qets)' % (self.group_label, self.Γ2s[0], len(self.Γ2s), len(self.equiv_waves))
+        elif len(self.Γ2s) == 0:
+            return 'group %s: %s^%d (%d qets)' % (self.group_label, self.Γ1s[0], len(self.Γ1s), len(self.equiv_waves))
+        else:
+            return 'group %s: %s^%d X %s^%d (%d qets)' % (self.group_label, self.Γ1s[0], len(self.Γ1s), self.Γ2s[0], len(self.Γ2s), len(self.equiv_waves))
     
     def wave_muxer(self, ψ_12s, ψ_34s):
         '''
