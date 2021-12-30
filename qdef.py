@@ -1910,10 +1910,18 @@ def simplify_qet(qet):
     new_dict = {k:sp.simplify(v) for k,v in qet.dict.items()}
     return Qet(new_dict)
 
-def braket_identities(group_label, verbose=True):
+def braket_identities(group_label, assume_real = True, verbose=True):
     '''
     Given  a  group  many  two-electron  operator brakets yield equivalent
     results for a spherically symmetric operator.
+
+    Parameters
+    ----------
+
+    group_label (str): a string representing a point group.
+
+    assume_real (bool): if True then the functions are assumed to be real,
+    if false then only the hermitian identity is applied.
 
     Returns
     -------
@@ -1949,6 +1957,7 @@ def braket_identities(group_label, verbose=True):
             spin = sp.S(1)/2
             comp = s
         return (comp, spin)
+    
     def spin_restoration(qet):
         '''
         Going back from the overline shorthand for spin down,
@@ -1962,6 +1971,7 @@ def braket_identities(group_label, verbose=True):
 
     def composite_symbol(x):
         return sp.Symbol('(%s)'%(','.join(list(map(sp.latex,x)))))
+    
     def fourtuplerecovery(ft):
         '''the inverse of composite_symbol'''
         return tuple(map(sp.Symbol,sp.latex(ft)[1:-1].split(',')))
@@ -1986,13 +1996,18 @@ def braket_identities(group_label, verbose=True):
         # order.
         # Whatever is missed here is then brough back in
         # by the reality relations.
-        altorder1 = (ir3, ir2, ir1, ir4)
-        altorder2 = (ir1, ir4, ir3, ir2)
-        altorder3 = (ir3, ir4, ir1, ir2)
-        if (altorder1 in integral_identities) or\
-           (altorder2 in integral_identities) or\
-           (altorder3 in integral_identities):
-            continue
+        if assume_real:
+            altorder1 = (ir3, ir2, ir1, ir4)
+            altorder2 = (ir1, ir4, ir3, ir2)
+            altorder3 = (ir3, ir4, ir1, ir2)
+            if (altorder1 in integral_identities) or\
+            (altorder2 in integral_identities) or\
+            (altorder3 in integral_identities):
+                continue
+        else:
+            altorder3 = (ir3, ir4, ir1, ir2)
+            if (altorder3 in integral_identities):
+                continue
         integral_identity_sector = []
         components = [component_labels[ir] for ir in [ir1, ir2, ir3, ir4]]
         comp_to_idx = [{c: idx for idx, c in enumerate(component_labels[ir])} for ir in [ir1, ir2, ir3, ir4]]
@@ -2074,29 +2089,48 @@ def braket_identities(group_label, verbose=True):
     if verbose:
         msg = group_label + " Creating reality identities ..."
         print(msg)
-    
+
     real_var_simplifiers = {irc:[] for irc in great_identities}
-    kprimes = set()
-    # this has to run over all the quadruples of irs
-    for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
-        real_var_simplifier = {}
-        ircombo = (ir1, ir2, ir3, ir4)
-        components = [component_labels[ir] for ir in ircombo]
-        for γ1, γ2, γ3, γ4 in product(*components):
-            k = (γ1, γ2, γ3, γ4)
-            kalt1 = (γ3, γ2, γ1, γ4)
-            kalt2 = (γ1, γ4, γ3, γ2)
-            kalt3 = (γ3, γ4, γ1, γ2)
-            if kalt1 in kprimes:
-                real_var_simplifier[k] = kalt1
-            elif kalt2 in kprimes:
-                real_var_simplifier[k] = kalt2
-            elif kalt3 in kprimes:
-                real_var_simplifier[k] = kalt3
-            else:
-                real_var_simplifier[k] = k
-                kprimes.add(k)
-        real_var_simplifiers[ircombo] = real_var_simplifier
+    
+    if assume_real:
+        kprimes = set()
+        # this has to run over all the quadruples of irs
+        for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
+            real_var_simplifier = {}
+            ircombo = (ir1, ir2, ir3, ir4)
+            components = [component_labels[ir] for ir in ircombo]
+            for γ1, γ2, γ3, γ4 in product(*components):
+                k = (γ1, γ2, γ3, γ4)
+                kalt1 = (γ3, γ2, γ1, γ4)
+                kalt2 = (γ1, γ4, γ3, γ2)
+                kalt3 = (γ3, γ4, γ1, γ2)
+                if kalt1 in kprimes:
+                    real_var_simplifier[k] = kalt1
+                elif kalt2 in kprimes:
+                    real_var_simplifier[k] = kalt2
+                elif kalt3 in kprimes:
+                    real_var_simplifier[k] = kalt3
+                else:
+                    real_var_simplifier[k] = k
+                    kprimes.add(k)
+            real_var_simplifiers[ircombo] = real_var_simplifier
+    else:
+        kprimes = set()
+        # this has to run over all the quadruples of irs
+        for ir1, ir2, ir3, ir4 in product(*([group.irrep_labels]*4)):
+            real_var_simplifier = {}
+            ircombo = (ir1, ir2, ir3, ir4)
+            components = [component_labels[ir] for ir in ircombo]
+            for γ1, γ2, γ3, γ4 in product(*components):
+                k = (γ1, γ2, γ3, γ4)
+                kalt3 = (γ3, γ4, γ1, γ2)
+                if kalt3 in kprimes:
+                    real_var_simplifier[k] = kalt3
+                else:
+                    real_var_simplifier[k] = k
+                    kprimes.add(k)
+            real_var_simplifiers[ircombo] = real_var_simplifier
+
 
     real_var_full_simplifier = {}
     for ircombo in real_var_simplifiers:
@@ -2259,7 +2293,9 @@ def braket_identities(group_label, verbose=True):
     if verbose:
         msg = group_label + " Creating reality identities ..."
         print(msg)
+    
     real_var_simplifiers_2 = {irc:[] for irc in great_identities_2}
+    # if assume_real:
     # this has to run over all the quadruples of irs
     kprimes = set()
     for ir1, ir2 in product(*([group.irrep_labels]*2)):
@@ -2279,6 +2315,10 @@ def braket_identities(group_label, verbose=True):
                 real_var_simplifier[k] = k
                 kprimes.add(k)
         real_var_simplifiers_2[ircombo] = real_var_simplifier
+
+    real_var_full_simplifier_2 = {}
+    for ircombo in real_var_simplifiers_2:
+        real_var_full_simplifier_2.update(real_var_simplifiers_2[ircombo])
 
     # For each 2-tuple of irreps
     # create a system of symbolic solutions
@@ -2333,7 +2373,7 @@ def braket_identities(group_label, verbose=True):
     for ircombo in all_sols_2:
         super_solution_2.update(all_sols_2[ircombo])
 
-    return real_var_full_simplifier, super_solution, real_var_simplifiers_2, super_solution_2
+    return real_var_full_simplifier, super_solution, real_var_full_simplifier_2, super_solution_2
 
 def double_electron_braket(qet0, qet1, erase_spin=True):
     '''
