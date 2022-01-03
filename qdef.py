@@ -34,11 +34,13 @@ from matplotlib import pyplot as plt
 from IPython.display import display, HTML, Math
 
 from misc import *
+from integrals import *
 from qdefcore import *
 from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
 from sympy.physics.quantum.dagger import Dagger
 from sympy import Eijk as εijk
 import warnings
+
 
 
 module_dir = os.path.dirname(__file__)
