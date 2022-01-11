@@ -12,9 +12,9 @@ import sys
 from datetime import datetime
 
 save_to_pickle = True
-pickle_fname = './data/symmetry_bases_sc_and_standard_12.pkl'
+pickle_fname = './data/symmetry_bases_sc_and_standard_with_irrep_matrices.pkl'
 computed_groups = CPGs.all_group_labels
-# computed_groups = ['D_{3}']
+# computed_groups = ['O']
 in_parallel = False
 
 def qetrealsimpler(qets):
@@ -97,13 +97,18 @@ def irrep_check(group, a_basis_list, irrep, l):
     
     Returns
     -------
+    all_checks, bases
+
     all_checks (list): a list of nested lists, of which there are as many
     as groups of qets were given. The enclosed lists have three Bool, the
     first one of which is the check for the multiplication table, the 2nd
     of which is the of characters of the induced matrices, and the  third
     being the check against the matrices being unitary.
+
+    irrep_mats  (dict):  the  keys  of  this  dictionary are group operation symbols and its values are the associated matrices matrices.
     '''
     all_checks = []
+    all_induced_matrices = []
     for a_basis in a_basis_list:
         lbasis = [(l,m) for m in range(-l,l+1)]
         basis_matrix = sp.Matrix([b.vec_in_basis(lbasis) for b in a_basis]).T
@@ -128,7 +133,7 @@ def irrep_check(group, a_basis_list, irrep, l):
             char_checks[group_op] = char_check
             ru = sp.simplify(induced_matrices[group_op] * Dagger(induced_matrices[group_op]))
             ru = sp.re(ru) + sp.I*sp.im(ru)
-            unitarity_checks[group_op] =  (ru == sp.eye(group.irrep_dims[irrep]) )
+            unitarity_checks[group_op] = (ru == sp.eye(group.irrep_dims[irrep]) )
         # check to see if the product table is satisfied
         ptable = group.multiplication_table_dict
         checks = {}
@@ -144,7 +149,8 @@ def irrep_check(group, a_basis_list, irrep, l):
                     warnings.warn("Multiplication table mismatch.")
                 checks[(group_op_0,group_op_1)] = pcheck
         all_checks.append((all(checks.values()), all(char_checks.values()), all(unitarity_checks.values())))
-    return all_checks
+        all_induced_matrices.append(induced_matrices)
+    return all_checks, all_induced_matrices
 
 def symmetry_adapted_basis_v_real(group_label, lmax, verbose=False):
     '''
@@ -183,6 +189,7 @@ def symmetry_adapted_basis_v_real(group_label, lmax, verbose=False):
     is  the  resultant  basis  in  terms  of  sine  and  cosine  spherical
     harmonics,  and  symmetry_basis  is  for  the  result  translated into
     standard spherical harmonics.
+    
     Both  these are nested dictionaries where the first key corresponds to
     labels  (sp.Symbol)  of  the irreducible representations of the group,
     whose  second  key  corresponds  to a value of l, and whose value is a
@@ -442,21 +449,25 @@ if __name__ == '__main__':
             all_the_symmetry_bases[group_label] = symmetry_adapted_basis(group_label, lmax, True)
     total_checks = {}
     all_checks = []
-    print("Checking soundness of produced bases...")
+    all_irrep_matrices = {group_label:{} for group_label in all_the_symmetry_bases}
+    print("Checking bases and gathering final irrep matrices...")
     for group_label, basis_dict in all_the_symmetry_bases.items():
-        print(group_label)
         group = CPGs.get_group_by_label(group_label)
         total_checks[group_label] = {}
+        irrep_dict = {}
         for irrep_symbol, l_dict in basis_dict[1].items():
             total_checks[group_label][irrep_symbol] = []
+            irrep_group = {l:[] for l in range(lmax+1)}
             for l, qet_groups in l_dict.items():
-                checking = sum(irrep_check(group, qet_groups, irrep_symbol, l),())
+                check = irrep_check(group, qet_groups, irrep_symbol, l)
+                checking = sum(check[0],())
                 total_checks[group_label][irrep_symbol].append(checking)
                 all_checks.append(all(checking))
-    # print(total_checks)
-    # print(all_checks)
+                irrep_group[l].append(check[1])
+            irrep_dict[irrep_symbol] = irrep_group
+        all_irrep_matrices[group_label] = irrep_dict
     if (all(all_checks)):
         print("All bases check out.")
         if save_to_pickle:
             print("Saving to pickle...")
-            pickle.dump(all_the_symmetry_bases, open(pickle_fname,'wb'))
+            pickle.dump({'symmetry_bases': all_the_symmetry_bases, 'irrep_matrices': all_irrep_matrices}, open(pickle_fname,'wb'))

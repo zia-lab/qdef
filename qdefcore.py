@@ -674,7 +674,7 @@ class Qet():
         return 'Qet(%s)' % str(self.dict)
 
 symmetry_bases = pickle.load(open(os.path.join(module_dir,'data',
-                                            'symmetry_bases.pkl'),'rb'))
+                                            'symmetry_bases_standard.pkl'),'rb'))
 
 class ProductTable():
     '''

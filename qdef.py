@@ -23,6 +23,7 @@ from sympy.physics.quantum import Ket, Bra
 from sympy.physics.wigner import gaunt
 from sympy.combinatorics.permutations import Permutation
 from itertools import combinations, permutations, combinations_with_replacement
+from sympy.functions.special.tensor_functions import KroneckerDelta
 from functools import reduce
 
 from collections import OrderedDict
@@ -693,6 +694,8 @@ def symmetry_adapted_basis_v5(group_label, lmax, verbose=False):
                 symmetry_basis[group_irrep][l] = []
     return symmetry_basis
 
+symmetry_adapted_basis = symmetry_adapted_basis_v5
+
 generic_cf = Qet({(k,q):(sp.Symbol('B_{%d,%d}^%s' % (k,q,"r"))-sp.I*sp.Symbol('B_{%d,%d}^%s' % (k,q,"i"))) for k in [1,2,3,4,5,6] for q in range(-k,k+1)})
 
 def compute_crystal_field(group_num):
@@ -952,6 +955,79 @@ def lmqet_to_irrepqet(group_label, qet, returnbasis=False):
 ####################### Irreducible basis transforms ######################
 ###########################################################################
 
+def braket_basis_change(braket, basis_changer):
+    '''
+    Take  a  qet,  understood  as  a  four  symbol braket, and a
+    dictionary  that  maps  the  current basis to a new one, and
+    return  the resulting expression for the new braket in terms
+    of  the new basis. All throughout it is assumed that between
+    the given braket there is an implicit operator.
+
+    Parameters
+    ----------
+    braket   (qdefcore.Qet)
+    basis_changer (dict):  keys being  equal  to single electron
+    quantum  symbols  and  values  to  qets  that  determine the
+    superposition of the new basis to which this vector is being
+    mapped to. The keys of the dictionary need not  include  all
+    the quantum symbols included in the qet.
+
+    Returns
+    -------
+    new_braket (qdefcore.Qet)
+
+    Example
+    -------
+
+    braket = Qet({(1,2,3,4): 5,
+                (8,4,3,1): 1})
+    basis_change = {1: Qet({(8,): sp.I})}
+    print(braket_basis_change(braket, basis_change))
+    >> {(8, 2, 3, 4): -5*I, (8, 4, 3, 8): I}
+
+    '''
+
+    new_braket = Qet({})
+    for k, v in braket.dict.items():
+        βi, βj, βk, βl = [(Qet({(γ,):1}) if γ not in basis_changer else basis_changer[γ]) for γ in k]
+        βi, βj = βi.dual(), βj.dual()
+        γiγjγkγl = ((βi * βj) * βk) * βl
+        new_braket = new_braket + ( v * γiγjγkγl)
+    return new_braket
+
+def to_slater_params(qnums, coeff):
+    '''
+    This function will take a set of qnums that are assumed to be l1, m1, l2, m2, l1p, m1p, l2p, m2p
+    and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
+    '''
+    # print("afresh")
+    if len(qnums) == 8:
+        l1, m1, l2, m2, l1p, m1p, l2p, m2p = qnums
+    else:
+        m1, m2, m1p, m2p = qnums
+        l1, l2, l1p, l2p = 2, 2, 2, 2
+    if KroneckerDelta(m1+m2, m1p+m2p):
+        if (m1 - m1p) % 2 == 0:
+            phase = 1
+        else:
+            phase = -1
+        new_dict = {}
+        for k in range(6):
+            key = sp.Symbol('F^{(%d)}' % k)
+            c1 = (sp.sqrt((4*sp.pi) / (2*k+1)) 
+                    * threeHarmonicIntegral(l1,   m1,
+                                            k,   (m1 - m1p),
+                                            l1p, m1p))
+            c2 = (sp.sqrt((4*sp.pi) / (2*k+1)) 
+                    * threeHarmonicIntegral(l2,  m2,
+                                            k,   (m2-m2p),
+                                            l2p, m2p))
+            val = phase * coeff * c1 * c2
+            if val:
+                new_dict[key] = val
+        return new_dict
+    else:
+        return {}
 
 ###########################################################################
 ############### Calculation of Clebsch-Gordan Coefficients ################
@@ -1977,6 +2053,9 @@ def braket_identities(group_label, assume_real = True, verbose=True):
     two-symbol  brakets,  and  the  corresponding values represent to what
     they  equal  in terms of the smallest possible set of independent two-
     symbol brakets.
+
+    +  simplifier : a function that can be used to apply the computed sim-
+    plifications.
     
     '''
     group = CPGs.get_group_by_label(group_label)
@@ -2410,7 +2489,22 @@ def braket_identities(group_label, assume_real = True, verbose=True):
     for ircombo in all_sols_2:
         super_solution_2.update(all_sols_2[ircombo])
 
-    return real_var_full_simplifier, super_solution, real_var_full_simplifier_2, super_solution_2
+    def simplifier(qet):
+        simp_ket = Qet({})
+        for k,v in qet.dict.items():
+            if k in real_var_full_simplifier:
+                simp_ket += Qet({real_var_full_simplifier[k]:v})
+            else:
+                simp_ket += Qet({k:v})
+        true_qet = Qet({})
+        for k,v in simp_ket.dict.items():
+            if k in super_solution:
+                true_qet += v*Qet(super_solution[k])
+            else:
+                true_qet += Qet({k:v})
+        return true_qet
+
+    return real_var_full_simplifier, super_solution, real_var_full_simplifier_2, super_solution_2, simplifier
 
 def double_electron_braket(qet0, qet1, erase_spin=True):
     '''
@@ -2451,6 +2545,7 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
     '''
 
     full_braket = []
+    qet0 = qet0.dual()
     for det0, coeff0 in qet0.dict.items():
         num_electrons = len(det0)
         set0 = set(det0)
@@ -2473,7 +2568,7 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
             comparisons = list(map(lambda x: x[0]==x[1], zip(odet0, odet1)))
             if all(comparisons):
                 # CASE I
-                # print(1)
+                # print("I")
                 for i in range(num_electrons):
                     spin_up_0_i = 'bar' not in str(odet0[i])
                     for j in range(i+1,num_electrons):
@@ -2489,7 +2584,7 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
                 # print(double_brakets)
             elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
                 # CASE II
-                # print(2)
+                # print("II")
                 spin_up_0_0 = ('bar' not in str(odet0[0]))
                 spin_up_1_0 = ('bar' not in str(odet1[0]))
                 for j in range(1,num_electrons):
@@ -2504,7 +2599,7 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
                                                 -total_coeff))
             elif (odet0[0] != odet1[0]) and (odet0[1] != odet1[1]) and all(comparisons[2:]): 
                 # CASE III
-                # print(3)
+                # print("III")
                 spin_up_0_0 = ('bar' not in str(odet0[0]))
                 spin_up_0_1 = ('bar' not in str(odet0[1]))
                 spin_up_1_0 = ('bar' not in str(odet1[0]))
@@ -2519,17 +2614,11 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
                                             -total_coeff))
             elif not any(comparisons[:3]):
                 # CASE IV
-                # print(4)
+                # print("IV")
                 double_brakets = []
             else:
                 raise Exception("Ooops, This case shouldn't occur")
-            # print("Yielded %d terms" % len(double_brakets))
             full_braket.extend(double_brakets)
-    # full_braket = Qet(dict(full_braket))
-    # print("full_braket len = ",len(full_braket))
-    # for k in full_braket:
-    #     print(k)
-    # print(full_braket)
     full_braket = sum([Qet({k:v}) for k,v in full_braket],Qet({}))
     if erase_spin:  
         return strip_spin(full_braket)
@@ -2573,13 +2662,13 @@ def single_electron_braket(qet0, qet1, erase_spin=True):
         Sugano, Tanabe, and Kamimura
     '''
     full_braket = []
+    qet0 = qet0.dual()
     for det0, coeff0 in qet0.dict.items():
-        num_electrons = len(det0)
+        set0 = set(det0)
         for det1, coeff1 in qet1.dict.items():
             # before  given  value to the braket it is necessary
             # to  align  the symbols in the determinantal states
             # and keep track of the reordering sign
-            set0 = set(det0)
             set1 = set(det1)
             # there should be no repeat symbols in any determinantal state
             assert len(set0) == len(det0) and len(set1) == len(det1), "There's something funny here ..."
@@ -2600,8 +2689,8 @@ def single_electron_braket(qet0, qet1, erase_spin=True):
                 single_brakets = [((φ, φ), total_coeff) for φ in odet0]
             elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
                 # CASE II
-                spin_up_0_0 = 'bar' in str(det0[0])
-                spin_up_1_0 = 'bar' in str(det1[0])
+                spin_up_0_0 = 'bar' in str(odet0[0])
+                spin_up_1_0 = 'bar' in str(odet1[0])
                 if spin_up_0_0 == spin_up_1_0:
                     single_brakets = [((odet0[0],
                                         odet1[0]), total_coeff)]
@@ -2613,7 +2702,7 @@ def single_electron_braket(qet0, qet1, erase_spin=True):
             else:
                 raise Exception("Ooops, This case shouldn't occur")
             full_braket.extend(single_brakets)
-    full_braket = Qet(dict(full_braket))
+    full_braket = sum([Qet({k:v}) for k,v in full_braket],Qet({}))
     if erase_spin:
         return strip_spin(full_braket)
     else:
