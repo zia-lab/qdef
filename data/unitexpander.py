@@ -8,7 +8,7 @@ import sympy as sp
 # This script takes the conversion factors found in the spreadsheet
 # ConversionFactors.xlsx and generates the additional factors that
 # these ones implies.
-# As a final result a dictionary is produced and save in a pickle.
+# As a final result a dictionary is produced and saved in a pickle.
 
 def generate_unit_matrix():
     if os.path.exists('./conversion_facts.pkl'):

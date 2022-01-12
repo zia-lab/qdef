@@ -518,6 +518,13 @@ class Qet():
             new_dict[key] = multiplier*(coeff)
         return Qet(new_dict)
 
+    def simplify(self):
+        '''simplify coefficients'''
+        new_dict = dict(self.dict)
+        for key, coeff in new_dict.items():
+            new_dict[key] = sp.simplify(coeff)
+        return Qet(new_dict)
+    
     def basis(self):
         '''return a list with all the keys in the qet'''
         return list(self.dict.keys())

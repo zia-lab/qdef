@@ -52,6 +52,7 @@ module_dir = os.path.dirname(__file__)
 morrison_loc = os.path.join(module_dir,'data','morrison.pkl')
 morrison = pickle.load(open(morrison_loc,'rb'))
 new_labels = pickle.load(open('./Data/components_rosetta.pkl','rb'))
+crystal_splits = pickle.load(open('./data/crystal_splits.pkl','rb'))
 
 # =========================== Load others ======================= #
 # =============================================================== #
@@ -769,6 +770,171 @@ def compute_crystal_field(group_num):
 ###########################################################################
 
 ###########################################################################
+############################## Hamiltonians ###############################
+
+def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standard_basis=False):
+    '''
+    Given  a  crystal field on an an ion with a given number of electrons,
+    this  function  provides  the  matrix that represents the hamiltionian
+    that includes the crystal field together with the Coulomb repulsion.
+
+    This  Hamiltonian only describes how the ground state is split both by
+    the  crystal  field  and by the Coulomb repulsion. The contribution to
+    the  total  energy,  as  provided  by the interaction with the nuclear
+    charge  does  not  figure  here, because it merely provides a constant
+    shift to all the energy levels included in this description.
+
+    In  all  cases  the  basis  used  in this matrix representation of the
+    Hamiltonian  is  composed  of  slater  determinants of single-electron
+    states.  If  force_standard_basis=True  then the angular part of these
+    states    is    given    by    standard    spherical    harmonic    if
+    force_standard_basis=False  then  the single-electron states are taken
+    as  the  eigenvectors of the single-electron crystal field. In forming
+    these slater determinants spin=1/2 is assumed.
+
+    The  Coulomb  repulsion appears as Slater integrals of several orders,
+    and  the  crystal  field  contribution as a function of the parameters
+    that parametrize it according to the corresponding symmetry group.
+
+    If  the crystal field for a single electron is possible to diagonalize
+    symbolically, then the basis used for the hamiltonian is an eigenbasis
+    for  it, if not, then the single-electron basis is simply the full set
+    of spherical harmonics for the given value of l  (multiplied by radial
+    parts that figure as the parameters of the model hamiltonian).
+
+    Parameters
+    ----------
+
+    num_electrons (int): how many electrons are there included.
+
+    group_label   (str): label for one of the 32
+
+    l             (int): angular momentum of pressumed ground state
+
+    sparse (Bool): if True then the returned matrix is sp.SparseMatrix
+
+    force_standard_basis  (Bool):  whether  to  force  use of the standard
+    spherical  harmonic basis, instead of allowing for the eigenvectors of
+    the crystal field to be used.
+
+    Returns
+    ------
+
+    hamiltonian  (sp.SparseMatrix): in terms of Slater integrals F^{k} (or
+    Racah  parameters  if  to_Racah  is  provided)  and  the crystal field
+    parameters adequate to the group.
+
+    basis_change  (OrderedDict): the keys being the labels used internally
+    for   calculations   and   the   values   being   Qets  understood  as
+    superpositions of spherical harmonics. This for  the  single  electron
+    states which are used to create multi-electron states.
+
+    slater_dets  (list):  a  list  of  symbols  that represents the slater
+    determinants  used for the basis in which the hamiltonian is computed,
+    in  here  a  symbol with a bar on top is understood to have spin down,
+    and  one  without  to have spin up (m=1/2). Together with basis_change
+    this could be used to generate the multi-electron determinantal states
+    in terms of slater determinants of spherical harmonics.
+
+    '''
+
+    uID = (num_electrons, group_label, l, sparse, force_standard_basis)
+
+    if uID in hamiltonian_CF_CR.remembered:
+        return hamiltonian_CF_CR.remembered[uID]
+
+    group_index = CPGs.all_group_labels.index(group_label) + 1
+
+    cf_field = crystal_splits[group_index]
+    crystal_basis = (len(cf_field['eigen_system']) > 0)
+    
+    if crystal_basis:
+        eigen_sys = cf_field['eigen_system'][0]
+
+    if crystal_basis and not force_standard_basis:
+        print("Using crystal field basis.")
+        basis_change = OrderedDict()
+        eigen_counter = 0
+        basis_energies = {}
+        for eigen_part in eigen_sys:
+            eigen_energy = eigen_part[0]
+            for eigen_vec in eigen_part[2]:
+                eigen_label = sp.Symbol('\\alpha_{%d}' % (eigen_counter))
+                spherical_combo = Qet({(l,m): n for m,n in zip(range(-l,l+1),list(eigen_vec.T)) if n!= 0})
+                normalizer = sp.S(1)/spherical_combo.norm()
+                basis_change[eigen_label] = normalizer*spherical_combo
+                basis_energies[eigen_label] = eigen_energy
+                eigen_counter += 1
+        single_e_basis = list(basis_change.keys())
+        def simple_energy(qnums, coeff):
+            the_dict = {1:0}
+            γ1, γ2 = qnums
+            if γ1 == γ2:
+                the_dict[1] = coeff*basis_energies[γ1]
+            if the_dict[1] == 0:
+                return {}
+            return the_dict
+    else:
+        print("Using spherical harmonics basis.")
+        single_e_basis = [sp.Symbol('Y_{%d,%d}' % (l,m)) for m in range(-l,l+1)]
+        basis_change = OrderedDict([(sp.Symbol('Y_{%d,%d}' % (l,m)),Qet({(l,m):1})) for m in range(-l,l+1)])
+        ham = cf_field['matrices'][0]
+        def simple_energy(qnums, coeff):
+            the_dict = {1:0}
+            γ1, γ2 = qnums
+            γ1idx = single_e_basis.index(γ1)
+            γ2idx = single_e_basis.index(γ2)
+            the_dict[1] = coeff*ham[γ1idx,γ2idx]
+            if the_dict[1] == 0:
+                return {}
+            else:
+                return the_dict
+
+    # add spin up and spin down
+    single_e_spin_orbitals = single_e_basis + [bar_symbol(v) for v in single_e_basis]
+    # create determinantal states
+    slater_dets = list(combinations(single_e_spin_orbitals,num_electrons))
+    slater_qets = [Qet({k:1}) for k in slater_dets]
+    if sparse:
+        hamiltonian = {}
+    else:
+        hamiltonian = []
+
+    for idx0, qet0 in enumerate(slater_qets):
+        row = []
+        for idx1, qet1 in enumerate(slater_qets):
+            double_braket = double_electron_braket(qet0, qet1)
+            coulomb_matrix_element = braket_basis_change(double_braket, basis_change)
+            coulomb_matrix_element = coulomb_matrix_element.apply(to_slater_params)
+            coulomb_matrix_element = sp.expand(coulomb_matrix_element.as_symbol_sum())
+            crystal_field_energy = single_electron_braket(qet0, qet1).apply(simple_energy).as_symbol_sum()
+            matrix_element = coulomb_matrix_element + crystal_field_energy
+            if matrix_element != 0:
+                if sparse:
+                    hamiltonian[(idx0,idx1)] = (matrix_element)
+                else:
+                    row.append(matrix_element)
+            else:
+                if not sparse:
+                    row.append(matrix_element)
+
+        if not sparse:
+            hamiltonian.append(row)
+    
+    if sparse:
+        hamiltonian = (sp.SparseMatrix(len(slater_qets), len(slater_qets), hamiltonian))
+    else:
+        print(len(hamiltonian))
+        hamiltonian = sp.Matrix(hamiltonian)
+
+    hamiltonian_CF_CR.remembered[uID] = (hamiltonian, basis_change, slater_dets)
+    return hamiltonian, basis_change, slater_dets
+hamiltonian_CF_CR.remembered = {}
+
+############################## Hamiltonians ###############################
+###########################################################################
+
+###########################################################################
 ####################### Irreducible basis transforms ######################
 
 def irrepqet_to_lmqet(group_label, irrep_qet, l, returnbasis=False):
@@ -1430,7 +1596,7 @@ class CrystalElectronsSCoupling():
         self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
         self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
         self.irreps = self.group.irrep_labels
-        self.ms = [-sp.S(1)/2,sp.S(1)/2]
+        self.ms = [-sp.S(1)/2, sp.S(1)/2]
         self.s_half = sp.S(1)/2
         self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
         # if its an aggregate of the same irrep

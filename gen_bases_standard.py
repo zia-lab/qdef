@@ -53,7 +53,7 @@ def basis_check(group_label, irrep_symbol, qets, full_output = False):
             check = True
         else:
             check = False
-        all_comparisons[R] = (check,direct_way, irrep_way)
+        all_comparisons[R] = (check, direct_way, irrep_way)
         all_checks[R] = check
     if sum(all_checks.values()) == len(all_checks):
         all_good = True
@@ -148,10 +148,6 @@ def symmetry_adapted_basis_standard(group_label, lmax, verbose=False):
                     print("Collecting that many, and in groups of %d, from the original set..." % irrep_dim)
                 assert (bigmatrix.rows % irrep_dim) == 0, "No. of indep entries should divide the dim of the irrep."
                 # determine what groupings have the full rank of the matrix
-                # chunks = [(coord_vecs[i*irrep_dim : (i*irrep_dim + irrep_dim)]) for i in range(bigmatrix.rows // irrep_dim)]
-                # cycles = num_lin_indep_rows // irrep_dim
-                # chunks = [chunk for chunk in chunks if (sp.Matrix(chunk).rank() == irrep_dim)]
-
                 chunks = [(coord_vecs[i*irrep_dim : (i*irrep_dim + irrep_dim)]) for i in range(bigmatrix.rows // irrep_dim)]
                 cycles = num_lin_indep_rows // irrep_dim
                 chunks = [tuple(map(tuple,chunk)) for chunk in chunks if (sp.Matrix(chunk).rank() == irrep_dim)]

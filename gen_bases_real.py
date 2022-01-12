@@ -321,9 +321,9 @@ def symmetry_adapted_basis_v_real(group_label, lmax, verbose=False):
                 chunks = [tuple(map(tuple,chunk)) for chunk in chunks if (sp.Matrix(chunk).rank() == irrep_dim)]
                 chunks = list(set(chunks))
 
-                print("num chunks =",len(chunks),"num cycles =", cycles)
+                # print("num chunks =",len(chunks),"num cycles =", cycles)
                 num_combos = sp.binomial(len(chunks), cycles)
-                print("Searching %d combinations." % num_combos)
+                # print("Searching %d combinations." % num_combos)
 
                 # from collections import deque
                 # good_to_go = False
@@ -365,7 +365,7 @@ def symmetry_adapted_basis_v_real(group_label, lmax, verbose=False):
                     tot = sp.Matrix(sp.BlockMatrix(mbits))
                     # numtot = sp.N(tot)
                     the_rank = tot.rank()
-                    print(the_rank, num_lin_indep_rows, '%d/%d' % (counter+1, num_combos))
+                    # print(the_rank, num_lin_indep_rows, '%d/%d' % (counter+1, num_combos))
                     counter += 1
                     if the_rank == num_lin_indep_rows:
                         # a satisfactory subset has been found, exit
