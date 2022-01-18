@@ -16,15 +16,15 @@ import sympy as sp
 import os
 import numpy as np
 import pandas as pd
-from sympy.physics.quantum import Ket, Bra
+from sympy.physics.quantum import Ket, Bra, KetBase
 from sympy.physics.wigner import gaunt
 from collections import OrderedDict
 from itertools import product
 from matplotlib import pyplot as plt
 from misc import double_group_matrix_inverse, fmt_table
+from constants import *
 
 module_dir = os.path.dirname(__file__)
-
 
 # =============================================================== #
 # ====================== Load element data ====================== #
@@ -82,6 +82,14 @@ double_group_metadata = double_group_dict['metadata']
 
 # ===================== Load group theory data ================== #
 # =============================================================== #
+
+class DetKet(KetBase):
+    lbracket_latex = r'\left|'
+    rbracket_latex = r'\right|\rangle'
+
+class DetBra(KetBase):
+    lbracket_latex = r'\langle\left|'
+    rbracket_latex = r'\right|'
 
 def orthogonal_matrix(euler_params):
     '''
@@ -377,6 +385,39 @@ class PeriodicTable():
         ax.set_aspect('equal')
         return fig, ax
 
+class SpinOrbital():
+    '''
+    Class used to represent a spin orbital.
+    '''
+    def __init__(self, orbital_part, spin):
+        '''
+        Parameters
+        ----------
+        orbital_part (anything, usually sp.Symbol)
+        spin   (S_DOWN or S_UP)
+
+        '''
+        self.orbital = orbital_part
+        self.spin = spin
+
+    def __repr__(self):
+        if self.spin == S_DOWN:
+            return str(self.orbital) + '↓'
+        else:
+            return str(self.orbital) + '↑'
+    
+    def _repr_latex_(self):
+        if self.spin == S_UP:
+            return '$\\displaystyle %s$' % str(self.orbital)
+        else:
+            return '$\\displaystyle \\bar{%s}$' % str(self.orbital)
+    
+    def __eq__(self, other):
+        return (self.spin == other.spin and self.orbital == other.orbital)
+    
+    def __hash__(self):
+        return hash((self.orbital, self.spin))
+
 class Term():
     '''
     To  represent  a  term,  this  object  holds the states that
@@ -564,6 +605,42 @@ class Qet():
                     sympyRep += coeff*Ket(key)
         return sympyRep
 
+    def as_detbraket(self):
+        '''
+        Give  a  representation  of  the qet as a detBra*detKet. The
+        keys in the dict for the ket are assumed to split first half
+        for the detbra, and other second half for the detket.
+        '''
+        sympyRep = sp.S(0)
+        for key, coeff in self.dict.items():
+            l = int(len(key)/2)
+            if key == ():
+                sympyRep += coeff
+            else:
+                sympyRep += coeff*(DetBra(*key[:l])*DetKet(*key[l:]))
+        return sympyRep
+    
+    def as_spinorb_ket(self):
+        '''
+        Give   a   representation   of   the   qet  as  a  Ket  from
+        sympy.physics.quantum  assuming  that  its  quantum  numbers
+        represent spin orbitals for a spin 1/2 particle.
+        '''
+        sympyRep = sp.S(0)
+        for key, coeff in self.dict.items():
+            if key == ():
+                sympyRep += coeff
+            else:
+                if isinstance(key, tuple):
+                    symbs = [skey.orbital if skey.spin == S_UP else sp.Symbol(r'\bar{%s}' % sp.latex(skey.orbital)) for skey in key]
+                    sympyRep += coeff * Ket(*symbs)
+                else:
+                    if key.spin == S_UP:
+                        sympyRep += coeff * Ket(key.orbital)
+                    else:
+                        sympyRep += coeff * Ket(sp.Symbol(r'\bar{%s}' % sp.latex(key.orbital)))
+        return sympyRep
+
     def as_bra(self):
         '''
         Give a representation of the qet  as  a  Bra  from
@@ -577,12 +654,41 @@ class Qet():
                 sympyRep += coeff*Bra(*key)
         return sympyRep
 
+    def as_detbra(self):
+        '''
+        Give a representation of the qet  as  a  determinantal
+        Bra  from sympy.physics.quantum.
+        This is for presentation only, don't use for calculations.
+        '''
+        sympyRep = sp.S(0)
+        for key, coeff in self.dict.items():
+            if key == ():
+                sympyRep += coeff
+            else:
+                sympyRep += coeff*DetBra(*key)
+        return sympyRep
+    
+    def as_detket(self):
+        '''
+        Give a representation of the qet  as  a  determinantal
+        Ket  from sympy.physics.quantum.
+        This is for presentation only, don't use for calculations.
+        '''
+        sympyRep = sp.S(0)
+        for key, coeff in self.dict.items():
+            if key == ():
+                sympyRep += coeff
+            else:
+                sympyRep += coeff*DetKet(*key)
+        return sympyRep
+
     def as_braket(self):
         '''
         Give a representation of the qet as a Bra*Ket. The
         keys in the dict for the ket are assumed to  split
         first half for the bra, and other second half  for
         the ket.
+        This is for presentation only, don't use for calculations.
         '''
         sympyRep = sp.S(0)
         for key, coeff in self.dict.items():
@@ -623,10 +729,10 @@ class Qet():
 
     def apply(self,f):
         '''
-        This method can be used to apply a function  to  a
-        qet the provided function f must take as arguments
-        a single pair of  qnum  and  coeff  and  return  a
-        dictionary or a (qnum, coeff) tuple
+        This method can be used to apply a function  to   a
+        qet. The provided function f must take as arguments
+        a single pair of  (qnums, coeff)  and   return    a
+        dictionary or a (qnum, coeff) tuple.
         '''
         new_dict = dict()
         for key, coeff in self.dict.items():
@@ -654,6 +760,13 @@ class Qet():
             norm2 += abs(coeff)**2
         return sp.sqrt(norm2)
 
+    def normalized(self):
+        '''
+        Return a normalized version of qet.
+        '''
+        thenormalizer = sp.S(1)/self.norm()
+        return thenormalizer*Qet(self.dict)
+
     def symmetrize(self):
         '''
         Use  if  the  keys  of the kets are tuples and one
@@ -679,6 +792,11 @@ class Qet():
 
     def __repr__(self):
         return 'Qet(%s)' % str(self.dict)
+
+    def __eq__(self, other):
+        if other == 0:
+            other = Qet({})
+        return (self.dict == other.dict)
 
 symmetry_bases = pickle.load(open(os.path.join(module_dir,'data',
                                             'symmetry_bases_standard.pkl'),'rb'))

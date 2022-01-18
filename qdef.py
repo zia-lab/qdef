@@ -19,7 +19,7 @@ import sympy as sp
 import pandas as pd
 import math
 from sympy import pi, I
-from sympy.physics.quantum import Ket, Bra
+from sympy.physics.quantum import Ket, Bra, TensorProduct
 from sympy.physics.wigner import gaunt
 from sympy.combinatorics.permutations import Permutation
 from itertools import combinations, permutations, combinations_with_replacement
@@ -37,6 +37,7 @@ from IPython.display import display, HTML, Math
 from misc import *
 from integrals import *
 from qdefcore import *
+from constants import *
 from sympy.physics.wigner import clebsch_gordan as clebsch_gordan
 from sympy.physics.quantum.dagger import Dagger
 from sympy import Eijk as εijk
@@ -772,6 +773,8 @@ def compute_crystal_field(group_num):
 ###########################################################################
 ############################## Hamiltonians ###############################
 
+
+
 def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standard_basis=False):
     '''
     Given  a  crystal field on an an ion with a given number of electrons,
@@ -843,6 +846,8 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
     if uID in hamiltonian_CF_CR.remembered:
         return hamiltonian_CF_CR.remembered[uID]
 
+    LS_dict = LSmatrix(l, S_HALF, high_to_low=True, as_dict=True)
+
     group_index = CPGs.all_group_labels.index(group_label) + 1
 
     cf_field = crystal_splits[group_index]
@@ -859,39 +864,68 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
         for eigen_part in eigen_sys:
             eigen_energy = eigen_part[0]
             for eigen_vec in eigen_part[2]:
-                eigen_label = sp.Symbol('\\alpha_{%d}' % (eigen_counter))
-                spherical_combo = Qet({(l,m): n for m,n in zip(range(-l,l+1),list(eigen_vec.T)) if n!= 0})
-                normalizer = sp.S(1)/spherical_combo.norm()
-                basis_change[eigen_label] = normalizer*spherical_combo
-                basis_energies[eigen_label] = eigen_energy
+                for spin in [S_UP, S_DOWN]:
+                    eigen_label = SpinOrbital(sp.Symbol('\\alpha_{%d}' % (eigen_counter)), spin)
+                    spherical_combo = Qet({(l,m,spin): v for m,v in zip(range(l,-l-1,-1),list(eigen_vec.T)) if v!= 0})
+                    normalizer = sp.S(1)/spherical_combo.norm()
+                    basis_change[eigen_label] = normalizer*spherical_combo
+                    basis_energies[eigen_label] = eigen_energy
                 eigen_counter += 1
         single_e_basis = list(basis_change.keys())
-        def simple_energy(qnums, coeff):
+        def crystal_energy(qnums, coeff):
             the_dict = {1:0}
             γ1, γ2 = qnums
-            if γ1 == γ2:
-                the_dict[1] = coeff*basis_energies[γ1]
+            if γ1.spin != γ2.spin:
+                return {}
+            else:
+                if γ1.orbital == γ2.orbital:
+                    the_dict[1] = coeff * basis_energies[γ1]
+                if the_dict[1] == 0:
+                    return {}
+                else:
+                    return the_dict
+        def spin_energy(qnums, coeff):
+            the_dict = {1:0}
+            l1, m1, s1, l2, m2, s2 = qnums
+            the_dict[1] += coeff * sp.Symbol('\\zeta_{SO}') * LS_dict[((m1,s1), (m2,s2))]
             if the_dict[1] == 0:
                 return {}
-            return the_dict
+            else:
+                return the_dict
     else:
         print("Using spherical harmonics basis.")
-        single_e_basis = [sp.Symbol('Y_{%d,%d}' % (l,m)) for m in range(-l,l+1)]
-        basis_change = OrderedDict([(sp.Symbol('Y_{%d,%d}' % (l,m)),Qet({(l,m):1})) for m in range(-l,l+1)])
+        single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
+                            for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
+        basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
+                            for spin in [S_DOWN, S_UP] for m in range(-l,l+1)])
         ham = cf_field['matrices'][0]
-        def simple_energy(qnums, coeff):
+        def crystal_energy(qnums, coeff):
             the_dict = {1:0}
             γ1, γ2 = qnums
-            γ1idx = single_e_basis.index(γ1)
-            γ2idx = single_e_basis.index(γ2)
-            the_dict[1] = coeff*ham[γ1idx,γ2idx]
+            γ1idx = single_e_basis.index(γ1) % ham.rows
+            γ2idx = single_e_basis.index(γ2) % ham.rows
+            if γ1.spin != γ2.spin:
+                return {}
+            else:
+                the_dict[1] = coeff * ham[γ1idx, γ2idx]
+                if the_dict[1] == 0:
+                    return {}
+                else:
+                    return the_dict
+        def spin_energy(qnums, coeff):
+            the_dict = {1:0}
+            γ1, γ2 = qnums
+            m1 = list(basis_change[γ1].dict.keys())[0][1]
+            m2 = list(basis_change[γ2].dict.keys())[0][1]
+            s1, s2  = γ1.spin, γ2.spin
+            the_dict[1] = coeff * sp.Symbol('\\zeta_{SO}') * LS_dict[((m1,s1),(m2,s2))]
             if the_dict[1] == 0:
                 return {}
             else:
                 return the_dict
 
     # add spin up and spin down
-    single_e_spin_orbitals = single_e_basis + [bar_symbol(v) for v in single_e_basis]
+    single_e_spin_orbitals = single_e_basis
     # create determinantal states
     slater_dets = list(combinations(single_e_spin_orbitals,num_electrons))
     slater_qets = [Qet({k:1}) for k in slater_dets]
@@ -904,11 +938,17 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
         row = []
         for idx1, qet1 in enumerate(slater_qets):
             double_braket = double_electron_braket(qet0, qet1)
-            coulomb_matrix_element = braket_basis_change(double_braket, basis_change)
+            coulomb_matrix_element = double_braket_basis_change(double_braket, basis_change)
             coulomb_matrix_element = coulomb_matrix_element.apply(to_slater_params)
             coulomb_matrix_element = sp.expand(coulomb_matrix_element.as_symbol_sum())
-            crystal_field_energy = single_electron_braket(qet0, qet1).apply(simple_energy).as_symbol_sum()
-            matrix_element = coulomb_matrix_element + crystal_field_energy
+            single_braket = single_electron_braket(qet0, qet1)
+            crystal_field_energy = single_braket.apply(crystal_energy).as_symbol_sum()
+            if (crystal_basis and not force_standard_basis):
+                single_braket = single_braket_basis_change(single_braket, basis_change)
+            spin_energy_melement = single_braket.apply(spin_energy).as_symbol_sum()
+            matrix_element = (coulomb_matrix_element 
+                            + crystal_field_energy 
+                            + spin_energy_melement)
             if matrix_element != 0:
                 if sparse:
                     hamiltonian[(idx0,idx1)] = (matrix_element)
@@ -924,7 +964,6 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
     if sparse:
         hamiltonian = (sp.SparseMatrix(len(slater_qets), len(slater_qets), hamiltonian))
     else:
-        print(len(hamiltonian))
         hamiltonian = sp.Matrix(hamiltonian)
 
     hamiltonian_CF_CR.remembered[uID] = (hamiltonian, basis_change, slater_dets)
@@ -1121,7 +1160,38 @@ def lmqet_to_irrepqet(group_label, qet, returnbasis=False):
 ####################### Irreducible basis transforms ######################
 ###########################################################################
 
-def braket_basis_change(braket, basis_changer):
+def single_braket_basis_change(braket, basis_changer):
+    '''
+    Take  a  qet,  understood  as  a  two   symbol braket, and a
+    dictionary  that  maps  the  current basis to a new one, and
+    return  the resulting expression for the new braket in terms
+    of  the new basis. All throughout it is assumed that between
+    the given braket there is an implicit operator.
+
+    Parameters
+    ----------
+    braket   (qdefcore.Qet)
+    basis_changer (dict):  keys being  equal  to single electron
+    quantum  symbols  and  values  to  qets  that  determine the
+    superposition of the new basis to which this vector is being
+    mapped to. The keys of the dictionary need not  include  all
+    the quantum symbols included in the qet.
+
+    Returns
+    -------
+    new_braket (qdefcore.Qet)
+
+    '''
+
+    new_braket = Qet({})
+    for k, v in braket.dict.items():
+        βi, βj = [(Qet({(γ,):1}) if γ not in basis_changer else basis_changer[γ]) for γ in k]
+        βi = βi.dual()
+        γiγjγkγl = (βi * βj)
+        new_braket = new_braket + ( v * γiγjγkγl)
+    return new_braket
+
+def double_braket_basis_change(braket, basis_changer):
     '''
     Take  a  qet,  understood  as  a  four  symbol braket, and a
     dictionary  that  maps  the  current basis to a new one, and
@@ -1148,7 +1218,7 @@ def braket_basis_change(braket, basis_changer):
     braket = Qet({(1,2,3,4): 5,
                 (8,4,3,1): 1})
     basis_change = {1: Qet({(8,): sp.I})}
-    print(braket_basis_change(braket, basis_change))
+    print(double_braket_basis_change(braket, basis_change))
     >> {(8, 2, 3, 4): -5*I, (8, 4, 3, 8): I}
 
     '''
@@ -1167,12 +1237,10 @@ def to_slater_params(qnums, coeff):
     and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
     '''
     # print("afresh")
-    if len(qnums) == 8:
-        l1, m1, l2, m2, l1p, m1p, l2p, m2p = qnums
-    else:
-        m1, m2, m1p, m2p = qnums
-        l1, l2, l1p, l2p = 2, 2, 2, 2
-    if KroneckerDelta(m1+m2, m1p+m2p):
+    l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
+    if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
+        return {}
+    elif KroneckerDelta(m1+m2, m1p+m2p):
         if (m1 - m1p) % 2 == 0:
             phase = 1
         else:
@@ -1630,8 +1698,8 @@ class CrystalElectronsSCoupling():
                         )
         the_single_qet_key = []
         for γ in self.component_labels[Γ]:
-            the_single_qet_key.append(γ)
-            the_single_qet_key.append(bar_symbol(γ))
+            the_single_qet_key.append(SpinOrbital(γ, S_UP))
+            the_single_qet_key.append(SpinOrbital(γ, S_DOWN))
         the_single_qet_key = tuple(the_single_qet_key)
         the_single_qet = Qet({the_single_qet_key: 1})
         return {the_single_ψ: the_single_qet}
@@ -1756,7 +1824,8 @@ class CrystalElectronsSCoupling():
                             )
                     if ψ_123 not in ψ_123s:
                         ψ_123s[ψ_123] = Qet({})
-                    γ3f = (γ3 if (m3 > 0) else bar_symbol(γ3))
+                    # γ3f = (γ3 if (m3 > 0) else bar_symbol(γ3))
+                    γ3f = (SpinOrbital(γ3, S_UP) if (m3 > 0) else SpinOrbital(γ3, S_DOWN))
                     ψ_123s[ψ_123] = ψ_123s[ψ_123] + (qet_12 * Qet({(γ3f,): coeff}))
         return ψ_123s
 
@@ -1779,7 +1848,9 @@ class CrystalElectronsSCoupling():
                         S = S,
                         M = m
                         )
-                γf = (γ if (m > 0) else bar_symbol(γ))
+                # γf = (γ if (m > 0) else bar_symbol(γ))
+                γf = (SpinOrbital(γ, S_UP) if (m > 0) else SpinOrbital(γ, S_DOWN))
+
                 total_ket_part_key = (γf,)
                 if ψ not in ψs:
                     ψs[ψ] = {}
@@ -1818,8 +1889,10 @@ class CrystalElectronsSCoupling():
                     # collect in the dictionary all the parts that correspond to the sums
                     if ψ not in ψ_12s:
                         ψ_12s[ψ] = {}
-                    γ1f = (γ1 if (m1 > 0) else bar_symbol(γ1))
-                    γ2f = (γ2 if (m2 > 0) else bar_symbol(γ2))
+                    # γ1f = (γ1 if (m1 > 0) else bar_symbol(γ1))
+                    # γ2f = (γ2 if (m2 > 0) else bar_symbol(γ2))
+                    γ1f = (SpinOrbital(γ1, S_UP) if (m1 > 0) else SpinOrbital(γ1, S_DOWN))
+                    γ2f = (SpinOrbital(γ2, S_UP) if (m2 > 0) else SpinOrbital(γ2, S_DOWN))
                     total_ket_part_key = (γ1f, γ2f)
                     if total_ket_part_key not in ψ_12s[ψ]:
                         ψ_12s[ψ][total_ket_part_key] = 0
@@ -1897,8 +1970,8 @@ class CrystalElectronsLLCoupling():
         self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
         self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
         self.irreps = self.group.irrep_labels
-        self.ms = [-sp.S(1)/2,sp.S(1)/2]
-        self.s_half = sp.S(1)/2
+        self.ms = [S_DOWN, S_UP]
+        self.s_half = S_HALF
         self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
         self.equiv_waves = self.wave_muxer(self.crystalelectron0.equiv_waves,
                                      self.crystalelectron1.equiv_waves)
@@ -2672,7 +2745,7 @@ def braket_identities(group_label, assume_real = True, verbose=True):
 
     return real_var_full_simplifier, super_solution, real_var_full_simplifier_2, super_solution_2, simplifier
 
-def double_electron_braket(qet0, qet1, erase_spin=True):
+def double_electron_braket(qet0, qet1):
     '''
     Given  two  qets,  which  are  assumed to be composed of determinantal
     states, and a two electron operator op, return value of the braket
@@ -2734,48 +2807,29 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
             comparisons = list(map(lambda x: x[0]==x[1], zip(odet0, odet1)))
             if all(comparisons):
                 # CASE I
-                # print("I")
                 for i in range(num_electrons):
-                    spin_up_0_i = 'bar' not in str(odet0[i])
                     for j in range(i+1,num_electrons):
-                        # print(i,j)
-                        spin_up_0_j = 'bar' not in str(odet0[j])
                         double_brakets.append(((odet0[i], odet0[j],
                                                 odet0[i], odet0[j]),
                                                 total_coeff))
-                        if (spin_up_0_i == spin_up_0_j): 
-                            double_brakets.append(((odet0[i], odet0[j],
+                        double_brakets.append(((odet0[i], odet0[j],
                                                     odet0[j], odet0[i]),
                                                     -total_coeff))
-                # print(double_brakets)
             elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
                 # CASE II
-                # print("II")
-                spin_up_0_0 = ('bar' not in str(odet0[0]))
-                spin_up_1_0 = ('bar' not in str(odet1[0]))
                 for j in range(1,num_electrons):
-                    spin_up_0_j = ('bar' not in str(odet0[j]))
-                    if (spin_up_0_0 == spin_up_1_0):
-                        double_brakets.append(((odet0[0], odet0[j],
-                                                odet1[0], odet0[j]),
-                                                total_coeff))
-                    if (spin_up_0_0 == spin_up_0_j) and (spin_up_0_j == spin_up_1_0): 
-                        double_brakets.append(((odet0[0], odet0[j],
-                                                odet0[j], odet1[0]),
-                                                -total_coeff))
+                    double_brakets.append(((odet0[0], odet0[j],
+                                            odet1[0], odet0[j]),
+                                            total_coeff))
+                    double_brakets.append(((odet0[0], odet0[j],
+                                            odet0[j], odet1[0]),
+                                            -total_coeff))
             elif (odet0[0] != odet1[0]) and (odet0[1] != odet1[1]) and all(comparisons[2:]): 
                 # CASE III
-                # print("III")
-                spin_up_0_0 = ('bar' not in str(odet0[0]))
-                spin_up_0_1 = ('bar' not in str(odet0[1]))
-                spin_up_1_0 = ('bar' not in str(odet1[0]))
-                spin_up_1_1 = ('bar' not in str(odet1[1]))
-                if (spin_up_0_0 == spin_up_1_0) and (spin_up_0_1 == spin_up_1_1):
-                    double_brakets.append(((odet0[0], odet0[1],
+                double_brakets.append(((odet0[0], odet0[1],
                                             odet1[0], odet1[1]),
                                             total_coeff))
-                if (spin_up_0_0 == spin_up_1_1) and (spin_up_0_1 == spin_up_1_0):
-                    double_brakets.append(((odet0[0], odet0[1],
+                double_brakets.append(((odet0[0], odet0[1],
                                             odet1[1], odet1[0]),
                                             -total_coeff))
             elif not any(comparisons[:3]):
@@ -2786,12 +2840,9 @@ def double_electron_braket(qet0, qet1, erase_spin=True):
                 raise Exception("Ooops, This case shouldn't occur")
             full_braket.extend(double_brakets)
     full_braket = sum([Qet({k:v}) for k,v in full_braket],Qet({}))
-    if erase_spin:  
-        return strip_spin(full_braket)
-    else:
-        return full_braket
+    return full_braket
 
-def single_electron_braket(qet0, qet1, erase_spin=True):
+def single_electron_braket(qet0, qet1):
     '''
     Given  two qets, assumed to be composed of determinantal states, and a
     single-electron operator return the value of the braket
@@ -2855,13 +2906,8 @@ def single_electron_braket(qet0, qet1, erase_spin=True):
                 single_brakets = [((φ, φ), total_coeff) for φ in odet0]
             elif (odet0[0] != odet1[0]) and all(comparisons[1:]):
                 # CASE II
-                spin_up_0_0 = 'bar' in str(odet0[0])
-                spin_up_1_0 = 'bar' in str(odet1[0])
-                if spin_up_0_0 == spin_up_1_0:
-                    single_brakets = [((odet0[0],
+                single_brakets = [((odet0[0],
                                         odet1[0]), total_coeff)]
-                else:
-                    single_brakets = []
             elif (odet0[0] != odet1[0]) and (odet0[1] != odet1[1]):
                 # CASE III
                 single_brakets = []
@@ -2869,15 +2915,102 @@ def single_electron_braket(qet0, qet1, erase_spin=True):
                 raise Exception("Ooops, This case shouldn't occur")
             full_braket.extend(single_brakets)
     full_braket = sum([Qet({k:v}) for k,v in full_braket],Qet({}))
-    if erase_spin:
-        return strip_spin(full_braket)
-    else:
-        return full_braket
+    return full_braket
 
 
 
 
 ######################### MultiElectron Foundry ###########################
+###########################################################################
+
+###########################################################################
+####################### Angular Momentum Matrices #########################
+
+def Jmatrices(j, high_to_low = False, as_dict = False):
+    '''
+    Angular momentum matrices for the given value of j. Using ħ=1.
+
+    Parameters
+    ----------
+    j (int or half-int)
+    high_to_low (Bool): if true mj = j is on top left corner of matrices
+    as_dict (Bool): whether to return a dictionary instead
+    
+    Returns
+    -------
+    if as_dict == False:
+        (Jx, Jy, Jz) (tuple) whose elements are sp.Matrix
+    else:
+        (Jxdict, Jydict, Jzdict) (tuple) whose elements are dictionaries
+        whose keys are tuples (mjrow, mjcol) and whose values are the 
+        corresponding matrix elements.
+
+    '''
+    args = (j, high_to_low, as_dict)
+    if args in Jmatrices.values:
+        return Jmatrices.values[args]
+    j = sp.S(int(2*j))/2
+    basis = mrange(j)
+    if high_to_low:
+        basis = basis[-1::-1]
+    lp = sp.Matrix([(Qet({mj+1: sp.sqrt((j-mj)*(j+mj+1))})).vec_in_basis(basis) for mj in basis]).T
+    lm = sp.Matrix([(Qet({mj-1: sp.sqrt((j+mj)*(j-mj+1))})).vec_in_basis(basis) for mj in basis]).T
+    lx = (lp + lm)/sp.S(2)
+    ly = (lp - lm)/(sp.S(2)*sp.I)
+    lz = sp.Matrix([(Qet({mj: mj})).vec_in_basis(basis) for mj in basis]).T
+    if not as_dict:
+        Jmatrices.values[args] = (lx,ly,lz)
+        return (lx, ly, lz)
+    else:
+        lxyz_dicts = tuple({(ml0, ml1): op[basis.index(ml0), basis.index(ml1)] for ml0 in basis for ml1 in basis}
+                        for op in (lx, ly, lz))
+        Jmatrices.values[args] = lxyz_dicts
+        return lxyz_dicts
+Jmatrices.values = {}
+
+def LSmatrix(l, s, high_to_low = False, as_dict = False):
+    '''
+    Provide the matrix representation for L⋅S = Lx*Sx + Ly*Sy + Lz*Sz
+    in the standard basis. Using ħ=1.
+
+    Parameters
+    ----------
+    l (int or half-int)
+    s (int or half-int)
+    high_to_low (Bool): if True then ml = l is on top left corner of matrices
+    as_dict (Bool): if True then the function returns a dictionary of matrix elements
+    
+    Returns
+    -------
+    if as_dict == False
+        Lsmat (sp.Matrix) a matrix for the L⋅S operator
+    else:
+        Lsdict where the keys are two tuples ((ml_row, ms_row), (ml_col, ms_col)) and
+        whose values are the corresponding matrix elements.
+
+    '''
+    args = (l,s,high_to_low,as_dict)
+    if args in LSmatrix.values:
+        return LSmatrix.values[args]
+    Lmatrices = Jmatrices(l, high_to_low)
+    Smatrices = Jmatrices(s, high_to_low)
+    LSparts = [TensorProduct(Lm, Sm) for Lm, Sm in zip(Lmatrices, Smatrices)]
+    Lsmat = sum(LSparts, sp.zeros(int(2*l+1)*int(2*s+1)))
+    if not as_dict:
+        LSmatrix.values[args] = Lsmat
+        return Lsmat
+    else:
+        if high_to_low:
+            lsbasis = list(product(mrange(l), mrange(s)))
+        else:
+            lsbasis = list(product(mrange(l)[-1::-1], mrange(s)[-1::-1]))
+        Lsdict = {((mlrow,msrow),(mlcol,mscol)): Lsmat[lsbasis.index((mlrow,msrow)), lsbasis.index((mlcol,mscol))] 
+                 for (mlrow,msrow) in lsbasis for (mlcol, mscol) in lsbasis}
+        LSmatrix.values[args] = Lsdict
+        return Lsdict
+LSmatrix.values = {}
+
+####################### Angular Momentum Matrices #########################
 ###########################################################################
 
 ###########################################################################
