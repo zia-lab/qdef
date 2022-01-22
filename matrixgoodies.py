@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 ######################################################################
-#                  _____     matrix        ___                       #
+#                  _____     The matrix  ___                         #
 #                 / ____/___  ____  ____/ (_)__  _____               #
 #                / / __/ __ \/ __ \/ __  / / _ \/ ___/               #
 #               / /_/ / /_/ / /_/ / /_/ / /  __(__  )                #
@@ -42,7 +42,6 @@ def block_form(matrix):
     >>> display(test_matrix)
     >>> display(block_form(test_matrix)[0])
 
-
     '''
     matrix = sp.Matrix(matrix)
     connectome = []
@@ -81,3 +80,187 @@ def block_form(matrix):
     col_reordering = [index_maps_h[k] for k in range(size)]
     row_reordering = [index_maps_v[k] for k in range(size)]
     return sp.Matrix(sp.BlockDiagMatrix(*blocks)), blocks, col_reordering, row_reordering
+
+
+def eigenvalue_dismabiguate(eigenvals, interpolant_order=2, runway=10):
+    '''
+    Useful  to  identify  "branches" in the spectrum of hermitian matrices
+    M(x_i) which are functions of a single continous parameter x.
+    
+    This  function tracks the eigenvalues as the parameter of the matrices
+    is  varied. This is done by implementing continuity constraints in the
+    values and extrapolated values of the created branches.
+    
+    This  function  is  agnostic  to  the parameters that have defined the
+    given  eigenvalues,  and  only  relies on them being evenly spaced and
+    ordered.
+
+    Parameters
+    ----------
+
+    runway  (int)  :  how  many  points are used to train the interpolants
+
+    eigenvals  (np.array)  :  an  array  where eigenvals[i] represents the
+    eigenvalues of M(x_i)
+
+    Returns
+    -------
+    mbranches  (np.array):  with mbraches[j] representing the j-th identified
+    branch of the given operator; mbranches has as many rows as eigenvals has
+    columns, and as many columns as eigenvals had rows.
+
+    '''
+    mbranches = {idx:[energeigenvals] for idx, energeigenvals in enumerate(eigenvals[0])}
+    for idx, col in enumerate(eigenvals[1:]):
+        supplied_branches = []
+        for energeigenvals in col:
+            interpolants = {}
+            poleigenvalsvalues = {}
+            if idx < runway:
+                dists = []
+                for branchidx in mbranches:
+                    last_energeigenvals = mbranches[branchidx][-1]
+                    dists.append((branchidx,np.abs(last_energeigenvals-energeigenvals), energeigenvals))
+                dists = list(sorted(dists, key = lambda x: x[1]))
+                while True:
+                    belonging = dists[0][0]
+                    if belonging not in supplied_branches:
+                        supplied_branches.append(belonging)
+                        mbranches[belonging].append(dists[0][2])
+                        break
+                    else:
+                        dists = dists[1:]
+            else:
+                # for each branch build an interpolation and extrapolate +1
+                extrapols = []
+                for branchidx in mbranches:
+                    branch_energies = mbranches[branchidx][-runway:]
+                    x = range(runway)
+                    if branchidx in interpolants:
+                        poleigenvalsvalue = poleigenvalsvalues[branchidx]
+                        print('.')
+                        1/0
+                    else:
+                        poleigenvalsfit = np.poly1d(np.polyfit(x,branch_energies, interpolant_order))
+                        interpolants[branchidx] = poleigenvalsfit
+                        poleigenvalsvalue = poleigenvalsfit(runway)
+                        poleigenvalsvalues[branchidx] = poleigenvalsvalue
+                    extrapols.append((branchidx, np.abs(poleigenvalsvalue-energeigenvals)))
+                extrapols = list(sorted(extrapols, key = lambda x: x[1]))
+                while True:
+                    belonging = extrapols[0][0]
+                    if belonging not in supplied_branches:
+                        supplied_branches.append(belonging)
+                        mbranches[belonging].append(energeigenvals)
+                        break
+                    else:
+                        extrapols = extrapols[1:]
+    return np.array(list(mbranches.values()))
+
+def degen_remove(array, utol = 1e-3):
+    '''
+    This  function  takes  an  array,  and  returns  the  columns that are
+    different to one another to within the provided tolerance.
+
+    Parameters
+    ----------
+    array  (np.array): Where array[i] are interpreted as the columns to be
+    compared.
+
+    Returns
+    -------
+    uniqrows  (np.array):  an array whose rows are all different to within
+    the provided tolerance.
+
+    '''
+    uniqrows = [array[0]]
+    tol = utol * len(uniqrows[0])
+    for idx in range(1,len(array)):
+        branch = array[idx]
+        diffs = [np.sqrt(np.sum(np.abs(branch-ubranch)**2)) > tol for ubranch in uniqrows]
+        if all(diffs):
+            uniqrows.append(branch)
+    return np.array(uniqrows)
+
+def vector_upgrade(vector, pivots, fullbasis):
+    '''
+    Give a vector whose components are initially only in a subspace
+    of an original vector space, promote it by adding zeros in  the
+    adequate places.
+
+    Parameters
+    ----------
+    vector (np.array): the vector in a subspace of the larger vector
+    space.
+
+    pivots (list): contains the indices in the larger vector  space
+    that are represented in the coefficients of the given vector.
+    
+    fullbasis (list or np.array): a list of ordered unit vectors.
+
+    Example
+    -------
+
+    >> vector = [1,2,3]
+    >> pivots = [0,2,4]
+    >> fullbasis = np.eye(7)
+    >> vector_upgrade(vector, pivots, fullbasis)
+
+    array([1,0,2,0,3,0,0])
+
+    Added on Jan-17 2022-01-17 11:43:49
+    '''
+    return np.sum(np.array([coeff*fullbasis[pivot] 
+                for coeff, pivot in zip(vector, pivots)]), axis=0)
+
+def block_diagonalize(blocks, notches, symbols_rep, final_sort = True, assume_hermitian = True):
+    '''
+    If a matrix has been put into block diagonal form, this function
+    can help in finding its spectrum by patching together the eigen-
+    values and eigenvectors of the blocks.
+
+    Parameters
+    ----------
+
+    blocks  (list): iterable  whose  elements are symbolic sp.Matrix
+    notches (list): a list of integers which represent the subspaces
+                to which the given  blocks belong to in the original
+                ordering of the matrix
+    symbols_rep (dict): a dictionary with substitutions that convert
+                         all the given matrices into numerical ones.
+    
+    Returns
+    -------
+
+    (all_eigenvals, all_eigenvects)   (tuple)
+    all_eigenvals (np.array): an array with all the blocks eigenvalues
+    all_eigenvects (np.array):  an  array  whose  j-th  column  is  an 
+                                   eigenvector of the j-th eigenvalue.
+    
+    Added on Jan-17 2022-01-17 11:44:29
+    '''
+    dims = list(map(lambda x: x.rows, blocks))
+    total_dim = sum(dims)
+    fullbasis = np.eye(total_dim)
+    all_eigenvals = np.zeros((total_dim))
+    all_eigenvects =  np.zeros((total_dim, total_dim))
+    cursor = 0
+    counter = 0
+    for block, offsets in zip(blocks, notches):
+        block_dim = block.rows
+        block = np.array(block.subs(symbols_rep)).astype(np.complex64)
+        eigenvals, eigenvects = np.linalg.eigh(block)
+        if assume_hermitian:
+            eigenvals = np.real(eigenvals)
+        eigenvects = eigenvects.T
+        all_eigenvals[cursor:cursor+block_dim] = eigenvals
+        offsets = notches[cursor:cursor+block_dim]
+        for eigenvect in eigenvects:
+            all_eigenvects[counter] = vector_upgrade(eigenvect, offsets, fullbasis)
+            counter += 1
+        cursor += block_dim
+    if final_sort:
+        sorter = np.argsort(all_eigenvals)
+        all_eigenvals, all_eigenvects = all_eigenvals[sorter], all_eigenvects[sorter]
+    all_eigenvects = all_eigenvects.T
+    return all_eigenvals, all_eigenvects

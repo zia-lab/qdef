@@ -542,7 +542,7 @@ class Qet():
                 for k2, v2 in multiplier.dict.items():
                     k3 = k1 + k2
                     v3 = v1 * v2
-                    if v3 !=0:
+                    if v3 != 0:
                         new_dict[k3] = v3
             return Qet(new_dict)
         else:
@@ -786,17 +786,24 @@ class Qet():
                 else:
                     new_dict[key] = coeff
         return Qet(new_dict)
-
+    
+    def permute(self, permutation):
+        new_dict = {}
+        for k,v in self.dict.items():
+            new_k = tuple([k[p] for p in permutation])
+            new_dict[new_k] = v
+        return Qet(new_dict)
+ 
     def __str__(self):
         return str(self.dict)
 
     def __repr__(self):
         return 'Qet(%s)' % str(self.dict)
 
-    def __eq__(self, other):
-        if other == 0:
-            other = Qet({})
-        return (self.dict == other.dict)
+    # def __eq__(self, other):
+    #     if other == 0:
+    #         other = Qet({})
+    #     return (self.dict == other.dict)
 
 symmetry_bases = pickle.load(open(os.path.join(module_dir,'data',
                                             'symmetry_bases_standard.pkl'),'rb'))

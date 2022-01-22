@@ -773,19 +773,60 @@ def compute_crystal_field(group_num):
 ###########################################################################
 ############################## Hamiltonians ###############################
 
+def trees_dict(l, return_matrix = False):
+    '''
+    This  function  returns the matrix elements of the l_1⋅l_2 operator in
+    the standard basis for two electrons.
 
+    This  can  be  used to evaluate the two-body contribution of the Trees
+    effective operator.
 
-def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standard_basis=False):
+    The  keys are given in the format (m1, m2, m1p, m2p) so that the given
+    value    in    the    dictionary    equals    the    matrix    element
+    <m1,m2|l_1⋅l_2|m1p,m2p>.
+    '''
+    if l in trees_dict.values:
+        return trees_dict.values[l]
+    jmats = Jmatrices(l, high_to_low=False)
+    trees_mat = 2*sum([TensorProduct(mat1,mat1) for mat1 in jmats], sp.zeros((2*l+1)**2))
+    if return_matrix:
+        return trees_mat
+    mbasis = mrange(l)
+    trees_dictionaire = OrderedDict()
+    tensor_basis = list(product(mbasis, mbasis))
+    for rowidx in range(trees_mat.rows):
+        row_thing = tensor_basis[rowidx]
+        for colidx in range(trees_mat.cols):
+            col_thing = tensor_basis[colidx]
+            val = trees_mat[rowidx, colidx]
+            if val !=0:
+                trees_dictionaire[tuple(row_thing + col_thing)] = val
+    trees_dict.values[l] = trees_dictionaire
+    return trees_dictionaire
+trees_dict.values = {}
+
+def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_standard_basis=False):
     '''
     Given  a  crystal field on an an ion with a given number of electrons,
     this  function  provides  the  matrix that represents the hamiltionian
-    that includes the crystal field together with the Coulomb repulsion.
+    that includes:
 
-    This  Hamiltonian only describes how the ground state is split both by
-    the  crystal  field  and by the Coulomb repulsion. The contribution to
-    the  total  energy,  as  provided  by the interaction with the nuclear
-    charge  does  not  figure  here, because it merely provides a constant
-    shift to all the energy levels included in this description.
+    1) the crystal field term of the given symmetry (one-body),
+    2) the Coulomb repulsion between electrons (two-body),
+    3) the spin-orbit interaction (one-body),
+    4) and the Trees effective operator α_T L(L+1) (two-body + one-body).
+
+    The symbols associated with each term are:
+
+    - crystal field: B_{i,j}
+    - coulomb repulsion: F^{(k)}
+    - spin-orbit interacion: \zeta_{SO}
+    - Trees operator: \alpha_T
+
+    The  contribution  to the total energy, as provided by the interaction
+    with  the  nuclear  charge  does  not  figure  here, because it merely
+    provides  a  constant  shift to all the energy levels included in this
+    description.
 
     In  all  cases  the  basis  used  in this matrix representation of the
     Hamiltonian  is  composed  of  slater  determinants of single-electron
@@ -804,6 +845,13 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
     for  it, if not, then the single-electron basis is simply the full set
     of spherical harmonics for the given value of l  (multiplied by radial
     parts that figure as the parameters of the model hamiltonian).
+
+    The  two-electron  and  one-electron operators are evaluated using the
+    Slater-Condon rules.
+
+    The  resulting  matrix is square with size d X d with d = sp.binomial(
+    2*2*l(+1),  num_electrons), which equals how many spin orbitals can be
+    assigned to the given number of electrons.
 
     Parameters
     ----------
@@ -843,8 +891,8 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
 
     uID = (num_electrons, group_label, l, sparse, force_standard_basis)
 
-    if uID in hamiltonian_CF_CR.remembered:
-        return hamiltonian_CF_CR.remembered[uID]
+    if uID in hamiltonian_CF_CR_SO_TO.remembered:
+        return hamiltonian_CF_CR_SO_TO.remembered[uID]
 
     LS_dict = LSmatrix(l, S_HALF, high_to_low=True, as_dict=True)
 
@@ -852,6 +900,7 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
 
     cf_field = crystal_splits[group_index]
     crystal_basis = (len(cf_field['eigen_system']) > 0)
+    trees_dictionaire = trees_dict(l)
     
     if crystal_basis:
         eigen_sys = cf_field['eigen_system'][0]
@@ -872,6 +921,7 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
                     basis_energies[eigen_label] = eigen_energy
                 eigen_counter += 1
         single_e_basis = list(basis_change.keys())
+
         def crystal_energy(qnums, coeff):
             the_dict = {1:0}
             γ1, γ2 = qnums
@@ -884,6 +934,7 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
                     return {}
                 else:
                     return the_dict
+        
         def spin_energy(qnums, coeff):
             the_dict = {1:0}
             l1, m1, s1, l2, m2, s2 = qnums
@@ -892,6 +943,30 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
                 return {}
             else:
                 return the_dict
+
+        def trees_op_two_bod(qnums, coeff):
+            '''
+            This function will take a set of qnums that are assumed to be l1, m1, l2, m2, l1p, m1p, l2p, m2p
+            and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
+            '''
+            l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
+            if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
+                return {}
+            else:
+                if (m1,m2,m1p,m2p) in trees_dictionaire:
+                    return {1: coeff * trees_dictionaire[(m1,m2,m1p,m2p)]}
+                else:
+                    return {}
+        def tree_op_one_bod(qnums, coeff):
+            the_dict = {1:0}
+            l1, m1, s1, l2, m2, s2 = qnums
+            if m1 == m2 and s1 == s2:
+                the_dict[1] = coeff * l * (l+1)
+            if the_dict[1] == 0:
+                return {}
+            else:
+                return the_dict
+
     else:
         print("Using spherical harmonics basis.")
         single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
@@ -899,6 +974,7 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
         basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
                             for spin in [S_DOWN, S_UP] for m in range(-l,l+1)])
         ham = cf_field['matrices'][0]
+
         def crystal_energy(qnums, coeff):
             the_dict = {1:0}
             γ1, γ2 = qnums
@@ -912,6 +988,7 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
                     return {}
                 else:
                     return the_dict
+        
         def spin_energy(qnums, coeff):
             the_dict = {1:0}
             γ1, γ2 = qnums
@@ -923,11 +1000,38 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
                 return {}
             else:
                 return the_dict
-
+        
+        def trees_op_two_bod(qnums, coeff):
+            '''
+            This function will take a set of qnums that are assumed to be l1, m1, l2, m2, l1p, m1p, l2p, m2p
+            and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
+            '''
+            l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
+            if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
+                return {}
+            else:
+                if (m1,m2,m1p,m2p) in trees_dictionaire:
+                    return {1: coeff * trees_dictionaire[(m1,m2,m1p,m2p)]}
+                else:
+                    return {}
+        
+        def tree_op_one_bod(qnums, coeff):
+            the_dict = {1:0}
+            γ1, γ2 = qnums
+            m1 = list(basis_change[γ1].dict.keys())[0][1]
+            m2 = list(basis_change[γ2].dict.keys())[0][1]
+            s1, s2  = γ1.spin, γ2.spin
+            if m1 == m2 and s1 == s2:
+                the_dict[1] = coeff * l * (l+1)
+            if the_dict[1] == 0:
+                return {}
+            else:
+                return the_dict
+    
     # add spin up and spin down
     single_e_spin_orbitals = single_e_basis
     # create determinantal states
-    slater_dets = list(combinations(single_e_spin_orbitals,num_electrons))
+    slater_dets = list(combinations(single_e_spin_orbitals, num_electrons))
     slater_qets = [Qet({k:1}) for k in slater_dets]
     if sparse:
         hamiltonian = {}
@@ -937,18 +1041,24 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
     for idx0, qet0 in enumerate(slater_qets):
         row = []
         for idx1, qet1 in enumerate(slater_qets):
+            # two electron operators
             double_braket = double_electron_braket(qet0, qet1)
-            coulomb_matrix_element = double_braket_basis_change(double_braket, basis_change)
-            coulomb_matrix_element = coulomb_matrix_element.apply(to_slater_params)
+            double_braket = double_braket_basis_change(double_braket, basis_change)
+            coulomb_matrix_element = double_braket.apply(to_slater_params)
             coulomb_matrix_element = sp.expand(coulomb_matrix_element.as_symbol_sum())
+            trees_matrix_element_twobody = sp.Symbol('\\alpha_T')*sp.expand(double_braket.apply(trees_op_two_bod).as_symbol_sum())
+            # one electron operators
             single_braket = single_electron_braket(qet0, qet1)
-            crystal_field_energy = single_braket.apply(crystal_energy).as_symbol_sum()
+            crystal_field__matrix_element = single_braket.apply(crystal_energy).as_symbol_sum()
             if (crystal_basis and not force_standard_basis):
                 single_braket = single_braket_basis_change(single_braket, basis_change)
-            spin_energy_melement = single_braket.apply(spin_energy).as_symbol_sum()
+            trees_matrix_element_onebod = sp.Symbol('\\alpha_T')*single_braket.apply(tree_op_one_bod).as_symbol_sum()
+            spinorb_energy_matrix_element = single_braket.apply(spin_energy).as_symbol_sum()
             matrix_element = (coulomb_matrix_element 
-                            + crystal_field_energy 
-                            + spin_energy_melement)
+                            + trees_matrix_element_twobody
+                            + trees_matrix_element_onebod
+                            + crystal_field__matrix_element 
+                            + spinorb_energy_matrix_element)
             if matrix_element != 0:
                 if sparse:
                     hamiltonian[(idx0,idx1)] = (matrix_element)
@@ -966,9 +1076,9 @@ def hamiltonian_CF_CR(num_electrons, group_label, l, sparse=False, force_standar
     else:
         hamiltonian = sp.Matrix(hamiltonian)
 
-    hamiltonian_CF_CR.remembered[uID] = (hamiltonian, basis_change, slater_dets)
+    hamiltonian_CF_CR_SO_TO.remembered[uID] = (hamiltonian, basis_change, slater_dets)
     return hamiltonian, basis_change, slater_dets
-hamiltonian_CF_CR.remembered = {}
+hamiltonian_CF_CR_SO_TO.remembered = {}
 
 ############################## Hamiltonians ###############################
 ###########################################################################
@@ -1262,6 +1372,7 @@ def to_slater_params(qnums, coeff):
         return new_dict
     else:
         return {}
+
 
 ###########################################################################
 ############### Calculation of Clebsch-Gordan Coefficients ################
