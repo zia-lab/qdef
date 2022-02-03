@@ -53,7 +53,7 @@ def basis_check(group_label, irrep_symbol, qets, full_output = False):
             check = True
         else:
             check = False
-        all_comparisons[R] = (check, direct_way, irrep_way)
+        all_comparisons[R] = (check,direct_way, irrep_way)
         all_checks[R] = check
     if sum(all_checks.values()) == len(all_checks):
         all_good = True

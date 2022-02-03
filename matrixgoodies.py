@@ -12,6 +12,7 @@
 import networkx as nx
 import sympy as sp
 import numpy as np
+from uncertainties import ufloat
 
 def block_form(matrix):
     '''
@@ -264,3 +265,48 @@ def block_diagonalize(blocks, notches, symbols_rep, final_sort = True, assume_he
         all_eigenvals, all_eigenvects = all_eigenvals[sorter], all_eigenvects[sorter]
     all_eigenvects = all_eigenvects.T
     return all_eigenvals, all_eigenvects
+
+def uncertain_eigenvalsh(smatrix, vars, num_trials):
+    '''
+    Given  a  hermitian  matrix  (sp.Matrix)  that  depends  on  a  set of
+    variables,  and  given  the best estimates and uncertainties for their
+    values,  this  function  determines  the  eigenvalues  of  the  matrix
+    together with its estimated uncertainty.
+
+    It  assumes that the errors in the parameters are normaly distributed,
+    such  that  the  uncertainties  given  in  its  parameters  equal  the
+    standard deviation for the corresponding normal distributions.
+
+    No checks are made that the matrix be hermitian.
+
+    Parameters
+    ----------
+    smatrix  (sp.Matrix):  a matrix with free_symbols equal to the keys of
+    vars.
+
+    num_trials  (int):  how  many samples will be taken in the Monte Carlo
+    evaluation of the eigenvalues.
+
+    vars  (OrderedDict):  keys  being  the varibles in smatrix, and values
+    being equal to ufloat.
+
+    Returns
+    -------
+    uncertain_eigenvalues  (np.array):  an  np.array  whose  elements  are
+    ufloat,  which  correspond  to  the  eigenvalues  of the given matrix,
+    ordered from smallest to largest.
+    '''
+    lambda_matrix = sp.lambdify(list(vars.keys()), smatrix)
+    trial_matrices = []
+    for _ in range(num_trials):
+            exp_params = [np.random.normal(varvalue.nominal_value,
+                                          varvalue.std_dev) 
+                                            for varvalue in vars.values()]
+            this_ham = lambda_matrix(*exp_params)
+            trial_matrices.append(np.array(this_ham,dtype=np.complex64))
+    trial_matrices = np.array(trial_matrices)
+    eigenvals = np.sort(np.linalg.eigvalsh(trial_matrices))
+    best_estimates = np.mean(eigenvals, axis=0)
+    stds = np.std(eigenvals, axis=0)
+    uncertain_eigenvalues = np.array([ufloat(b,s) for b,s in zip(best_estimates, stds)])
+    return uncertain_eigenvalues

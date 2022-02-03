@@ -54,8 +54,11 @@ GT_CGs = pickle.load(open(os.path.join(module_dir,'data',
 CG_coeffs_partitioned = pickle.load(open(os.path.join(module_dir,'data',
                                             'CG_coeffs_partitioned.pkl'),'rb'))
 
-nistdf = pd.read_pickle(os.path.join(module_dir,'data',
+nistdf_levels = pd.read_pickle(os.path.join(module_dir,'data',
                                     'nist_atomic_spectra_database_levels.pkl'))
+nistdf_lines = pd.read_pickle(os.path.join(module_dir,'data',
+                                    'nist_atomic_spectra_database_lines.pkl'))
+
 spinData = pd.read_pickle(os.path.join(module_dir,'data','spindata.pkl'))
 
 # gives the atomic numbers of the firs three rows of transition
@@ -206,7 +209,9 @@ class Atom():
         else:
             self.ionization_energies = ionization_data[self.symbol]
         # a dataframe with level data as compiled by NIST
-        self.nist_data = nistdf[nistdf['Element'] == self.symbol]
+        self.nist_data_levels = nistdf_levels[nistdf_levels['Element'] == self.symbol]
+        # a dataframe with line data as compiled by NIST
+        self.nist_data_lines = nistdf_lines[nistdf_lines['element'] == self.symbol]
         # a dataframe with isotopic data
         self.isotope_data = spinData[spinData['atomic_number'] == self.atomic_number]
         # additional data
@@ -236,7 +241,7 @@ class Atom():
     def level_diagram(self, charge, min_energy=-np.inf, max_energy=np.inf):
         '''make a nice plot of the levels of the ion with the given charge'''
         cmap = plt.cm.RdYlGn
-        datum = self.nist_data[self.nist_data['Charge'] == charge]
+        datum = self.nist_data_levels[self.nist_data_levels['Charge'] == charge]
         energy_levels = datum['Level (eV)']
         configs = datum['Configuration']
         if charge == 0:
@@ -303,8 +308,10 @@ class Ion(Atom):
     def __init__(self, element, charge_state):
         Atom.__init__(self,element)
         self.charge_state = charge_state
-        self.nist_data = self.nist_data[self.nist_data['Charge'] == self.charge_state]
-        self.nist_data.reset_index(drop=True, inplace=True)
+        self.nist_data_levels = self.nist_data_levels[self.nist_data_levels['Charge'] == self.charge_state]
+        self.nist_data_levels.reset_index(drop=True, inplace=True)
+        self.nist_data_lines = self.nist_data_lines[self.nist_data_lines['charge'] == self.charge_state]
+        self.nist_data_lines.reset_index(drop=True, inplace=True)
 
 class PeriodicTable():
     '''

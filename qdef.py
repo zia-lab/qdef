@@ -53,7 +53,10 @@ module_dir = os.path.dirname(__file__)
 morrison_loc = os.path.join(module_dir,'data','morrison.pkl')
 morrison = pickle.load(open(morrison_loc,'rb'))
 new_labels = pickle.load(open('./Data/components_rosetta.pkl','rb'))
-crystal_splits = pickle.load(open('./data/crystal_splits.pkl','rb'))
+crystal_splits_loc = os.path.join(module_dir,'data','crystal_splits.pkl')
+crystal_splits = pickle.load(open(crystal_splits_loc,'rb'))
+kurvits_free_ion_fit_dict_loc = os.path.join(module_dir,'data','kurvits_free_ion_fit_dict.pkl')
+kurvits_free_ion_fit_dict = pickle.load(open(kurvits_free_ion_fit_dict_loc,'rb'))
 
 # =========================== Load others ======================= #
 # =============================================================== #
@@ -96,6 +99,162 @@ crystal_fields_raw = morrison['crystal_fields_raw']
 crystal_fields = {}
 for k in crystal_fields_raw:
     crystal_fields[k] = [Qet(q) for q in crystal_fields_raw[k]]
+
+###########################################################################
+########################## Free Ion Parameters ############################
+
+def kurvits_slater_ints_and_SO(n:int, charge:int, neutral_valence_electrons:int) -> tuple:
+    '''
+    This  function  returns approximate values for the spin-orbit coupling
+    strength  ζ, and for the slater integrals F^{(2)} and F^{(4)} that may
+    be  used  to  approximate  the  interactions in free ions with valence
+    electrons in d-orbitals.
+    All given in energy units of cm^{-1}
+    Parameters
+    ----------
+    n (int)     : atom shell number (3,4,5)
+    charge (int): charge of positive ion (2,3,4)
+    neutral_valence_electrons  (int): valence electrons in neutral species
+                                      (2-8)
+    Returns
+    -------
+    F2, F4, ζ (tuple)
+    '''
+    config = '%dd' % n
+    Bparams = kurvits_free_ion_fit_dict[("Bfit", config, charge)][-1::-1]
+    Cparams = kurvits_free_ion_fit_dict[("Cfit", config, charge)][-1::-1]
+    SOparams = kurvits_free_ion_fit_dict[("SOfit", config, charge)][-1::-1]
+    B = np.polyval(Bparams, neutral_valence_electrons)
+    C = np.polyval(Cparams, neutral_valence_electrons)
+    ζ = np.polyval(SOparams, neutral_valence_electrons)
+    subs = {sp.Symbol('B'):B,sp.Symbol('C'):C}
+    F2 = SLATER_TO_RACAH[sp.Symbol('F^{(2)}')].subs(subs)
+    F4 = SLATER_TO_RACAH[sp.Symbol('F^{(4)}')].subs(subs)
+    return F2, F4, ζ
+
+def kurvits_slater_RacahP_and_SO(n:int, charge:int, neutral_valence_electrons:int) -> tuple:
+    '''
+    This  function  returns approximate values for the spin-orbit coupling
+    strength  ζ, and for the slater integrals F^{(2)} and F^{(4)} that may
+    be  used  to  approximate  the  interactions in free ions with valence
+    electrons in d-orbitals.
+    All given in energy units of cm^{-1}
+    Parameters
+    ----------
+    n (int)     : atom shell number (3,4,5)
+    charge (int): charge of positive ion (2,3,4)
+    neutral_valence_electrons  (int): valence electrons in neutral species
+                                      (2-8)
+    Returns
+    -------
+    F2, F4, ζ (tuple)
+    '''
+    config = '%dd' % n
+    Bparams = kurvits_free_ion_fit_dict[("Bfit", config, charge)][-1::-1]
+    Cparams = kurvits_free_ion_fit_dict[("Cfit", config, charge)][-1::-1]
+    SOparams = kurvits_free_ion_fit_dict[("SOfit", config, charge)][-1::-1]
+    B = np.polyval(Bparams, neutral_valence_electrons)
+    C = np.polyval(Cparams, neutral_valence_electrons)
+    ζ = np.polyval(SOparams, neutral_valence_electrons)
+    return B, C, ζ
+
+########################## Free Ion Parameters ############################
+###########################################################################
+
+
+###########################################################################
+###################### Magnetic Dipole Calculations #######################
+
+def mag_dip_xyz(axis, l):
+    '''
+    Parameters
+    ----------
+    axis (str) ∈ {'x', 'y', 'z'}
+    l    (int) : orbital angulr momentum
+    Returns
+    -------
+    mag_dip_fun (function) a function which can be used to evaluate matrix
+    elements  in  qets  which  represent a matrix element for the magnetic
+    dipole  operator  taking  the  standard  basis  as the single electron
+    basis used to build multielectron determinantal states.
+    '''
+    axis_index = {'x':0, 'y':1, 'z':2}[axis]
+    L_orbital = Jmatrices(l, False, as_dict=True)
+    L_spin = Jmatrices(1/2, False, as_dict=True)
+    def mag_dip_fun(qnums, coeff):
+        orb0, orb1 = qnums
+        gs = sp.Symbol('g_s', real=True)
+        orbital_contrib, spin_contrib = 0, 0
+        if orb0.spin == orb1.spin:
+            orbital_contrib = L_orbital[axis_index][(orb0.orbital[1],
+                                                    orb1.orbital[1])]
+        if orb0.orbital == orb1.orbital:
+            spin_contrib = L_spin[axis_index][(orb0.spin, orb1.spin)]
+        return {1: coeff*(orbital_contrib + gs * spin_contrib)}
+    return mag_dip_fun
+
+def standard_mag_dip(num_electrons, l):
+    '''
+
+    Compute  the  matrix  elements  of the magnetic dipole operator in the
+    standard basis for a system with the given number of electrons.
+
+        -\mu_B * (L + g_s S)
+
+    Parameters
+    ----------
+    num_electrons (int) :
+    l             (l)   :
+
+    Returns
+    -------
+    mag_dip_matrices, mag_dip_operator (tuple) with
+        mag_dip_matrices  (OrderedDict): with keys 'x', 'y', 'z' and
+        values  sp.Matrix mag_dip_operators (OrderedDict): with keys
+        'x',  'y',  'z' and values OrderedDict whose keys are tuples
+        with as many SpinOrbital as num_electrons there are.
+    
+    '''
+    if (num_electrons,l) in standard_mag_dip.values:
+        return standard_mag_dip.values[(num_electrons, l)]
+    mag_dip = {axis: mag_dip_xyz(axis, l) for axis in 'xyz'}
+    
+    single_e_spin_orbitals = [SpinOrbital((l,m), spin) 
+                                for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
+    slater_dets = list(combinations(single_e_spin_orbitals, num_electrons))
+    slater_qets = [Qet({k:1}) for k in slater_dets]
+
+    mag_dip_operator = OrderedDict()
+    mag_dip_operator['x'] = OrderedDict()
+    mag_dip_operator['y'] = OrderedDict()
+    mag_dip_operator['z'] = OrderedDict()
+
+    mag_dip_matrices = OrderedDict([('x',[]),('y',[]),('z',[])])
+    for qet0 in slater_qets:
+        row = {'x':[], 'y':[], 'z':[]}
+        qet0key = list(qet0.dict.keys())[0]
+        for qet1 in slater_qets:
+            qet1key = list(qet1.dict.keys())[0]
+            key = (qet0key, qet1key)
+            for axis in mag_dip:
+                if (qet1key, qet0key) in mag_dip_operator[axis]:
+                    braket = sp.conjugate(mag_dip_operator[axis][(qet1key, qet0key)])
+                    mag_dip_operator[axis][key] = braket
+                    row[axis].append(braket)
+                else:
+                    braket = -single_electron_braket(qet0, qet1).apply(mag_dip[axis]).as_symbol_sum()
+                    mag_dip_operator[axis][key] = braket
+                    row[axis].append(braket)
+        for axis in row:
+            mag_dip_matrices[axis].append(row[axis])
+    mag_dip_matrices = {axis: sp.Matrix(mag_dip_matrices[axis]) for axis in mag_dip_matrices}
+    standard_mag_dip.values[(num_electrons, l)] = (mag_dip_matrices, mag_dip_operator)
+    return mag_dip_matrices, mag_dip_operator
+standard_mag_dip.values = {}
+
+###################### Magnetic Dipole Calculations #######################
+###########################################################################
+
 
 ###########################################################################
 #################### Calculation of Surface Harmonics #####################

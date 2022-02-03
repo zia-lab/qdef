@@ -10,6 +10,34 @@ import sympy as sp
 
 module_dir = os.path.dirname(__file__)
 
+def latex_float(afloat, num_decimal_digits = 2, latex_ready = True) -> str:
+    '''
+    Given  a float, return a latex representation with the required number
+    of  decimal  digits after the decimal point, using standard scientific
+    notation.
+    '''
+    template = "{0:.%de}" % num_decimal_digits
+    float_str = template.format(afloat)
+    if "e" in float_str:
+        base, exponent = float_str.split("e")
+        exponent = int(exponent)
+        if exponent == 0:
+            template = '%.'+str(num_decimal_digits)+'f'
+            if latex_ready:
+                return '$%s$' % (template % afloat)
+            else:
+                return template % afloat
+        else:
+            if latex_ready:
+                return r"${0} \times 10^{{{1}}}$".format(base, int(exponent))
+            else:
+                return r"{0} \times 10^{{{1}}}".format(base, int(exponent))
+    else:
+        if latex_ready:
+            return '$%s$' % str(afloat)
+        else:
+            return str(afloat)
+
 def rational_approx(x, N, min=0):
     '''
     Given  a number x this function returns a fraction
@@ -357,6 +385,7 @@ class UnitCon():
                             module_dir,
                             'data',
                             'conversion_facts.pkl'),'rb'))
+    hc = 1239.8424749521
     @classmethod
     def con_factor(cls, source_unit, target_unit):
         '''
@@ -380,12 +409,16 @@ class UnitCon():
 
 class Con():
     '''
-    Basis constants, all given in standard SI units.
+    Fundamental and derived constants, all given in SI units.
     c, π, ℏ, h, ε0, μ0
     '''
-    c = 299792458
+    c = 299792458 # m/s
     π = 3.14159265358
-    ℏ = 6.62607015e-34
-    h = ℏ * 2 * π
-    ε0 = 8.8541878128e-12
-    μ0 = 1.25663706212e-6
+    h = 6.62607015e-34 # Js
+    ℏ = h / (2 * π) # Js
+    ε0 = 8.8541878128e-12 # F/m
+    μ0 = 1.25663706212e-6 # H/m
+    e = 1.602176634e-19 # C
+    me = 9.10938370e-31 # kg
+    μB = e*ℏ/2/me # J/T
+    gs = 2.002319304362
