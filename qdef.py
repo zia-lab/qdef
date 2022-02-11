@@ -1920,7 +1920,7 @@ class CrystalElectronsSCoupling():
     '''
     Couple electrons in sequence, adding one at a time.
     '''
-    def __init__(self, group_label, Γs):
+    def __init__(self, group_label, Γs, group):
         '''
         Parameters
         ----------
@@ -1929,16 +1929,19 @@ class CrystalElectronsSCoupling():
         '''
         self.Γs = Γs
         self.group_label = group_label
-        self.group = CPGs.get_group_by_label(self.group_label)
+        # self.group = CPGs.get_group_by_label(self.group_label)
+        self.group = group
         self.group_CGs = self.group.CG_coefficients
-        self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
-        self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
+        # print(self.group_CGs)
+        # self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
+        # self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
         self.irreps = self.group.irrep_labels
-        self.ms = [-sp.S(1)/2, sp.S(1)/2]
+        self.ms = [S_DOWN, S_UP]
         self.s_half = sp.S(1)/2
-        self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        # self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        self.component_labels = self.group.component_labels
         # if its an aggregate of the same irrep
-        same_irrep = len(set(self.Γs)) == 1
+        same_irrep = (len(set(self.Γs)) == 1)
         if len(self.Γs) != 0:
             full_orbital = self.group.irrep_dims[self.Γs[0]]*2 == len(self.Γs)
         else:
@@ -2042,6 +2045,8 @@ class CrystalElectronsSCoupling():
                 equivalent_parts[set_ket] = []
                 standard_order[set_ket] = ket_part_key
             equivalent_parts[set_ket].append((ket_part_key, ket_part_coeff))
+        # print("----")
+        # print(standard_order)
         # once I've grouped them together into pices of equivalent parts
         # i then need to rearrange and properly sign the rearrangements
         det_simple = []
@@ -2120,7 +2125,6 @@ class CrystalElectronsSCoupling():
                         )
                 # γf = (γ if (m > 0) else bar_symbol(γ))
                 γf = (SpinOrbital(γ, S_UP) if (m > 0) else SpinOrbital(γ, S_DOWN))
-
                 total_ket_part_key = (γf,)
                 if ψ not in ψs:
                     ψs[ψ] = {}
@@ -2159,8 +2163,6 @@ class CrystalElectronsSCoupling():
                     # collect in the dictionary all the parts that correspond to the sums
                     if ψ not in ψ_12s:
                         ψ_12s[ψ] = {}
-                    # γ1f = (γ1 if (m1 > 0) else bar_symbol(γ1))
-                    # γ2f = (γ2 if (m2 > 0) else bar_symbol(γ2))
                     γ1f = (SpinOrbital(γ1, S_UP) if (m1 > 0) else SpinOrbital(γ1, S_DOWN))
                     γ2f = (SpinOrbital(γ2, S_UP) if (m2 > 0) else SpinOrbital(γ2, S_DOWN))
                     total_ket_part_key = (γ1f, γ2f)
@@ -2218,7 +2220,7 @@ class CrystalElectronsLLCoupling():
     '''
     Couple two groups of electrons in one fell swoop.
     '''
-    def __init__(self, group_label, Γ1s, Γ2s):
+    def __init__(self, group_label, Γ1s, Γ2s, group):
         '''
         group_label (str): label for a crystallographic point group
         Γ1s    (2-tuple): (irrep_symbol (sp.Symbol), num_electrons (int))
@@ -2232,17 +2234,19 @@ class CrystalElectronsLLCoupling():
             self.Γ2s = []
         else:
             self.Γ2s = [Γ2s[0] for _ in range(Γ2s[1])]
-        self.crystalelectron0 = CrystalElectronsSCoupling(group_label, self.Γ1s)
-        self.crystalelectron1 = CrystalElectronsSCoupling(group_label, self.Γ2s)
+        self.group = group
+        self.crystalelectron0 = CrystalElectronsSCoupling(group_label, self.Γ1s, self.group)
+        self.crystalelectron1 = CrystalElectronsSCoupling(group_label, self.Γ2s, self.group)
         self.group_label = group_label
-        self.group = CPGs.get_group_by_label(self.group_label)
+        # self.group = CPGs.get_group_by_label(self.group_label)
         self.group_CGs = self.group.CG_coefficients
         self.flat_labels = dict(sum([list(l.items()) for l in list(new_labels[self.group_label].values())],[]))
-        self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
+        # self.group_CGs = {(self.flat_labels[k[0]], self.flat_labels[k[1]], self.flat_labels[k[2]]):v for k,v in self.group_CGs.items()}
         self.irreps = self.group.irrep_labels
         self.ms = [S_DOWN, S_UP]
         self.s_half = S_HALF
-        self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        # self.component_labels = {k:list(v.values()) for k,v in new_labels[self.group_label].items()}
+        self.component_labels = self.group.component_labels
         self.equiv_waves = self.wave_muxer(self.crystalelectron0.equiv_waves,
                                      self.crystalelectron1.equiv_waves)
         self.equiv_waves = self.to_equiv_electrons(self.equiv_waves)
@@ -3023,10 +3027,6 @@ def double_electron_braket(qet0, qet1):
       <qet0| \sum_{i>j=1}^N f_i,j |qet1> 
     
     in terms of brakets of double electron orbitals.
-
-    Spin is assumed to be integrated in the notation for the symbols where
-    a  symbol  that  is  adorned with an upper bar is assumed to have spin
-    down and one without to have spin up.
 
     This function assumes that the operator does not act on spin.
 

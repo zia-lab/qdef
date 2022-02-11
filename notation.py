@@ -3,7 +3,7 @@
 import sympy as sp
 from collections import OrderedDict
 
-spectroscopic_alphabet = 'spdfghiklmnoqrtuv'
+spectroscopic_alphabet = 'spdfghiklmnoqrtuvwxyz'
 l_from_lett_to_num = OrderedDict([(spectroscopic_alphabet[i], i) for i in range( len(spectroscopic_alphabet) )])
 l_from_num_to_lett = OrderedDict([(i, spectroscopic_alphabet[i]) for i in range( len(spectroscopic_alphabet) )])
 

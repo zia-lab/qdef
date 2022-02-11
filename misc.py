@@ -95,7 +95,21 @@ def as_det_ket(qet):
     '''
     detket = sp.S(0)
     for k,v in qet.dict.items():
-        symb = sp.Symbol((r'|%s|' % str(k)).replace('(','').replace(')','').replace(',',''))
+        kbits = []
+        if isinstance(k, tuple):
+            for kpart in k:
+                if isinstance(k, SpinOrbital):
+                    korb = kpart.orbital
+                    kspin = kpart.spin
+                    if kspin == S_DOWN:
+                        kbits.append(sp.Symbol('\\bar{%s}' % str(korb)))
+                    else:
+                        kbits.append(sp.Symbol('%s' % str(korb)))
+        else:
+            kbits = k
+        strk = (r'|%s|' % str(kbits)).replace('(','').replace(')','').replace(',','')
+        strk = strk.replace('')
+        symb = sp.Symbol(strk)
         detket += symb * v
     return detket
 
@@ -422,3 +436,92 @@ class Con():
     me = 9.10938370e-31 # kg
     μB = e*ℏ/2/me # J/T
     gs = 2.002319304362
+
+# =============================================================== #
+# ======================= File Management =====+================= #
+
+def split_dump(obj, rootname, folder='.', max_size_in_MB=99):
+    '''
+    Serialize an object into files of a given maximum size.
+    Parameters
+    ----------
+    obj  (any object that can be pickled):
+    rootname (str): base for filenames, not including extension or folder
+    folder   (str): relative or absolute target directory
+    max_size_in_MB (int): max size in MB for the pickled parts.
+    Returns
+    -------
+    None
+    '''
+    max_size_in_MB = int(max_size_in_MB)
+    max_size = max_size_in_MB*1024**2
+    fnametemplate = '%s-%d.part.pkl'
+    match_pattern = '%s-[\d]+.part.pkl' % rootname
+    current_matches = list(filter(lambda s: re.match(match_pattern, s), os.listdir(folder)))
+    current_matches_fnames = [os.path.join(folder,match) for match in current_matches]
+    for match in current_matches_fnames:
+        # a safety measure
+        if '.part.pkl' not in match:
+            raise Exception("Since this is deleting stuff, best check to see what happened here.")
+        os.remove(match)
+    else:
+        if len(current_matches):
+            print("Removed %d previous matching files." % (len(current_matches)))
+    obj_bytes = pickle.dumps(obj)
+    byte_len = len(obj_bytes)
+    if byte_len > max_size:
+        chunk_size = max_size
+        counter, cursor = 0, 0
+        while True:
+            if cursor > byte_len:
+                break
+            fname = os.path.join(folder, fnametemplate % (rootname, counter))
+            lcursor, rcursor = cursor, cursor + chunk_size
+            with open(fname,'wb') as file:
+                file.write(obj_bytes[lcursor:rcursor])
+            counter += 1
+            cursor = rcursor
+        print("Object pickled to %d file(s)." % (counter))
+    else:
+        fname = os.path.join(folder, rootname+'.pkl')
+        with open(fname,'wb') as file:
+            pickle.dump(obj, file)
+        print("Object pickled to a single file.")
+    return None
+
+def split_load(rootname, folder='.'):
+    '''
+    Reconstitute a serialized object that was split into several chunks
+    using split_dump.
+    Parameters
+    ----------
+    obj  (any object that can be pickled)
+    rootname (str): root for filenames, not including extension or folder.
+    folder   (str): relative or absolute target directory
+    max_size_in_MB (int): max size in MB for the pickled parts.
+    Returns
+    -------
+    object
+    '''
+    fnametemplate = rootname + '-%d.part.pkl'
+    match_pattern = '%s-[\d]+.part.pkl' % rootname
+    current_matches = list(filter(lambda s: re.match(match_pattern, s), os.listdir(folder)))
+    if len(current_matches) > 0:
+        print("Rebuilding file from %d parts" % len(current_matches))
+        bites = bytes()
+        for id in range(len(current_matches)):
+            fname = os.path.join(folder,fnametemplate % id)
+            with open(fname,'rb') as file:
+                bites += file.read()
+        return pickle.loads(bites)
+    else:
+        print("No parts found matching given rootname and folder.")
+        singler = os.path.join(folder, rootname+'.pkl')
+        if os.path.exists(singler):
+            print("Found unsplit alt.")
+            return pickle.load(open(singler, 'rb'))
+        else:
+            return None
+
+# ======================= File Management =====+================= #
+# =============================================================== #
