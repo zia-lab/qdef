@@ -1,0 +1,469 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     18280,        461]
+NotebookOptionsPosition[     17290,        433]
+NotebookOutlinePosition[     17690,        449]
+CellTagsIndexPosition[     17647,        446]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["\<\
+Tanabe - Subano Diagrams for Transition Metal Ions 
+~Including Spin - Orbit~\
+\>", "Title",
+ CellChangeTimes->{{3.855601176409198*^9, 3.855601194037799*^9}, {
+  3.855601510094351*^9, 3.85560151451894*^9}},
+ TextAlignment->Center,ExpressionUUID->"bb7d7d1f-65d8-41ad-bc38-842c4f66afab"],
+
+Cell[CellGroupData[{
+
+Cell["Data Loader", "Section",
+ CellChangeTimes->{{3.855601201945044*^9, 
+  3.8556012082477293`*^9}},ExpressionUUID->"5fc77d0d-317c-49fd-93f0-\
+8b83ab23a7c9"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"h5File", "=", "\"\<tsk_diag_withSO_HF.h5\>\""}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"shellToatoms", "=", 
+   RowBox[{"<|", 
+    RowBox[{
+     RowBox[{"\"\<3d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Sc Ti V Cr Mn Fe Co Ni Cu Zn\>\"", ",", "\"\< \>\""}], 
+       "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"\"\<4d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Y Zr Nb Mo Tc Ru Rh Pd Ag Cd\>\"", ",", "\"\< \>\""}], 
+       "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"\"\<5d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Lu Hf Ta W Re Os Ir Pt Au Hg\>\"", ",", "\"\< \>\""}], 
+       "]"}]}]}], "|>"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"evtocm", "=", "8065.544290"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"datakeys", " ", "=", " ", 
+   RowBox[{"Import", "[", "h5File", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"HFdata", "=", 
+   RowBox[{"Association", "[", 
+    RowBox[{"Table", "[", 
+     RowBox[{
+      RowBox[{"key", "->", 
+       RowBox[{"Import", "[", 
+        RowBox[{"h5File", ",", "key"}], "]"}]}], ",", 
+      RowBox[{"{", 
+       RowBox[{"key", ",", "datakeys"}], "}"}]}], "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"energiesTemplate", "=", 
+   RowBox[{
+   "StringTemplate", "[", "\"\</`atom`/`charge`/energies\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"DqsTemplate", "=", 
+   RowBox[{"StringTemplate", "[", "\"\</`atom`/`charge`/Dqs\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cowandata", "=", 
+   RowBox[{
+    RowBox[{"Import", "[", "\"\<brik_and_ma_from_cowan.xlsx\>\"", "]"}], "[", 
+    
+    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"headers", "=", 
+   RowBox[{"cowandata", "[", 
+    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cowandata", "=", 
+   RowBox[{"cowandata", "[", 
+    RowBox[{"[", 
+     RowBox[{"2", ";;"}], "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cowanA", "=", 
+   RowBox[{"Association", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"#", "[", 
+          RowBox[{"[", "1", "]"}], "]"}], ",", 
+         RowBox[{"Round", "[", 
+          RowBox[{"#", "[", 
+           RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "->", 
+       RowBox[{"Association", "[", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"\"\<d^n\>\"", "->", 
+           RowBox[{"Round", "[", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "4", "]"}], "]"}], "]"}]}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"\"\<B\>\"", "->", 
+           RowBox[{"Round", "[", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", "6", "]"}], "]"}], "]"}]}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"\"\<C\>\"", "->", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "7", "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
+          RowBox[{"\"\<\[Zeta]\>\"", "->", 
+           RowBox[{"#", "[", 
+            RowBox[{"[", "11", "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
+          RowBox[{"\"\<C/B\>\"", "->", 
+           RowBox[{"Round", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"#", "[", 
+               RowBox[{"[", "7", "]"}], "]"}], "/", 
+              RowBox[{"#", "[", 
+               RowBox[{"[", "6", "]"}], "]"}]}], ",", "0.1"}], "]"}]}]}], 
+         "\[IndentingNewLine]", "}"}], "]"}]}], "&"}], "/@", "cowandata"}], 
+    "]"}]}], ";"}]}], "Input",
+ InitializationCell->True,
+ CellChangeTimes->{{3.8551342186367607`*^9, 3.855134229931226*^9}, {
+   3.8551343917200203`*^9, 3.855134468392103*^9}, {3.8551346545565367`*^9, 
+   3.855134684571607*^9}, {3.855134749629924*^9, 3.855134749848011*^9}, {
+   3.855333790704623*^9, 3.855333815373961*^9}, 3.855333983288155*^9, {
+   3.8553342013847322`*^9, 3.85533420888908*^9}, 3.8554250236384277`*^9, {
+   3.8555177840634403`*^9, 3.855517784367136*^9}, {3.8555180097105*^9, 
+   3.855518031954784*^9}, {3.855601088034122*^9, 3.8556011050892677`*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Viewer", "Section",
+ CellChangeTimes->{{3.8556012166733007`*^9, 
+  3.855601220899226*^9}},ExpressionUUID->"db03e039-3fbd-4322-b7bc-\
+bb373fa77622"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"(", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ekey", "=", 
+      RowBox[{"energiesTemplate", "[", 
+       RowBox[{"<|", 
+        RowBox[{
+         RowBox[{"\"\<atom\>\"", "->", "atom"}], ",", 
+         RowBox[{"\"\<charge\>\"", "->", "charge"}]}], "|>"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"dqkey", "=", 
+      RowBox[{"DqsTemplate", "[", 
+       RowBox[{"<|", 
+        RowBox[{
+         RowBox[{"\"\<atom\>\"", "->", "atom"}], ",", 
+         RowBox[{"\"\<charge\>\"", "->", "charge"}]}], "|>"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"energies", "=", 
+      RowBox[{"HFdata", "[", "ekey", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"Dqs", "=", 
+      RowBox[{"HFdata", "[", "dqkey", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"extraTicks", "=", 
+      RowBox[{"Table", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"ee", "*", "evtocm"}], ",", "ee"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"ee", ",", "0", ",", 
+          RowBox[{
+           RowBox[{"Erange", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], "/", "evtocm"}], ",", "0.25"}], 
+         "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"moTicks", "=", 
+      RowBox[{"Table", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"ee", "*", "evtocm"}], ",", "ee"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"ee", ",", "0", ",", 
+          RowBox[{
+           RowBox[{"Dqrange", "[", 
+            RowBox[{"[", "2", "]"}], "]"}], "/", "evtocm"}], ",", "0.1"}], 
+         "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"ListPlot", "[", 
+      RowBox[{
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"Transpose", "[", 
+          RowBox[{"{", 
+           RowBox[{"Dqs", ",", "row"}], "}"}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"row", ",", "energies"}], "}"}]}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Frame", "->", "True"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"Joined", "->", "joined"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"ImageSize", "\[Rule]", "1200"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"FrameLabel", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+           "\"\<E/\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)\>\"", ",", 
+            "\"\<E/eV\>\""}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+           "\"\<Dq/\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)\>\"", ",", 
+            "\"\<Dq/eV\>\""}], "}"}]}], "}"}]}], ",", "\[IndentingNewLine]", 
+       RowBox[{"FrameStyle", "->", 
+        RowBox[{"Directive", "[", "20", "]"}]}], ",", "\[IndentingNewLine]", 
+       RowBox[{"FrameTicks", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"Automatic", ",", "extraTicks"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"Automatic", ",", "moTicks"}], "}"}]}], "}"}]}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"PlotRange", "->", 
+        RowBox[{"{", 
+         RowBox[{"Dqrange", ",", "Erange"}], "}"}]}]}], "]"}]}], ")"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"Row", "[", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"shell", ",", "\"\<3d\>\""}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"\"\<3d\>\"", ",", "\"\<4d\>\"", ",", "\"\<5d\>\""}], 
+             "}"}]}], "}"}], "]"}], ",", "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"atom", ",", "\"\<Cu\>\""}], "}"}], ",", 
+            RowBox[{"shellToatoms", "[", "shell", "]"}], ",", 
+            RowBox[{"ControlType", "->", "SetterBar"}]}], "}"}], "]"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"charge", ",", "3"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7"}], 
+             "}"}], ",", 
+            RowBox[{"ControlType", "->", "RadioButton"}]}], "}"}], "]"}]}], 
+        "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"Dqrange", ",", 
+              RowBox[{"{", 
+               RowBox[{"0", ",", "3000"}], "}"}]}], "}"}], ",", "0", ",", 
+            "10000", ",", 
+            RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}], 
+         ",", "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"Erange", ",", 
+              RowBox[{"{", 
+               RowBox[{"0", ",", "20000"}], "}"}]}], "}"}], ",", 
+            RowBox[{"-", "1000"}], ",", "60000", ",", 
+            RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}], 
+         ",", "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"joined", ",", "True"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", "False"}], "}"}]}], "}"}], "]"}]}], 
+        "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]", "}"}], 
+    "]"}], ",", "\[IndentingNewLine]", 
+   RowBox[{"TrackedSymbols", "->", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->CompressedData["
+1:eJxTTMoPSmViYGAQAWIQHZ/ndPX3jjeODnEdz0D0nDLtTyB6y7+fP0B00YZu
+hj9AOnOODReIVjAOVgDRzI4dWiA6wy9ID0Tnp3xwAtEP/H77gui0w3HBIFog
+UCkcRP8Tb4oE0fs/liWBaP6ZIVkg+tOPvCoQ7cS2rQFEhy5a2wGin5m0dIFo
+yTkr+0D05guh/SC6n4v1lejON4485X+/gei2OZ5/QfRav3WMYkA6V5aHG0Tv
+iNknAKLtHlhKgWgXTTFZEL1IK8kXRF9fUuUPohNuhYlcBNKhopHiIPrDPxVt
+ED3rbiiY/iLy+/xPIL2LWf0CiL4hr3EFRNuHLLsKogHSDbSN
+  "],
+ CellLabel->"In[16]:=",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`atom$$ = "Ni", $CellContext`charge$$ = 
+    3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {0, 
+    20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d", 
+    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
+       Hold[$CellContext`atom$$], "Cu"}, 
+      Dynamic[
+       $CellContext`shellToatoms[$CellContext`shell$$]]}, {{
+       Hold[$CellContext`charge$$], 3}, {2, 3, 4, 5, 6, 7}}, {{
+       Hold[$CellContext`Dqrange$$], {0, 3000}}, 0, 10000}, {{
+       Hold[$CellContext`Erange$$], {0, 20000}}, -1000, 60000}, {{
+       Hold[$CellContext`joined$$], True}, {True, False}}, {
+      Hold[
+       Row[{
+         Column[{
+           Manipulate`Place[1], 
+           Manipulate`Place[2], 
+           Manipulate`Place[3]}], 
+         Column[{
+           Manipulate`Place[4], 
+           Manipulate`Place[5], 
+           Manipulate`Place[6]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
+    Typeset`size$$ = {1200., {376., 380.}}, Typeset`update$$ = 0, 
+    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     3, StandardForm, 
+      "Variables" :> {$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
+        3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {0, 
+         20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d"}, 
+      "ControllerVariables" :> {}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, 
+      "Body" :> ($CellContext`ekey = $CellContext`energiesTemplate[<|
+          "atom" -> $CellContext`atom$$, 
+           "charge" -> $CellContext`charge$$|>]; $CellContext`dqkey = \
+$CellContext`DqsTemplate[<|
+          "atom" -> $CellContext`atom$$, 
+           "charge" -> $CellContext`charge$$|>]; $CellContext`energies = \
+$CellContext`HFdata[$CellContext`ekey]; $CellContext`Dqs = \
+$CellContext`HFdata[$CellContext`dqkey]; $CellContext`extraTicks = 
+        Table[{$CellContext`ee $CellContext`evtocm, $CellContext`ee}, \
+{$CellContext`ee, 0, Part[$CellContext`Erange$$, 2]/$CellContext`evtocm, 
+           0.25}]; $CellContext`moTicks = 
+        Table[{$CellContext`ee $CellContext`evtocm, $CellContext`ee}, \
+{$CellContext`ee, 0, Part[$CellContext`Dqrange$$, 2]/$CellContext`evtocm, 
+           0.1}]; ListPlot[
+         Table[
+          
+          Transpose[{$CellContext`Dqs, $CellContext`row}], {$CellContext`row, \
+$CellContext`energies}], Frame -> True, Joined -> $CellContext`joined$$, 
+         ImageSize -> 1200, 
+         FrameLabel -> {{
+           "E/\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)", "E/eV"}, {
+           "Dq/\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)", "Dq/eV"}}, FrameStyle -> 
+         Directive[20], 
+         FrameTicks -> {{Automatic, $CellContext`extraTicks}, {
+           Automatic, $CellContext`moTicks}}, 
+         PlotRange -> {$CellContext`Dqrange$$, $CellContext`Erange$$}]), 
+      "Specifications" :> {{{$CellContext`shell$$, "3d"}, {"3d", "4d", "5d"}, 
+         ControlPlacement -> 1}, {{$CellContext`atom$$, "Cu"}, 
+         Dynamic[
+          $CellContext`shellToatoms[$CellContext`shell$$]], ControlType -> 
+         SetterBar, ControlPlacement -> 2}, {{$CellContext`charge$$, 3}, {2, 
+         3, 4, 5, 6, 7}, ControlType -> RadioButton, ControlPlacement -> 
+         3}, {{$CellContext`Dqrange$$, {0, 3000}}, 0, 10000, ControlType -> 
+         IntervalSlider, ControlPlacement -> 
+         4}, {{$CellContext`Erange$$, {0, 20000}}, -1000, 60000, ControlType -> 
+         IntervalSlider, ControlPlacement -> 
+         5}, {{$CellContext`joined$$, True}, {True, False}, ControlPlacement -> 
+         6}, 
+        Row[{
+          Column[{
+            Manipulate`Place[1], 
+            Manipulate`Place[2], 
+            Manipulate`Place[3]}], 
+          Column[{
+            Manipulate`Place[4], 
+            Manipulate`Place[5], 
+            Manipulate`Place[6]}]}]}, "Options" :> {TrackedSymbols -> True}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{1244., {452., 458.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.855425160277831*^9, 3.855517795431307*^9, {3.855517864673141*^9, 
+   3.855517883006372*^9}, {3.855517962304034*^9, 3.8555179972591248`*^9}, {
+   3.855518045864009*^9, 3.85551806320877*^9}, 3.85560111268533*^9, {
+   3.855601171022217*^9, 3.855601171938319*^9}, {3.855601228994754*^9, 
+   3.855601257026649*^9}, 3.8556013258149853`*^9},
+ CellLabel->"Out[16]=",ExpressionUUID->"688dd1b1-d12c-4340-999b-6ab682a5ac81"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1363, 1027},
+WindowMargins->{{0, Automatic}, {Automatic, -1093}},
+FrontEndVersion->"13.0 for Mac OS X ARM (64-bit) (December 2, 2021)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"60434c25-465a-4893-b8c1-57395146856b"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 294, 6, 160, "Title",ExpressionUUID->"bb7d7d1f-65d8-41ad-bc38-842c4f66afab"],
+Cell[CellGroupData[{
+Cell[899, 32, 158, 3, 67, "Section",ExpressionUUID->"5fc77d0d-317c-49fd-93f0-8b83ab23a7c9"],
+Cell[1060, 37, 4419, 114, 425, "Input",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5516, 156, 153, 3, 53, "Section",ExpressionUUID->"db03e039-3fbd-4322-b7bc-bb373fa77622"],
+Cell[CellGroupData[{
+Cell[5694, 163, 6278, 158, 545, "Input",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
+Cell[11975, 323, 5275, 105, 929, "Output",ExpressionUUID->"688dd1b1-d12c-4340-999b-6ab682a5ac81"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

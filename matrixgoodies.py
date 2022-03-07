@@ -83,7 +83,7 @@ def block_form(matrix):
     return sp.Matrix(sp.BlockDiagMatrix(*blocks)), blocks, col_reordering, row_reordering
 
 
-def eigenvalue_dismabiguate(eigenvals, interpolant_order=2, runway=10):
+def eigenvalue_disambiguate(eigenvals, interpolant_order=2, runway=10):
     '''
     Useful  to  identify  "branches" in the spectrum of hermitian matrices
     M(x_i) which are functions of a single continous parameter x.

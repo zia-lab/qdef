@@ -18,11 +18,12 @@ import numpy as np
 import pandas as pd
 from sympy.physics.quantum import Ket, Bra, KetBase
 from sympy.physics.wigner import gaunt
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from itertools import product
 from matplotlib import pyplot as plt
 from misc import double_group_matrix_inverse, fmt_table
 from constants import *
+from notation import *
 
 module_dir = os.path.dirname(__file__)
 
@@ -949,7 +950,7 @@ class CrystalGroup():
         for element, ir in zip(partition, group_irreps):
             el = int(sp.N(element,1,chop=True))
             qet = qet + Qet({ir:el})
-        return qet.basis()
+        return list(Counter((qet.dict)).elements())
 
     def direct_product_table(self, group_irreps, char_table, char_table_inverse, group_label):
         '''

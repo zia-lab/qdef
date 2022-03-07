@@ -1030,9 +1030,8 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
     Returns
     ------
 
-    hamiltonian  (sp.SparseMatrix): in terms of Slater integrals F^{k} (or
-    Racah  parameters  if  to_Racah  is  provided)  and  the crystal field
-    parameters adequate to the group.
+    hamiltonian  (sp.SparseMatrix):  given in in terms of Slater integrals
+    F^{k} and the crystal field parameters adequate to the group.
 
     basis_change  (OrderedDict): the keys being the labels used internally
     for   calculations   and   the   values   being   Qets  understood  as
@@ -1127,7 +1126,7 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
                 return the_dict
 
     else:
-        print("Using spherical harmonics basis.")
+        # Using uncoupled spherical harmonics basis.
         single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
                             for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
         basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
@@ -3391,6 +3390,117 @@ def l_splitter(group_num_or_label, l):
     splitted = list(map(lambda x: round(sp.N(x,chop=True)),
                 list(group.character_table_inverse*charVec)))
     return Qet(dict(zip(group.irrep_labels,splitted)))
+
+def LS_allowed_terms(l:int,n:int) -> dict:
+    '''
+    Calculate the allowed terms in LS coupling for homogeneous configurations.
+    Parameters
+    ----------
+    l (int): orbital angular momentum
+    n (int): how many electrons
+    Returns
+    -------
+    terms (dict) with keys equal to (2S+1) multiplicities and values
+    equal to list of allowed angular momenta.
+    '''
+    def flatten(nlist):
+        flist = []
+        for elem in nlist:
+            for it in elem:
+                flist.append(it)
+        return flist
+    ls = [l]*n
+    spins = [-1/2, 1/2]
+    terminators = {0:'S',1:'P',2:'D',3:'F',4:'G',5:'H',6:'I',7:'K',8:'L',
+                   9:'M',10:'N',11:'O',12:'Q',13:'R',14:'T',15:'U',16:'V',
+                  17:'W',18:'X',19:'Y',20:'Z'}
+    single_states = []
+    mLs = list(range(-l,l+1))
+    for mL in mLs:
+        for mS in [-1/2,1/2]:
+            single_states.append((mL,mS))
+    configs = list(map(set,list(combinations(single_states,n))))
+    MLs = range(-sum(ls),sum(ls)+1)
+    spins = np.arange(-1/2*len(ls),1/2*len(ls)+1)
+    microstates = {}
+    for ML in MLs:
+        subconfigs = [config for config in configs if sum([l[0] for l in list(config)]) == ML]
+        for mtot in spins:
+            thestates = [list(config)[:len(ls)*2] for config in subconfigs if sum([l[1] for l in list(config)])==mtot]
+            if len(thestates) > 0:
+                microstates[(ML,mtot)] = list(map(flatten,thestates))
+            else:
+                microstates[(ML,mtot)] = []
+    # find the non-empty ones
+    # from those pick the coordinates that are closest to the lower left corner
+    # if it is possible to to diagonally to the upper right, then this is a boxy box
+    # if not, then it is a rowy row
+    # it might also be a columny col
+    collections = []
+    while True:
+        non_empty = [[k,abs(MLs[0]-k[0])+abs(spins[0]-k[1])] for k in microstates.keys() if len(microstates[k])>0]
+        if len(non_empty) == 0:
+            break
+        corner = non_empty[np.argsort([r[-1] for r in non_empty])[0]][0]
+        if corner == (0,0):
+            case = 'box'
+            start = (0,0)
+            end = (0,0)
+        else:
+            right = (corner[0]+1, corner[1])
+            up = (corner[0], corner[1]+1)
+            diag = (corner[0]+1, corner[1]+1)
+            if up in microstates.keys():
+                up_bool = len(microstates[up]) > 0
+            else:
+                up_bool = False
+            if right in microstates.keys():
+                right_bool = len(microstates[right]) > 0
+            else:
+                right_bool = False
+            if diag in microstates.keys():
+                diag_bool = len(microstates[diag]) > 0
+            else:
+                diag_bool = False
+            if diag_bool and up_bool and right_bool:
+                case = 'box'
+                start = corner
+                end = (-corner[0], -corner[1])
+            elif up_bool and not right_bool:
+                case = 'col'
+                start = corner
+                end = (corner[0],-corner[1])
+            else:
+                case = 'row'
+                start = corner
+                end = (-corner[0], corner[1])
+        if case == 'row':
+            collect = []
+            for k in np.arange(start[0], end[0]+1):
+                collect.append(microstates[(k,0)].pop())
+        elif case == 'col':
+            collect = []
+            for k in np.arange(start[1], end[1]+1):
+                collect.append(microstates[(start[0],k)].pop())
+        elif case == 'box':
+            collect = []
+            for k in np.arange(start[0], end[0]+1):
+                for l in np.arange(start[1],end[1]+1):
+                    collect.append((microstates[(k,l)].pop()))
+        collections.append(collect)
+    terms = {}
+    for collection in collections:
+        L = max(np.sum(np.array(collection)[:,::2],axis=1))
+        S = max(np.sum(np.array(collection)[:,1::2],axis=1))
+        if int(S) == S:
+            S = int(S)
+        multiplicity = int(2*S+1)
+        if multiplicity in terms.keys():
+            terms[multiplicity].append(terminators[L])
+        else:
+            terms[multiplicity] = [terminators[L]]
+    return terms
+
 
 def Bsimple(Bexpr):
     '''

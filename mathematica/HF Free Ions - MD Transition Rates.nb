@@ -1,0 +1,425 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     17226,        417]
+NotebookOptionsPosition[     16147,        388]
+NotebookOutlinePosition[     16545,        404]
+CellTagsIndexPosition[     16502,        401]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["\<\
+Magnetic Dipole Transition Rates of Transition Metal Ions within the \
+Hartree-Fock approximation\
+\>", "Title",
+ CellChangeTimes->{{3.8547874462519073`*^9, 3.854787453246212*^9}, {
+  3.854791727585894*^9, 3.854791743971442*^9}},
+ TextAlignment->Center,ExpressionUUID->"f4c6207b-4aa5-45d6-9dd9-d2cd916a33c1"],
+
+Cell[CellGroupData[{
+
+Cell["Load Data", "Section",
+ CellChangeTimes->{{3.854787481405018*^9, 
+  3.854787485215932*^9}},ExpressionUUID->"d42a1eef-6e60-4b7a-aa37-\
+79f9ef377e82"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"availableData", "=", 
+   RowBox[{"Import", "[", "\"\<free_ion_HF.h5\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Off", "[", 
+  RowBox[{"LibraryFunction", "::", "nanull"}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ratesTemplate", "=", 
+   RowBox[{"StringTemplate", "[", "\"\</`atom`/`charge`/rates\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"wavesTemplate", "=", 
+   RowBox[{"StringTemplate", "[", "\"\</`atom`/`charge`/waves\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"shellToatoms", "=", 
+   RowBox[{"<|", 
+    RowBox[{
+     RowBox[{"\"\<3d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Sc Ti V Cr Mn Fe Co Ni Cu Zn\>\"", ",", "\"\< \>\""}], 
+       "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"\"\<4d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Y Zr Nb Mo Tc Ru Rh Pd Ag Cd\>\"", ",", "\"\< \>\""}], 
+       "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"\"\<5d\>\"", "->", 
+      RowBox[{"StringSplit", "[", 
+       RowBox[{"\"\<Lu Hf Ta W Re Os Ir Pt Au Hg\>\"", ",", "\"\< \>\""}], 
+       "]"}]}]}], "|>"}]}], ";"}]}], "Input",
+ InitializationCell->True,
+ CellChangeTimes->{{3.8547861115582037`*^9, 3.854786155763348*^9}, {
+   3.854786198037939*^9, 3.85478621149256*^9}, 3.854786337684564*^9, {
+   3.854786528128296*^9, 3.854786536626131*^9}, {3.854787430312394*^9, 
+   3.854787439447225*^9}, {3.854791678065733*^9, 3.8547916916721287`*^9}, {
+   3.855600796861228*^9, 3.855600797069971*^9}},
+ CellLabel->
+  "In[230]:=",ExpressionUUID->"65637df4-d76e-4449-898b-16abb4a0b95e"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Viewer", "Section",
+ CellChangeTimes->{{3.8547874939023447`*^9, 
+  3.854787496552086*^9}},ExpressionUUID->"dee94362-9efe-44f1-b610-\
+bd654578f6bb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"ratesAddr", "=", 
+      RowBox[{"ratesTemplate", "[", 
+       RowBox[{"<|", 
+        RowBox[{
+         RowBox[{"\"\<atom\>\"", "->", "atom"}], ",", 
+         RowBox[{"\"\<charge\>\"", "->", "charge"}]}], "|>"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"wavesAddr", "=", 
+      RowBox[{"wavesTemplate", "[", 
+       RowBox[{"<|", 
+        RowBox[{
+         RowBox[{"\"\<atom\>\"", "->", "atom"}], ",", 
+         RowBox[{"\"\<charge\>\"", "->", "charge"}]}], "|>"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"MemberQ", "[", 
+        RowBox[{"availableData", ",", "ratesAddr"}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"rates", "=", 
+          RowBox[{"Import", "[", 
+           RowBox[{"\"\<./free_ion_HF.h5\>\"", ",", "ratesAddr"}], "]"}]}], 
+         ";", "\[IndentingNewLine]", 
+         RowBox[{"waves", "=", 
+          RowBox[{
+           SuperscriptBox["10", "9"], "*", 
+           RowBox[{"Import", "[", 
+            RowBox[{"\"\<./free_ion_HF.h5\>\"", ",", "wavesAddr"}], "]"}]}]}],
+          ";", "\[IndentingNewLine]", 
+         RowBox[{"ListLogPlot", "[", 
+          RowBox[{
+           RowBox[{"Transpose", "[", 
+            RowBox[{"{", 
+             RowBox[{"waves", ",", "rates"}], "}"}], "]"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"ImageSize", "->", "1000"}], ",", "\[IndentingNewLine]", 
+           RowBox[{"Frame", "->", "True"}], ",", "\[IndentingNewLine]", 
+           RowBox[{"FrameLabel", "->", 
+            RowBox[{"{", 
+             RowBox[{
+             "\"\<\[Lambda]/nm\>\"", ",", 
+              "\"\<MD Rate / \!\(\*SuperscriptBox[\(s\), \(-1\)]\)\>\""}], 
+             "}"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"FrameStyle", "->", 
+            RowBox[{"Directive", "[", 
+             RowBox[{"16", ",", "Bold"}], "]"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"PlotMarkers", "->", "\"\<OpenMarkers\>\""}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"PlotStyle", "->", "Red"}], ",", "\[IndentingNewLine]", 
+           RowBox[{"PlotLabel", "->", 
+            RowBox[{"Style", "[", 
+             RowBox[{
+             "\"\<MD transition rates from Hartree-Fock\>\"", ",", "20"}], 
+             "]"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"PlotRange", "->", 
+            RowBox[{"{", 
+             RowBox[{"waveRange", ",", 
+              RowBox[{"{", 
+               RowBox[{
+                SuperscriptBox["10", 
+                 RowBox[{"ratesRange", "[", 
+                  RowBox[{"[", "1", "]"}], "]"}]], ",", 
+                SuperscriptBox["10", 
+                 RowBox[{"ratesRange", "[", 
+                  RowBox[{"[", "2", "]"}], "]"}]]}], "}"}]}], "}"}]}]}], 
+          "\[IndentingNewLine]", "]"}]}], ")"}], ",", "\[IndentingNewLine]", 
+       "\"\<Try Another\>\""}], "\[IndentingNewLine]", "]"}]}], ")"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"Row", "[", "\[IndentingNewLine]", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"Spacer", "[", "200", "]"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"shell", ",", "\"\<3d\>\""}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"\"\<3d\>\"", ",", "\"\<4d\>\"", ",", "\"\<5d\>\""}], 
+             "}"}]}], "}"}], "]"}], ",", "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"atom", ",", "\"\<Cu\>\""}], "}"}], ",", 
+            RowBox[{"shellToatoms", "[", "shell", "]"}], ",", 
+            RowBox[{"ControlType", "->", "SetterBar"}]}], "}"}], "]"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"charge", ",", "4"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7"}], 
+             "}"}], ",", 
+            RowBox[{"ControlType", "->", "RadioButton"}]}], "}"}], "]"}]}], 
+        "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"ratesRange", ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "6"}], ",", "1"}], "}"}]}], "}"}], ",", 
+            RowBox[{"-", "10"}], ",", "3", ",", 
+            RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}], 
+         ",", "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"waveRange", ",", 
+              RowBox[{"{", 
+               RowBox[{"100", ",", "1000"}], "}"}]}], "}"}], ",", "100", ",", 
+            "2000", ",", 
+            RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}]}],
+         "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Spacer", "[", "20", "]"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{"Framed", "[", 
+         RowBox[{"Style", "[", 
+          RowBox[{
+           RowBox[{"Dynamic", "[", 
+            RowBox[{"Superscript", "[", 
+             RowBox[{"atom", ",", 
+              RowBox[{
+               RowBox[{"ToString", "[", "charge", "]"}], "<>", 
+               "\"\<+\>\""}]}], "]"}], "]"}], ",", "60"}], "]"}], "]"}], 
+        "}"}], "]"}]}], "\[IndentingNewLine]", "}"}], "\[IndentingNewLine]", 
+    "]"}], ",", "\[IndentingNewLine]", 
+   RowBox[{"TrackedSymbols", ":>", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.854786213224421*^9, 3.854786226991543*^9}, {
+  3.854786257072175*^9, 3.854786299230815*^9}, {3.854786419892064*^9, 
+  3.8547865083891697`*^9}, {3.854786548320237*^9, 3.854786640135931*^9}, {
+  3.85478667184995*^9, 3.8547868178102007`*^9}, {3.8547868536105423`*^9, 
+  3.854787021572526*^9}, {3.8547870547015343`*^9, 3.8547870790589113`*^9}, {
+  3.854787122281065*^9, 3.854787210923498*^9}, {3.854787271602395*^9, 
+  3.8547872721507893`*^9}, {3.854787529687298*^9, 3.8547875354638863`*^9}, {
+  3.854787591869149*^9, 3.8547877201219673`*^9}, {3.854787766634924*^9, 
+  3.854787771621134*^9}, {3.85478781686878*^9, 3.854787915546721*^9}, {
+  3.8547879787522707`*^9, 3.854787985032688*^9}, {3.8547881294198713`*^9, 
+  3.854788134751525*^9}, {3.854791702870933*^9, 3.8547917066032248`*^9}, {
+  3.85560077743213*^9, 3.855600778350849*^9}},
+ CellLabel->
+  "In[229]:=",ExpressionUUID->"428a4865-9ccb-4e95-ba90-5889b064e5e2"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`atom$$ = "Tc", $CellContext`charge$$ = 
+    5, $CellContext`ratesRange$$ = {-6, 
+     2.2460000000000004`}, $CellContext`shell$$ = 
+    "4d", $CellContext`waveRange$$ = {100, 1000}, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
+       Hold[$CellContext`atom$$], "Cu"}, 
+      Dynamic[
+       $CellContext`shellToatoms[$CellContext`shell$$]]}, {{
+       Hold[$CellContext`charge$$], 4}, {2, 3, 4, 5, 6, 7}}, {{
+       Hold[$CellContext`ratesRange$$], {-6, 1}}, -10, 3}, {{
+       Hold[$CellContext`waveRange$$], {100, 1000}}, 100, 2000}, {
+      Hold[
+       Row[{
+         Spacer[200], 
+         Column[{
+           Manipulate`Place[1], 
+           Manipulate`Place[2], 
+           Manipulate`Place[3]}], 
+         Column[{
+           Manipulate`Place[4], 
+           Manipulate`Place[5]}], 
+         Spacer[20], 
+         Column[{
+           Framed[
+            Style[
+             Dynamic[
+              
+              Superscript[$CellContext`atom$$, 
+               ToString[$CellContext`charge$$] <> "+"]], 60]]}]}]], 
+      Manipulate`Dump`ThisIsNotAControl}}, Typeset`size$$ = {
+    1000., {314., 319.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     3, StandardForm, 
+      "Variables" :> {$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
+        4, $CellContext`ratesRange$$ = {-6, 1}, $CellContext`shell$$ = 
+        "3d", $CellContext`waveRange$$ = {100, 1000}}, 
+      "ControllerVariables" :> {}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, 
+      "Body" :> ($CellContext`ratesAddr = $CellContext`ratesTemplate[<|
+          "atom" -> $CellContext`atom$$, 
+           "charge" -> $CellContext`charge$$|>]; $CellContext`wavesAddr = \
+$CellContext`wavesTemplate[<|
+          "atom" -> $CellContext`atom$$, "charge" -> $CellContext`charge$$|>]; 
+       If[
+         MemberQ[$CellContext`availableData, $CellContext`ratesAddr], \
+$CellContext`rates = 
+          Import["./free_ion_HF.h5", $CellContext`ratesAddr]; \
+$CellContext`waves = 10^9 Import["./free_ion_HF.h5", $CellContext`wavesAddr]; 
+         ListLogPlot[
+           Transpose[{$CellContext`waves, $CellContext`rates}], ImageSize -> 
+           1000, Frame -> True, 
+           FrameLabel -> {
+            "\[Lambda]/nm", 
+             "MD Rate / \!\(\*SuperscriptBox[\(s\), \(-1\)]\)"}, FrameStyle -> 
+           Directive[16, Bold], PlotMarkers -> "OpenMarkers", PlotStyle -> 
+           Red, PlotLabel -> 
+           Style["MD transition rates from Hartree-Fock", 20], 
+           PlotRange -> {$CellContext`waveRange$$, {
+             10^Part[$CellContext`ratesRange$$, 1], 10^
+              Part[$CellContext`ratesRange$$, 2]}}], "Try Another"]), 
+      "Specifications" :> {{{$CellContext`shell$$, "3d"}, {"3d", "4d", "5d"}, 
+         ControlPlacement -> 1}, {{$CellContext`atom$$, "Cu"}, 
+         Dynamic[
+          $CellContext`shellToatoms[$CellContext`shell$$]], ControlType -> 
+         SetterBar, ControlPlacement -> 2}, {{$CellContext`charge$$, 4}, {2, 
+         3, 4, 5, 6, 7}, ControlType -> RadioButton, ControlPlacement -> 
+         3}, {{$CellContext`ratesRange$$, {-6, 1}}, -10, 3, ControlType -> 
+         IntervalSlider, ControlPlacement -> 
+         4}, {{$CellContext`waveRange$$, {100, 1000}}, 100, 2000, ControlType -> 
+         IntervalSlider, ControlPlacement -> 5}, 
+        Row[{
+          Spacer[200], 
+          Column[{
+            Manipulate`Place[1], 
+            Manipulate`Place[2], 
+            Manipulate`Place[3]}], 
+          Column[{
+            Manipulate`Place[4], 
+            Manipulate`Place[5]}], 
+          Spacer[20], 
+          Column[{
+            Framed[
+             Style[
+              Dynamic[
+               
+               Superscript[$CellContext`atom$$, 
+                ToString[$CellContext`charge$$] <> "+"]], 60]]}]}]}, 
+      "Options" :> {TrackedSymbols :> True}, "DefaultOptions" :> {}],
+     ImageSizeCache->{1044., {389., 394.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.854786273573823*^9, 3.854786319812892*^9, {3.854786479357617*^9, 
+   3.8547865086687737`*^9}, 3.8547866099231462`*^9, 3.854786640642716*^9, {
+   3.85478671344762*^9, 3.854786818403841*^9}, {3.854786853934013*^9, 
+   3.8547868628407507`*^9}, {3.854786921057829*^9, 3.85478692971299*^9}, {
+   3.854786976732909*^9, 3.8547869945185127`*^9}, 3.854787140218479*^9, 
+   3.8547872113189774`*^9, 3.85478727324223*^9, {3.854787501875898*^9, 
+   3.854787535745324*^9}, {3.854787596511105*^9, 3.854787720356711*^9}, 
+   3.854787771930971*^9, {3.854787817310648*^9, 3.854787875039028*^9}, {
+   3.854787909051985*^9, 3.8547879157957783`*^9}, 3.85478798534293*^9, 
+   3.8547880435736923`*^9, {3.854788130280179*^9, 3.8547881349906178`*^9}, 
+   3.8547917080174427`*^9, 3.8547930866996307`*^9, {3.854809808728629*^9, 
+   3.8548098130718822`*^9}, 3.8556007442004013`*^9, 3.8556007787943153`*^9},
+ CellLabel->
+  "Out[229]=",ExpressionUUID->"f61ca158-e322-4ab7-b42d-462f64d4e3ca"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"\[AliasDelimiter]", "\[AliasDelimiter]"}]], "Input",
+ CellChangeTimes->{{3.854809786090568*^9, 
+  3.8548097864413843`*^9}},ExpressionUUID->"dc4a680f-a8a0-4533-a8a3-\
+4abd1f7d10cb"]
+}, Closed]]
+}, Open  ]]
+},
+WindowSize->{1234, 1051},
+WindowMargins->{{247, Automatic}, {Automatic, 0}},
+FrontEndVersion->"13.0 for Mac OS X ARM (64-bit) (December 2, 2021)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"f407407a-3075-4c8a-baf0-2cdbe5387a55"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 318, 6, 160, "Title",ExpressionUUID->"f4c6207b-4aa5-45d6-9dd9-d2cd916a33c1"],
+Cell[CellGroupData[{
+Cell[923, 32, 154, 3, 67, "Section",ExpressionUUID->"d42a1eef-6e60-4b7a-aa37-79f9ef377e82"],
+Cell[1080, 37, 1778, 42, 194, "Input",ExpressionUUID->"65637df4-d76e-4449-898b-16abb4a0b95e",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2895, 84, 153, 3, 53, "Section",ExpressionUUID->"dee94362-9efe-44f1-b610-bd654578f6bb"],
+Cell[CellGroupData[{
+Cell[3073, 91, 6977, 160, 702, "Input",ExpressionUUID->"428a4865-9ccb-4e95-ba90-5889b064e5e2"],
+Cell[10053, 253, 5847, 124, 802, "Output",ExpressionUUID->"f61ca158-e322-4ab7-b42d-462f64d4e3ca"]
+}, Open  ]],
+Cell[15915, 380, 204, 4, 30, "Input",ExpressionUUID->"dc4a680f-a8a0-4533-a8a3-4abd1f7d10cb"]
+}, Closed]]
+}, Open  ]]
+}
+]
+*)
+
