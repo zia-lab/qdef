@@ -55,7 +55,7 @@ def calculate_vacancy_complexes(structure, dopant, tol=0.001):
         for neighbor in neighbors:
             replacing = this_species[neighbor]
             this_species[neighbor] = 'V'
-            a_defect = mg.Molecule(this_species, this_coords)
+            a_defect = mg.core.structure.Molecule(this_species, this_coords)
             finder = PointGroupAnalyzer(a_defect)
             pg = str(finder.get_pointgroup())
             defects.append([pg, a_defect])

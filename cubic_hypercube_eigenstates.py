@@ -75,7 +75,7 @@ if __name__ == '__main__':
             return None
         else:
             ham = hamiltonian_CF_CR_SO_TO(num_electrons, 'O', l, False, True)
-            matrixmah = ham[0].subs({sp.Symbol('B_{4,0}'): 10*Dq, sp.Symbol('F^{(0)}'): 0})
+            matrixmah = ham[0].subs({sp.Symbol('B_{4,0}'): 21*Dq, sp.Symbol('F^{(0)}'): 0})
             subs = {
                     sp.Symbol('F^{(2)}'): F2,
                     sp.Symbol('F^{(4)}'): F4,
