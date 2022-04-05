@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1012469,      17009]
-NotebookOptionsPosition[   1011216,      16978]
-NotebookOutlinePosition[   1011661,      16995]
-CellTagsIndexPosition[   1011618,      16992]
+NotebookDataLength[   1014218,      17039]
+NotebookOptionsPosition[   1012965,      17008]
+NotebookOutlinePosition[   1013410,      17025]
+CellTagsIndexPosition[   1013367,      17022]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -15884,10 +15884,10 @@ Cell[BoxData[{
    3.854125557532769*^9}, {3.854730825862854*^9, 3.854730835741102*^9}, {
    3.854739231224828*^9, 3.8547392335608664`*^9}, {3.854739813979814*^9, 
    3.8547398142943993`*^9}, {3.854791285764823*^9, 3.8547912943841763`*^9}, {
-   3.855136036782008*^9, 3.8551360386911373`*^9}},
- CellLabel->
-  "In[142]:=",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90"]
-}, Closed]],
+   3.855136036782008*^9, 3.8551360386911373`*^9}, {3.855851389061496*^9, 
+   3.855851391358921*^9}, {3.8558535032886*^9, 3.855853503888781*^9}},
+ CellLabel->"In[89]:=",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90"]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -16512,7 +16512,7 @@ Cell[BoxData[
           RowBox[{"{", 
            RowBox[{
             RowBox[{"{", 
-             RowBox[{"Dqrange", ",", "3", ",", "\"\<|Dq/B max|\>\""}], "}"}], 
+             RowBox[{"Dqrange", ",", "6", ",", "\"\<|Dq/B max|\>\""}], "}"}], 
             ",", "1", ",", 
             RowBox[{"Max", "[", "Dqs", "]"}]}], "}"}], "]"}], ",", 
          "\[IndentingNewLine]", 
@@ -16663,19 +16663,19 @@ Cell[BoxData[
    3.854739482600411*^9}, {3.85473963393939*^9, 3.854739635978753*^9}, {
    3.854739673099765*^9, 3.854739674260429*^9}, {3.854739811370934*^9, 
    3.8547398126866007`*^9}, {3.8547399423561277`*^9, 3.854739944981019*^9}, {
-   3.8554249611980267`*^9, 3.855424961806219*^9}},
+   3.8554249611980267`*^9, 3.855424961806219*^9}, 3.855851405498592*^9},
  CellLabel->
-  "In[164]:=",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+  "In[111]:=",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`atom$$ = "Cr", $CellContext`charge$$ = 
-    4, $CellContext`Dqrange$$ = 3, $CellContext`Erange$$ = 
+   DynamicModuleBox[{$CellContext`atom$$ = "V", $CellContext`charge$$ = 
+    3, $CellContext`Dqrange$$ = 6, $CellContext`Erange$$ = 
     30, $CellContext`extraUnit$$ = "eV", $CellContext`shell$$ = 
-    "3d", $CellContext`showLabels$$ = False, $CellContext`spin$$ = {
+    "3d", $CellContext`showLabels$$ = True, $CellContext`spin$$ = {
     "1", "2", "3", "4", "5", "6"}, $CellContext`symmetry$$ = 
-    "Cub", $CellContext`vLine$$ = 1, Typeset`show$$ = True, 
+    "Cub", $CellContext`vLine$$ = 1.71, Typeset`show$$ = True, 
     Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
     Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
     "\"untitled\"", Typeset`specs$$ = {{{
@@ -16687,7 +16687,30 @@ Cell[BoxData[
        Hold[$CellContext`symmetry$$], "Cub"}, {"Cub", "Tet", "Oct"}}, {{
        Hold[$CellContext`spin$$], {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
       "1", "2", "3", "4", "5", "6"}}, {{
-       Hold[$CellContext`Dqrange$$], 3, "|Dq/B max|"}, 1, 100.}, {{
+       Hold[$CellContext`Dqrange$$], 6, "|Dq/B max|"}, 1, CompressedData["
+1:eJwt1ktrG1cYBuCxLcuyLNu6S6P7JT+g1F50FWmRTcAEUkIgu1Jo6K79Cf4J
+XVali0JXWXuV1Qi6aUAtgUCh0IVDikhICE7rJE7iJK3nPGehj/PNc96ZORpd
+hl9+8/lXK1EU/Xzxko5b87Qc3gw1umF+3fyaelW9ol5W99VL89sXYzme/7a4
+GOP53sU4Gs9/mF2MsdxxcLe5A26Pi7mIW47kjeSN5I3kjeRxB9weF3MRtxzK
+G8obyhvKG8rjDrg9LuYibjmQN5A3kDeQN5DHHXB7XMxFg3kas+hb37euz/e5
+PtfjelyP63E9rst1uS7X5bpch+twHa7Ddbg21+baXJtrcy2uxbW4FtfiYi7m
+Yi7mYq7JNbkm1+Sa3ofGPGWzBtfgGlyDq3N1rs7VuTpX42pcjatxNddX5apc
+latyVa7CVbgKV+EqXJkrc2WuzJW5ElfiSlyJK3FFrsgVuSJXnH+fHt+df5r2
+d63b4Xe4HW6b2+YKXIErcFvcFpfn8lye2+Q2uRyX43LcBrfBZbksl+XWuXUu
+w2W4DLfGrXGr3Cq3yq1wK1zERVw0/yQ9/jH5Ou1/SMK698mvqT9PAjtPgnvH
+veXecGfcGfeae8W95E65U+5f7h/uBXfCnSRfpMefJ/fT/jPrnibfpf4J95hb
+cn9zj7iH3HESNuKv5DDt/2ndH8kg9Q+4+47fS6K0/4v53SRK6x3u/5F+wO9M
+Qr07mQY/CQ/uvYk8/QeTw3C+yU/h/JPjcD3csf5D/tHE/Uy+DffHPeaecE+5
+Z9xz7kT/hH8xsd+Tz8L+c6fcKfeSe8W95s64M+4N95Z7x51z59x77gP3kYum
+oR9Ng4+m++F5nf4Ynt+p55lb5Va5NW6Ny3AZLsOtc+tclstyWW6D2+ByXI7L
+cZvcJpfn8lye2+K2uAJX4ArcNrfN7XA73A63y+1yRf0iX5yG35vi9Pfw/cmV
+uBJX4kpciStzZa7MlbkyV+EqXIWrcBWuylW5KlflqlyNq3E1rsbVuDpX5+pc
+natzDa7BNbgG1+CaXJNr2t/mNHxfNrmYi7mYi7mYa3EtrsW1uBbX5tpcm2tz
+ba7DdbgO1+E6XJfrcl2uy3W5HtfjelyP63F9rs/1uT7X5wZT/wf5Qdjfg8E0
+/M4MgjvkZtwRt+CWXDSUN5Q3lDeUN5THzbgjbsEtuWgkbyRvJG/kvkbyuBl3
+xC24JReN5Y3ljeWN5Y3lcTPuiFtwSy66pO6rl9Ur6lX1mtzr5jfMb5rfmv4H
+uhj8pA==
+      "]}, {{
        Hold[$CellContext`Erange$$], 30, "E/B max"}, 1, 100}, {{
        Hold[$CellContext`showLabels$$], False}, {True, False}}, {{
        Hold[$CellContext`vLine$$], 1, "vLine/eV"}, 0, 2, 0.1}, {{
@@ -16717,7 +16740,7 @@ Cell[BoxData[
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
       "Variables" :> {$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
-        4, $CellContext`Dqrange$$ = 3, $CellContext`Erange$$ = 
+        4, $CellContext`Dqrange$$ = 6, $CellContext`Erange$$ = 
         30, $CellContext`extraUnit$$ = "eV", $CellContext`shell$$ = 
         "3d", $CellContext`showLabels$$ = 
         False, $CellContext`spin$$ = {
@@ -16767,6 +16790,7 @@ $CellContext`sign = If[$CellContext`numElectrons > 5, -1, 1]; If[
                
                Superscript[$CellContext`atom$$, 
                 ToString[$CellContext`charge$$] <> "+"]}, BaseStyle -> 
+              
               "Title"]; $CellContext`legends = \
 $CellContext`dset[$CellContext`\[CapitalNu]]["tskLabels"]; $CellContext`mask = 
             Map[MemberQ[$CellContext`spin$$, 
@@ -16925,8 +16949,8 @@ $CellContext`tskfig], "Wups"], "Missing"]),
          ControlPlacement -> 
          4}, {{$CellContext`spin$$, {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
          "1", "2", "3", "4", "5", "6"}, ControlType -> CheckboxBar, 
-         ControlPlacement -> 5}, {{$CellContext`Dqrange$$, 3, "|Dq/B max|"}, 
-         1, 100., ControlPlacement -> 
+         ControlPlacement -> 5}, {{$CellContext`Dqrange$$, 6, "|Dq/B max|"}, 
+         1, $CellContext`Dqs, ControlPlacement -> 
          6}, {{$CellContext`Erange$$, 30, "E/B max"}, 1, 100, 
          ControlPlacement -> 7}, {{$CellContext`showLabels$$, False}, {
          True, False}, ControlPlacement -> 
@@ -16953,7 +16977,7 @@ $CellContext`tskfig], "Wups"], "Missing"]),
             Manipulate`Place[9], 
             Manipulate`Place[10]}]}]}, "Options" :> {TrackedSymbols :> True}, 
       "DefaultOptions" :> {}],
-     ImageSizeCache->{1044., {464., 470.}},
+     ImageSizeCache->{1099., {435., 440.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -16964,20 +16988,26 @@ $CellContext`tskfig], "Wups"], "Missing"]),
    Deployed->True,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
  CellChangeTimes->{
   3.854809466070137*^9, {3.854809510778081*^9, 3.8548095303685513`*^9}, 
    3.855056849636531*^9, 3.8551351318191547`*^9, {3.8551352829200974`*^9, 
    3.855135285051931*^9}, 3.8551356235772448`*^9, 3.855424962055142*^9, {
    3.855425001093527*^9, 3.855425002026023*^9}, 3.855516090042901*^9, 
-   3.855599272223474*^9, {3.85559949082092*^9, 3.855599495415381*^9}},
- CellLabel->
-  "Out[164]=",ExpressionUUID->"487fff1f-e467-44bd-bb93-669d10265252"]
+   3.855599272223474*^9, {3.85559949082092*^9, 3.855599495415381*^9}, {
+   3.855850050794773*^9, 3.855850070683309*^9}, 3.855850531420802*^9, 
+   3.855850836898622*^9, {3.8558513947964163`*^9, 3.855851406064231*^9}, {
+   3.855853493748971*^9, 3.855853506110536*^9}, 3.857486889622663*^9, {
+   3.857486974763764*^9, 
+   3.857487003165062*^9}},ExpressionUUID->"3f0d6039-264e-4aec-9017-\
+6af4fecc6d30"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1099, 1027},
-WindowMargins->{{Automatic, -192}, {Automatic, -1093}},
+WindowSize->{1295, 1027},
+WindowMargins->{{-192, Automatic}, {Automatic, -1080}},
 TaggingRules-><|"TryRealOnly" -> False|>,
 FrontEndVersion->"13.0 for Mac OS X ARM (64-bit) (December 2, 2021)",
 StyleDefinitions->"Default.nb",
@@ -16996,18 +17026,18 @@ CellTagsIndex->{}
 Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 235, 3, 98, "Title",ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
-Cell[818, 27, 882, 17, 173, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
+Cell[818, 27, 882, 17, 150, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
 Cell[1703, 46, 944209, 15484, 424, "Input",ExpressionUUID->"e52eab67-abd7-4ad9-a1ab-c0c5f80ca84f"],
 Cell[CellGroupData[{
 Cell[945937, 15534, 245, 4, 67, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
-Cell[946185, 15540, 13112, 348, 1118, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
+Cell[946185, 15540, 13202, 348, 1055, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
  InitializationCell->True]
-}, Closed]],
+}, Open  ]],
 Cell[CellGroupData[{
-Cell[959334, 15893, 485, 7, 53, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
+Cell[959424, 15893, 485, 7, 67, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
 Cell[CellGroupData[{
-Cell[959844, 15904, 36768, 763, 2168, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
-Cell[996615, 16669, 14561, 304, 953, "Output",ExpressionUUID->"487fff1f-e467-44bd-bb93-669d10265252"]
+Cell[959934, 15904, 36790, 763, 2105, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+Cell[996727, 16669, 16198, 334, 894, "Output",ExpressionUUID->"3f0d6039-264e-4aec-9017-6af4fecc6d30"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]

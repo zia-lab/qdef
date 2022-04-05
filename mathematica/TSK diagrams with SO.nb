@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     18280,        461]
-NotebookOptionsPosition[     17290,        433]
-NotebookOutlinePosition[     17690,        449]
-CellTagsIndexPosition[     17647,        446]
+NotebookDataLength[     19568,        490]
+NotebookOptionsPosition[     18579,        462]
+NotebookOutlinePosition[     18978,        478]
+CellTagsIndexPosition[     18935,        475]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -21,11 +21,12 @@ Notebook[{
 
 Cell[CellGroupData[{
 Cell["\<\
-Tanabe - Subano Diagrams for Transition Metal Ions 
+Tanabe - Sugano Diagrams for Transition Metal Ions 
 ~Including Spin - Orbit~\
 \>", "Title",
  CellChangeTimes->{{3.855601176409198*^9, 3.855601194037799*^9}, {
-  3.855601510094351*^9, 3.85560151451894*^9}},
+  3.855601510094351*^9, 3.85560151451894*^9}, {3.855849722462775*^9, 
+  3.855849722599718*^9}},
  TextAlignment->Center,ExpressionUUID->"bb7d7d1f-65d8-41ad-bc38-842c4f66afab"],
 
 Cell[CellGroupData[{
@@ -44,8 +45,13 @@ Cell[BoxData[{
   RowBox[{"h5File", "=", "\"\<tsk_diag_withSO_HF.h5\>\""}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
+  RowBox[{
+  "h5File", "=", 
+   "\"\</Users/juan/ZiaLab/Codebase/qdef/data/tsk_diag_withSO_HF-test-final-\
+highres.h5\>\""}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
   RowBox[{"shellToatoms", "=", 
-   RowBox[{"<|", 
+   RowBox[{"<|", "\[IndentingNewLine]", 
     RowBox[{
      RowBox[{"\"\<3d\>\"", "->", 
       RowBox[{"StringSplit", "[", 
@@ -148,9 +154,14 @@ Cell[BoxData[{
    3.855333790704623*^9, 3.855333815373961*^9}, 3.855333983288155*^9, {
    3.8553342013847322`*^9, 3.85533420888908*^9}, 3.8554250236384277`*^9, {
    3.8555177840634403`*^9, 3.855517784367136*^9}, {3.8555180097105*^9, 
-   3.855518031954784*^9}, {3.855601088034122*^9, 3.8556011050892677`*^9}},
- CellLabel->"In[1]:=",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda"]
-}, Closed]],
+   3.855518031954784*^9}, {3.855601088034122*^9, 3.8556011050892677`*^9}, {
+   3.855859094912367*^9, 3.8558591008389997`*^9}, 3.855859338073642*^9, {
+   3.855859422554717*^9, 3.8558594310902977`*^9}, 3.855859586264971*^9, {
+   3.855861907987892*^9, 3.855861911455814*^9}, 3.8558633264472647`*^9, {
+   3.855865201369298*^9, 3.855865202602509*^9}, 3.856006887758965*^9},
+ CellLabel->
+  "In[125]:=",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda"]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -181,7 +192,9 @@ Cell[BoxData[
          RowBox[{"\"\<charge\>\"", "->", "charge"}]}], "|>"}], "]"}]}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"energies", "=", 
-      RowBox[{"HFdata", "[", "ekey", "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"Transpose", "[", 
+       RowBox[{"HFdata", "[", "ekey", "]"}], "]"}]}], ";", 
+     "\[IndentingNewLine]", 
      RowBox[{"Dqs", "=", 
       RowBox[{"HFdata", "[", "dqkey", "]"}]}], ";", "\[IndentingNewLine]", 
      RowBox[{"extraTicks", "=", 
@@ -203,11 +216,16 @@ Cell[BoxData[
          RowBox[{
           RowBox[{"ee", "*", "evtocm"}], ",", "ee"}], "}"}], ",", 
         RowBox[{"{", 
-         RowBox[{"ee", ",", "0", ",", 
-          RowBox[{
-           RowBox[{"Dqrange", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], "/", "evtocm"}], ",", "0.1"}], 
-         "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{"ee", ",", 
+          RowBox[{"Floor", "[", 
+           RowBox[{
+            RowBox[{"Dqrange", "[", 
+             RowBox[{"[", "1", "]"}], "]"}], "/", "evtocm"}], "]"}], ",", 
+          RowBox[{"Ceiling", "[", 
+           RowBox[{
+            RowBox[{"Dqrange", "[", 
+             RowBox[{"[", "2", "]"}], "]"}], "/", "evtocm"}], "]"}], ",", 
+          "0.1"}], "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
      RowBox[{"ListPlot", "[", 
       RowBox[{
        RowBox[{"Table", "[", 
@@ -264,7 +282,7 @@ Cell[BoxData[
           RowBox[{"{", 
            RowBox[{
             RowBox[{"{", 
-             RowBox[{"atom", ",", "\"\<Cu\>\""}], "}"}], ",", 
+             RowBox[{"atom", ",", "\"\<Cr\>\""}], "}"}], ",", 
             RowBox[{"shellToatoms", "[", "shell", "]"}], ",", 
             RowBox[{"ControlType", "->", "SetterBar"}]}], "}"}], "]"}], ",", 
          "\[IndentingNewLine]", 
@@ -287,8 +305,8 @@ Cell[BoxData[
             RowBox[{"{", 
              RowBox[{"Dqrange", ",", 
               RowBox[{"{", 
-               RowBox[{"0", ",", "3000"}], "}"}]}], "}"}], ",", "0", ",", 
-            "10000", ",", 
+               RowBox[{"0", ",", "3000"}], "}"}]}], "}"}], ",", 
+            RowBox[{"-", "10000"}], ",", "10000", ",", 
             RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}], 
          ",", "\[IndentingNewLine]", 
          RowBox[{"Control", "[", 
@@ -297,7 +315,8 @@ Cell[BoxData[
             RowBox[{"{", 
              RowBox[{"Erange", ",", 
               RowBox[{"{", 
-               RowBox[{"0", ",", "20000"}], "}"}]}], "}"}], ",", 
+               RowBox[{
+                RowBox[{"-", "100"}], ",", "20000"}], "}"}]}], "}"}], ",", 
             RowBox[{"-", "1000"}], ",", "60000", ",", 
             RowBox[{"ControlType", "->", "IntervalSlider"}]}], "}"}], "]"}], 
          ",", "\[IndentingNewLine]", 
@@ -312,31 +331,35 @@ Cell[BoxData[
     "]"}], ",", "\[IndentingNewLine]", 
    RowBox[{"TrackedSymbols", "->", "True"}]}], "]"}]], "Input",
  CellChangeTimes->CompressedData["
-1:eJxTTMoPSmViYGAQAWIQHZ/ndPX3jjeODnEdz0D0nDLtTyB6y7+fP0B00YZu
-hj9AOnOODReIVjAOVgDRzI4dWiA6wy9ID0Tnp3xwAtEP/H77gui0w3HBIFog
-UCkcRP8Tb4oE0fs/liWBaP6ZIVkg+tOPvCoQ7cS2rQFEhy5a2wGin5m0dIFo
-yTkr+0D05guh/SC6n4v1lejON4485X+/gei2OZ5/QfRav3WMYkA6V5aHG0Tv
-iNknAKLtHlhKgWgXTTFZEL1IK8kXRF9fUuUPohNuhYlcBNKhopHiIPrDPxVt
-ED3rbiiY/iLy+/xPIL2LWf0CiL4hr3EFRNuHLLsKogHSDbSN
+1:eJwdz08oQwEAx/EhWjOZ2uZPZP4Um5oDF6WxtYu0ybZHi2a9/NnIFrKxHJbQ
+MllOokdriXaYFMl2MJIcN0WklFIr2mGWGLPl/d7h2+f8rSGtmpFcFotVSQeH
+LIr79Flc3mlwxSBla0rCk+xPCk4fuVl/tGaqnQNFLVoRzJO7JNCk1kihdTih
+gC/qtAqOXhm0kNdb2w+zpYt6GP6wkbB4SzcOkymLAyoKTp2Q8AVcMNa6tArL
+Kf86PI4SHujh5L8LgnE51575gitUVwYG1Ic5QtrJKm4hPBs850HZS1sFVIqF
+VdAnIVXwYc/RA41PffxbWkKgL4WJbH0T3H4mGD/56cgPbSivIQofqxvvYIdu
+/x7OeDcu7CH6gxy4hL+RkgykFiSMUrFHOE87VhRk9LK76+DEzQHj3JrOBN/8
+u2ZYtsmegsbv5VnY7NI5oSxmZbRdu1/DtErVDuM/rpj6fg==
   "],
- CellLabel->"In[16]:=",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
+ CellLabel->
+  "In[138]:=",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`atom$$ = "Ni", $CellContext`charge$$ = 
-    3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {0, 
-    20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d", 
-    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
+   DynamicModuleBox[{$CellContext`atom$$ = "Cr", $CellContext`charge$$ = 
+    3, $CellContext`Dqrange$$ = {1400.0000000000018`, 
+    5120.}, $CellContext`Erange$$ = {19984., 28890.}, $CellContext`joined$$ = 
+    True, $CellContext`shell$$ = "3d", Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{{
        Hold[$CellContext`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
-       Hold[$CellContext`atom$$], "Cu"}, 
+       Hold[$CellContext`atom$$], "Cr"}, 
       Dynamic[
        $CellContext`shellToatoms[$CellContext`shell$$]]}, {{
        Hold[$CellContext`charge$$], 3}, {2, 3, 4, 5, 6, 7}}, {{
-       Hold[$CellContext`Dqrange$$], {0, 3000}}, 0, 10000}, {{
-       Hold[$CellContext`Erange$$], {0, 20000}}, -1000, 60000}, {{
+       Hold[$CellContext`Dqrange$$], {0, 3000}}, -10000, 10000}, {{
+       Hold[$CellContext`Erange$$], {-100, 20000}}, -1000, 60000}, {{
        Hold[$CellContext`joined$$], True}, {True, False}}, {
       Hold[
        Row[{
@@ -352,8 +375,8 @@ Cell[BoxData[
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      3, StandardForm, 
-      "Variables" :> {$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
-        3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {0, 
+      "Variables" :> {$CellContext`atom$$ = "Cr", $CellContext`charge$$ = 
+        3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {-100, 
          20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d"}, 
       "ControllerVariables" :> {}, 
       "OtherVariables" :> {
@@ -366,14 +389,17 @@ Cell[BoxData[
            "charge" -> $CellContext`charge$$|>]; $CellContext`dqkey = \
 $CellContext`DqsTemplate[<|
           "atom" -> $CellContext`atom$$, 
-           "charge" -> $CellContext`charge$$|>]; $CellContext`energies = \
-$CellContext`HFdata[$CellContext`ekey]; $CellContext`Dqs = \
+           "charge" -> $CellContext`charge$$|>]; $CellContext`energies = 
+        Transpose[
+          $CellContext`HFdata[$CellContext`ekey]]; $CellContext`Dqs = \
 $CellContext`HFdata[$CellContext`dqkey]; $CellContext`extraTicks = 
         Table[{$CellContext`ee $CellContext`evtocm, $CellContext`ee}, \
 {$CellContext`ee, 0, Part[$CellContext`Erange$$, 2]/$CellContext`evtocm, 
            0.25}]; $CellContext`moTicks = 
         Table[{$CellContext`ee $CellContext`evtocm, $CellContext`ee}, \
-{$CellContext`ee, 0, Part[$CellContext`Dqrange$$, 2]/$CellContext`evtocm, 
+{$CellContext`ee, 
+           Floor[Part[$CellContext`Dqrange$$, 1]/$CellContext`evtocm], 
+           Ceiling[Part[$CellContext`Dqrange$$, 2]/$CellContext`evtocm], 
            0.1}]; ListPlot[
          Table[
           
@@ -388,15 +414,15 @@ $CellContext`energies}], Frame -> True, Joined -> $CellContext`joined$$,
            Automatic, $CellContext`moTicks}}, 
          PlotRange -> {$CellContext`Dqrange$$, $CellContext`Erange$$}]), 
       "Specifications" :> {{{$CellContext`shell$$, "3d"}, {"3d", "4d", "5d"}, 
-         ControlPlacement -> 1}, {{$CellContext`atom$$, "Cu"}, 
+         ControlPlacement -> 1}, {{$CellContext`atom$$, "Cr"}, 
          Dynamic[
           $CellContext`shellToatoms[$CellContext`shell$$]], ControlType -> 
          SetterBar, ControlPlacement -> 2}, {{$CellContext`charge$$, 3}, {2, 
          3, 4, 5, 6, 7}, ControlType -> RadioButton, ControlPlacement -> 
-         3}, {{$CellContext`Dqrange$$, {0, 3000}}, 0, 10000, ControlType -> 
+         3}, {{$CellContext`Dqrange$$, {0, 3000}}, -10000, 10000, ControlType -> 
          IntervalSlider, ControlPlacement -> 
-         4}, {{$CellContext`Erange$$, {0, 20000}}, -1000, 60000, ControlType -> 
-         IntervalSlider, ControlPlacement -> 
+         4}, {{$CellContext`Erange$$, {-100, 20000}}, -1000, 60000, 
+         ControlType -> IntervalSlider, ControlPlacement -> 
          5}, {{$CellContext`joined$$, True}, {True, False}, ControlPlacement -> 
          6}, 
         Row[{
@@ -421,18 +447,21 @@ $CellContext`energies}], Frame -> True, Joined -> $CellContext`joined$$,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
  CellChangeTimes->{
-  3.855425160277831*^9, 3.855517795431307*^9, {3.855517864673141*^9, 
-   3.855517883006372*^9}, {3.855517962304034*^9, 3.8555179972591248`*^9}, {
-   3.855518045864009*^9, 3.85551806320877*^9}, 3.85560111268533*^9, {
-   3.855601171022217*^9, 3.855601171938319*^9}, {3.855601228994754*^9, 
-   3.855601257026649*^9}, 3.8556013258149853`*^9},
- CellLabel->"Out[16]=",ExpressionUUID->"688dd1b1-d12c-4340-999b-6ab682a5ac81"]
+  3.855862549137848*^9, {3.8558625982176723`*^9, 3.855862605624984*^9}, {
+   3.855862672413612*^9, 3.8558627237210283`*^9}, 3.855862787766272*^9, 
+   3.855862825572672*^9, {3.8558633139866734`*^9, 3.8558633155793447`*^9}, {
+   3.8558652082859383`*^9, 3.855865217010627*^9}, 3.8560044692429667`*^9, 
+   3.85600450306185*^9, 3.8560059695644007`*^9, 3.856006787630307*^9, 
+   3.85600689627678*^9, 3.856006941680003*^9, 3.857488678196423*^9, {
+   3.8574888017822857`*^9, 3.857488803294104*^9}},
+ CellLabel->
+  "Out[138]=",ExpressionUUID->"11ddb439-221b-4aef-adea-b4c6d02c0d11"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1363, 1027},
-WindowMargins->{{0, Automatic}, {Automatic, -1093}},
+WindowSize->{960, 1027},
+WindowMargins->{{Automatic, 0}, {Automatic, -1080}},
 FrontEndVersion->"13.0 for Mac OS X ARM (64-bit) (December 2, 2021)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"60434c25-465a-4893-b8c1-57395146856b"
@@ -449,17 +478,17 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 294, 6, 160, "Title",ExpressionUUID->"bb7d7d1f-65d8-41ad-bc38-842c4f66afab"],
+Cell[580, 22, 343, 7, 222, "Title",ExpressionUUID->"bb7d7d1f-65d8-41ad-bc38-842c4f66afab"],
 Cell[CellGroupData[{
-Cell[899, 32, 158, 3, 67, "Section",ExpressionUUID->"5fc77d0d-317c-49fd-93f0-8b83ab23a7c9"],
-Cell[1060, 37, 4419, 114, 425, "Input",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda",
+Cell[948, 33, 158, 3, 67, "Section",ExpressionUUID->"5fc77d0d-317c-49fd-93f0-8b83ab23a7c9"],
+Cell[1109, 38, 4908, 124, 467, "Input",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda",
  InitializationCell->True]
-}, Closed]],
+}, Open  ]],
 Cell[CellGroupData[{
-Cell[5516, 156, 153, 3, 53, "Section",ExpressionUUID->"db03e039-3fbd-4322-b7bc-bb373fa77622"],
+Cell[6054, 167, 153, 3, 67, "Section",ExpressionUUID->"db03e039-3fbd-4322-b7bc-bb373fa77622"],
 Cell[CellGroupData[{
-Cell[5694, 163, 6278, 158, 545, "Input",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
-Cell[11975, 323, 5275, 105, 929, "Output",ExpressionUUID->"688dd1b1-d12c-4340-999b-6ab682a5ac81"]
+Cell[6232, 174, 6705, 169, 545, "Input",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
+Cell[12940, 345, 5599, 112, 929, "Output",ExpressionUUID->"11ddb439-221b-4aef-adea-b4c6d02c0d11"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]

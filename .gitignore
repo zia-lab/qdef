@@ -150,3 +150,9 @@ Icon
 images/Icon
 Icon
 images/Icon
+
+# big data
+data/eigen_ions/
+data/eigen_ions_hr/
+data/lanthanide_tables/
+mathematica/tsk_hypercube.h5
