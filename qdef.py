@@ -52,11 +52,12 @@ module_dir = os.path.dirname(__file__)
 
 morrison_loc = os.path.join(module_dir,'data','morrison.pkl')
 morrison = pickle.load(open(morrison_loc,'rb'))
-new_labels = pickle.load(open('./Data/components_rosetta.pkl','rb'))
+new_labels = pickle.load(open('./data/components_rosetta.pkl','rb'))
 crystal_splits_loc = os.path.join(module_dir,'data','crystal_splits.pkl')
 crystal_splits = pickle.load(open(crystal_splits_loc,'rb'))
 kurvits_free_ion_fit_dict_loc = os.path.join(module_dir,'data','kurvits_free_ion_fit_dict.pkl')
 kurvits_free_ion_fit_dict = pickle.load(open(kurvits_free_ion_fit_dict_loc,'rb'))
+s2_operators = pickle.load(open(os.path.join(module_dir,'data','s2_operators.pkl'),'rb'))
 
 # =========================== Load others ======================= #
 # =============================================================== #
@@ -109,7 +110,7 @@ def kurvits_slater_ints_and_SO(n:int, charge:int, neutral_valence_electrons:int)
     strength  ζ, and for the slater integrals F^{(2)} and F^{(4)} that may
     be  used  to  approximate  the  interactions in free ions with valence
     electrons in d-orbitals.
-    All given in energy units of cm^{-1}
+    All given in energy units of cm^{-1}.
     Parameters
     ----------
     n (int)     : atom shell number (3,4,5)
@@ -138,7 +139,7 @@ def kurvits_slater_RacahP_and_SO(n:int, charge:int, neutral_valence_electrons:in
     strength  ζ, and for the slater integrals F^{(2)} and F^{(4)} that may
     be  used  to  approximate  the  interactions in free ions with valence
     electrons in d-orbitals.
-    All given in energy units of cm^{-1}
+    All given in energy units of cm^{-1}.
     Parameters
     ----------
     n (int)     : atom shell number (3,4,5)
@@ -932,6 +933,92 @@ def compute_crystal_field(group_num):
 ###########################################################################
 ############################## Hamiltonians ###############################
 
+def S_squared(num_electrons:int, l:int, sparse: bool = False):
+    '''
+    Provides  the  matrix  representation of the S^2 operator in
+    the determinantal uncoupled basis.
+
+    Parameters
+    ----------
+    num_electrons  : how  many
+    l              : orbital angular momentum of electrons.
+    sparse         : whether to return a sparse sympy Matrix.
+
+    Returns
+    -------
+    s2operator (sp.Matrix)
+
+    '''
+    if l == 2:
+        return s2_operators[num_electrons]
+    ssquared_dictionaire = trees_dict(S_HALF)
+    # Using uncoupled spherical harmonics basis.
+    single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
+                        for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
+    basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
+                        for spin in [S_DOWN, S_UP] for m in range(-l,l+1)])
+
+    def ssquared_op_two_bod(qnums, coeff):
+        l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
+        if not(KroneckerDelta(m1,m1p) and KroneckerDelta(m2,m2p)):
+            return {}
+        else:
+            if (s1,s2,s1p,s2p) in ssquared_dictionaire:
+                return {1: coeff * ssquared_dictionaire[(s1,s2,s1p,s2p)]}
+            else:
+                return {}
+
+    def ssquared_op_one_bod(qnums, coeff):
+        the_dict = {1:0}
+        γ1, γ2 = qnums
+        m1 = list(basis_change[γ1].dict.keys())[0][1]
+        m2 = list(basis_change[γ2].dict.keys())[0][1]
+        s1, s2  = γ1.spin, γ2.spin
+        if m1 == m2 and s1 == s2:
+            the_dict[1] = coeff * S_HALF * (S_HALF + 1)
+        if the_dict[1] == 0:
+            return {}
+        else:
+            return the_dict
+
+    # add spin up and spin down
+    single_e_spin_orbitals = single_e_basis
+    # create determinantal states
+    slater_dets = list(combinations(single_e_spin_orbitals, num_electrons))
+    slater_qets = [Qet({k:1}) for k in slater_dets]
+
+    if sparse:
+        s2operator = {}
+    else:
+        s2operator = []
+
+    for idx0, qet0 in enumerate(slater_qets):
+        row = []
+        for idx1, qet1 in enumerate(slater_qets):
+            double_braket = double_electron_braket(qet0, qet1)
+            double_braket = double_braket_basis_change(double_braket, basis_change)
+            ssquared_matrix_element_twobody = sp.expand(double_braket.apply(ssquared_op_two_bod).as_symbol_sum())
+            single_braket = single_electron_braket(qet0, qet1)
+            ssquared_matrix_element_onebod = single_braket.apply(ssquared_op_one_bod).as_symbol_sum()
+            matrix_element = (ssquared_matrix_element_twobody + ssquared_matrix_element_onebod)
+            if matrix_element != 0:
+                if sparse:
+                    s2operator[(idx0,idx1)] = (matrix_element)
+                else:
+                    row.append(matrix_element)
+            else:
+                if not sparse:
+                    row.append(matrix_element)
+        if not sparse:
+            s2operator.append(row)
+
+    if sparse:
+        s2operator = (sp.SparseMatrix(len(slater_qets), len(slater_qets), s2operator))
+    else:
+        s2operator = sp.Matrix(s2operator)
+    return s2operator
+
+
 def trees_dict(l, return_matrix = False):
     '''
     This  function  returns the matrix elements of the l_1⋅l_2 operator in
@@ -1103,10 +1190,6 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
                 return the_dict
 
         def trees_op_two_bod(qnums, coeff):
-            '''
-            This function will take a set of qnums that are assumed to be l1, m1, l2, m2, l1p, m1p, l2p, m2p
-            and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
-            '''
             l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
             if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
                 return {}
@@ -1160,10 +1243,6 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
                 return the_dict
         
         def trees_op_two_bod(qnums, coeff):
-            '''
-            This function will take a set of qnums that are assumed to be l1, m1, l2, m2, l1p, m1p, l2p, m2p
-            and will return a set of qnums that correspond to slater integrals and corresponding coefficients.
-            '''
             l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
             if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
                 return {}
@@ -3027,13 +3106,10 @@ def double_electron_braket(qet0, qet1):
     
     in terms of brakets of double electron orbitals.
 
-    This function assumes that the operator does not act on spin.
-
     Parameters
     ----------
     qet0    (qdefcore.Qet): a qet of determinantal states
     qet1    (qdefcore.Qet): a qet of determinantal states
-    strip_spin      (bool): if True then spin bars are removed in output
 
     Returns
     -------
@@ -3124,13 +3200,10 @@ def single_electron_braket(qet0, qet1):
     a  symbol  that  is  adorned with an upper bar is assumed to have spin
     down and one without to have spin up.
 
-    This function assumes that the operator does not act on spin.
-
     Parameters
     ----------
     qet0       (qdefcore.Qet): another qet
     qet1       (qdefcore.Qet): a qet
-    erase_spin (bool)        : if True then spin bars are removed in output
 
     Returns
     -------
