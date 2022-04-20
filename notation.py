@@ -9,6 +9,7 @@ l_from_num_to_lett = OrderedDict([(i, spectroscopic_alphabet[i]) for i in range(
 
 def l_notation_switch(origin):
     if isinstance(origin,str):
+        origin = origin.lower()
         return l_from_lett_to_num[origin]
     elif isinstance(origin, int):
         return l_from_num_to_lett[origin]
