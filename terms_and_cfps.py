@@ -9,7 +9,6 @@ from functools import reduce
 from notation import *
 import pickle
 import os
-from fractions import Fraction
 from collections import Counter
 
 # ┌─────────────────────────────────────────┐
@@ -86,14 +85,14 @@ if __name__ == '__main__':
         if l == 1:
             term_label = line.split(' ')[0]
             multiS = sp.S(int(line[0]))
-            S = Fraction((multiS-1)/2)
+            S = sp.S(multiS-1)/2
             L = l_notation_switch(line[1])
             seniority = int(line.split(' ')[1])
             term_labels[(l,n)].append(s_Label(l,n,term_label,multiS,L,1,seniority,S))
         elif l == 2:
             term_label = line.split(' ')[0]
             multiS = sp.S(int(line[0]))
-            S = Fraction((multiS-1)/2)
+            S = sp.S(multiS-1)/2
             L = l_notation_switch(line[1])
             seniority = int(line.split(' ')[1])
             R5 = tuple(map(int,line.split(' ')[2]))
@@ -105,7 +104,7 @@ if __name__ == '__main__':
         elif l == 3:
             term_label = line.split(' ')[0]
             multiS = sp.S(int(line[0]))
-            S = Fraction((multiS-1)/2)
+            S = sp.S(multiS-1)/2
             L = l_notation_switch(line[1])
             seniority = int(line.split(' ')[1])
             R7 = tuple(map(int,line.split(' ')[2]))

@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
 
-from cmath import phase
 import sympy as sp
-import numpy as np
 from collections import OrderedDict
 from itertools import product
 from sympy.physics.wigner import wigner_6j as w6j
 from sympy.physics.wigner import wigner_3j
 from functools import lru_cache
+import os
+import pickle
+from notation import *
+from qdef import mrange
+
+module_dir = os.path.dirname(__file__)
+
+seniority_dict = pickle.load(open(os.path.join(module_dir,'data','seniority_dict.pkl'),'rb'))
+all_terms = pickle.load(open(os.path.join(module_dir,'data','all_term_labels.pkl'),'rb'))
+
+HALF = sp.S(1)/2
 
 @lru_cache(maxsize=None)
 def w3j(j1, j2, j3, m1, m2, m3):
     return wigner_3j(j1, j2, j3, m1, m2, m3)
+
+def tp1(x):
+    return 2*x+1
 
 @lru_cache(maxsize=None)
 def VC_coeff(bra,ket):
@@ -52,7 +64,7 @@ def Ck(k, l, lp):
     threejay = w3j(l, k, lp, 0, 0, 0)
     return phase * threejay * sp.sqrt((2*l+1) * (2*lp+1))
 
-def CkCk(l,k):
+def CkCk(l, k):
     '''
     Returns the matrix elements of the operator
     (γ j1 j2 J MJ | Cᴷ⋅Cᴷ | γp j1p j2p Jp MJp)
@@ -155,3 +167,313 @@ def reduced_j(l, L, Lp):
     sixj = w6j(L, 1, Lp, l, l, l)
     radius = sp.sqrt(l*(l+1)*(2*l+1))
     return phase * sixj * rooty * radius
+
+def term_range(l,n):
+    '''
+    Given an electron configuration l^n this
+    iterator provides the corresponding terms.
+    '''
+    if n > 2*l+1:
+        n = (4*l+2) - n
+    terms = all_terms[(all_terms['l'] == l) & (all_terms['n'] == n)][['S','L','idx']].to_records(index=False)
+    return terms
+
+def ψ_range(term):
+    '''
+    Given a term this yields the wavefunction
+    contained in it
+    '''
+    S, L, W = term
+    ML_s, MS_s = mrange(L), mrange(S)
+    for MS, ML in product(MS_s, ML_s):
+        Ω  = (W,  S,  MS,  L,  ML) # full address of row state
+        yield Ω
+
+def config_range(l,n):
+    '''
+    '''
+    for term in term_range(l,n):
+        for Ω in ψ_range(term):
+            yield Ω
+
+@lru_cache(maxsize=None)
+def Ω_coeff(l, n, Ω, Ωp_1, Ωp_2):
+    '''
+    This function returns the coefficient
+    <lⁿ⁻¹ W* S* MS* L* ML*; l ms ml | lⁿW S MS L ML>
+    Parameters
+    ----------
+    n (int): number of electrons
+    Returns
+    -------
+    '''
+    (W,    S,    MS,    L,    ML)    = Ω # daughter
+    (W_p,  S_p,  MS_p,  L_p,  ML_p)  = Ωp_1 # parent1
+    (W_pp, S_pp, MS_pp, L_pp, ML_pp) = Ωp_2 # parent2
+    cfp_args = (l, n,
+               S,    L,    W, # daughter term
+               S_p,  L_p,  W_p, # parent1 term
+               S_pp, L_pp, W_pp) # parent2 term
+    # Vector Coupling coeffs
+    vcS = VC_coeff((S_p, MS_p, S_pp, MS_pp), 
+                      (S_p, S_pp, S,    MS))
+    if vcS == 0:
+        return 0
+    
+    vcL = VC_coeff((L_p, ML_p,  L_pp, ML_pp), 
+                      (L_p, L_pp, L,    ML))
+    if vcL == 0:
+        return 0
+    
+    cfp = CFP_1(*cfp_args, True)
+    if cfp == 0:
+        return 0
+    val = vcS * vcL * cfp
+    return val
+
+def CFP_fun(num_bodies, string_notation = False):
+    '''
+    Parameters
+    ----------
+    num_bodies (int): either 1,2,3,4
+    string_notation (bool): if true then input to function is a friendly string
+
+    Returns
+    -------
+    fun (function): a function that provides the coefficients of
+    fractional parentage for the provided number of bodies.
+
+    References
+    ----------
+    + Data is from Velkov, “Multi-Electron Coefficients of Fractional Parentage for the p, d, and f Shells.”
+    '''
+    if num_bodies not in [1,2,3,4]:
+        raise Exception("%d bodies not included in minimal set." % num_bodies)
+    if not string_notation:
+        doc_string = '''
+        Returns the {num_bodies}-body coefficient of fractional parentage.  If
+        coefficient  is  physical  but  not immediately available, a series of
+        identities are tried out to see if it can be computed thus.
+
+        Parameters
+        ----------
+        l (int): orbital angular momentum of constituent electrons
+        n (int): how many electrons in configuration
+        S (half-int or int): S of daughter
+        L (int): L of daughter
+        W (int): index of daughter
+        S_p (half-int or int): S of parent_1
+        L_p (int): L of parent_1
+        W_p (int): index of parent_1
+        S_pp (half-int or int): S of parent_2
+        L_pp (int): L of parent_2
+        W_pp (int): index of parent_2
+        fill_missing (bool): if True then 0 is returned for key not found, unsafe.
+        
+        Returns
+        -------
+        CFP (sp.S): symbolic expression for coefficent of fractional parentage
+        '''.format(num_bodies = num_bodies)
+        def fun(l, n, 
+                S,    L,    W, # daughter
+                S_p,  L_p,  W_p, # parent_1
+                S_pp, L_pp, W_pp, # parent_2
+                fill_missing=False):
+            n_p  = n - num_bodies
+            n_pp = num_bodies
+            key  = (num_bodies, l, 
+                   n,    S,    L,    W,
+                   n_p,  S_p,  L_p,  W_p,
+                   n_pp, S_pp, L_pp, W_pp)
+            if key in fun.data: # Case I
+                return fun.data[key]
+            else:  # Case II
+                if n <= 2*l+1:
+                    ν    = seniority_dict[(l, n,    S,    L,    W)]
+                else:
+                    ν    = seniority_dict[(l, 4*l+2-n,    S,    L,    W)]
+                if n_p <= 2*l+1:
+                    ν_p  = seniority_dict[(l, n_p,  S_p,  L_p,  W_p)]
+                else:
+                    ν_p  = seniority_dict[(l, 4*l+2-n_p,  S_p,  L_p,  W_p)]
+                if n_pp <= 2*l+1:
+                    ν_pp = seniority_dict[(l, n_pp, S_pp, L_pp, W_pp)]
+                else:
+                    ν_pp = seniority_dict[(l, 4*l+2-n_pp, S_pp, L_pp, W_pp)]
+                alter_key = (num_bodies, l, 
+                            4*l + 2 - n_p, S_p, L_p, W_p,
+                            n_pp, S_pp, L_pp, W_pp, 
+                            4*l + 2 - n, S, L, W)
+                if alter_key in fun.data:
+                    phase = phaser(sp.S(ν - ν_p - (n % 2) + (n_p % 2))/2)
+                    phase = (phase
+                            * sp.sqrt(tp1(S_p)*tp1(L_p)/tp1(S)/tp1(L))
+                            * sp.sqrt(sp.binomial(4*l + 2 - n_p, n_pp)/sp.binomial(n, n_pp))
+                            )
+                    return phase * fun.data[alter_key]
+                else: # Case III
+                    alter_key = (num_bodies, l, 
+                                4*l + 2 - n_pp, S_pp, L_pp, W_pp,
+                                4*l + 2 - n, S, L, W, 
+                                n_p, S_p, L_p, W_p)
+                    if alter_key in fun.data:
+                        phase = phaser(sp.S(ν - ν_pp - (n % 2) + (n_pp % 2))/2)
+                        phase = (phase
+                                * sp.sqrt(tp1(S_pp) * tp1(L_pp) / tp1(S) / tp1(L))
+                                * sp.sqrt(sp.binomial(4*l + 2 - n_pp, n_p) / sp.binomial(n, n_p))
+                                )
+                        return phase * fun.data[alter_key]
+                    else: # Case IV
+                        alter_key = (num_bodies, l, 
+                                    4*l + 2 - n_pp, S_pp, L_pp, W_pp,
+                                    n_p, S_p, L_p, W_p, 
+                                    4*l + 2 - n, S, L, W)
+                        if alter_key in fun.data:
+                            phase = phaser(S + S_p + S_pp + L + L_p + L_pp + sp.S(ν + ν_pp + (n_p%2))/2)
+                            phase = (phase
+                                    * sp.sqrt(tp1(S_pp) * tp1(L_pp) / tp1(S) / tp1(L))
+                                    * sp.sqrt(sp.binomial(4*l + 2 - n_pp, n_p) / sp.binomial(n, n_p))
+                                    )
+                            return phase * fun.data[alter_key]
+                        else: # Case V
+                            alter_key = (num_bodies, l, 
+                                        4*l + 2 - n_p, S_p, L_p, W_p,
+                                        4*l + 2 - n, S, L, W, 
+                                        n_pp, S_pp, L_pp, W_pp)
+                            if alter_key in fun.data:
+                                phase = phaser(S, + S_p - S_pp + L + L_p - L_pp, + sp.S(ν + ν_p - (n_pp%2))/2)
+                                phase = (phase
+                                        * sp.sqrt(tp1(S_p) * tp1(L_p) / tp1(S) / tp1(L))
+                                        * sp.sqrt(sp.binomial(4*l + 2 - n_p, n_pp) / sp.binomial(n, n_pp))
+                                        )
+                                return phase * fun.data[alter_key]
+                            else: # Case VI
+                                alter_key = (num_bodies, l, 
+                                            n, S, L, W,
+                                            n_pp, S_pp, L_pp, W_pp, 
+                                            n_p, S_p, L_p, W_p)
+                                if alter_key in fun.data:
+                                    phase = phaser(n_p*n_pp + S_p + S_pp -S + L_p + L_pp -L)
+                                    return phase * fun.data[alter_key]
+                                else:
+                                    if fill_missing:
+                                        return 0
+                                    else:
+                                        raise Exception("Missing key : %s" % str(key))
+        fun.__doc__ = doc_string
+        print("Loading data for %d-body coefficients of fractional parentage..." % (num_bodies))
+        fun.data = pickle.load(open(os.path.join(module_dir, 'data', 'CFP_%s-body-dict.pkl' % num_bodies),'rb'))
+    else:
+        doc_string = '''
+        Returns the {num_bodies}-body coefficient of fractional parentage.  If
+        coefficient  is  physical  but  not immediately available, a series of
+        identities are tried out to see if it can be computed thus.
+
+        Parameters
+        ----------
+        string_input  (str):  in  format  ('l n daughter_term parent_term_1
+        parent_term_2'). For example 'd 5 2I1 1I1 2D1'
+        fill_missing (bool): if True then 0 is returned for key not found, unsafe.
+
+        NOTE: it is assumed that terms with W_max = 1 still include the index. For example,
+        if 2D only has a single term, it should be input as 2D1.
+
+        Returns
+        -------
+        CFP (sp.S): symbolic expression for coefficent of fractional parentage.
+
+        '''.format(num_bodies = num_bodies)
+        def fun(string_input, fill_missing=False):
+            l, n, daughter_term, parent_term_1, parent_term_2 = string_input.split(' ')
+            l, n = l_notation_switch(l), int(n)
+            S = sp.S(int(daughter_term[0]) - 1)/2
+            L = l_notation_switch(daughter_term[1])
+            W = int(daughter_term[2])
+            S_p = sp.S(int(parent_term_1[0]) - 1)/2
+            L_p = l_notation_switch(parent_term_1[1])
+            W_p = int(parent_term_1[2])
+
+            S_pp = sp.S(int(parent_term_2[0]) - 1)/2
+            L_pp = l_notation_switch(parent_term_2[1])
+            W_pp = int(parent_term_2[2])
+
+            n_p = n - num_bodies
+            n_pp = num_bodies
+            key = (num_bodies, l, 
+                   n, S, L, W,
+                   n_p, S_p, L_p, W_p,
+                   n_pp, S_pp, L_pp, W_pp)
+            if key in fun.data: # Case I
+                return fun.data[key]
+            else:  # Case II
+                ν    = seniority_dict[(l, n,    S,    L,    W)]
+                ν_p  = seniority_dict[(l, n_p,  S_p,  L_p,  W_p)]
+                ν_pp = seniority_dict[(l, n_pp, S_pp, L_pp, W_pp)]
+                alter_key = (num_bodies, l, 
+                            4*l + 2 - n_p, S_p, L_p, W_p,
+                            n_pp, S_pp, L_pp, W_pp, 
+                            4*l + 2 - n, S, L, W)
+                if alter_key in fun.data:
+                    phase = phaser(sp.S(ν - ν_p - (n % 2) + (n_p % 2))/2)
+                    phase = (phase
+                            * sp.sqrt(tp1(S_p)*tp1(L_p)/tp1(S)/tp1(L))
+                            * sp.sqrt(sp.binomial(4*l + 2 - n_p, n_pp)/sp.binomial(n, n_pp))
+                            )
+                    return phase * fun.data[alter_key]
+                else: # Case III
+                    alter_key = (num_bodies, l, 
+                                4*l + 2 - n_pp, S_pp, L_pp, W_pp,
+                                4*l + 2 - n, S, L, W, 
+                                n_p, S_p, L_p, W_p)
+                    if alter_key in fun.data:
+                        phase = phaser(sp.S(ν - ν_pp - (n % 2) + (n_pp % 2))/2)
+                        phase = (phase
+                                * sp.sqrt(tp1(S_pp)*tp1(L_pp)/tp1(S)/tp1(L))
+                                * sp.sqrt(sp.binomial(4*l + 2 - n_pp, n_p) / sp.binomial(n, n_p))
+                                )
+                        return phase * fun.data[alter_key]
+                    else: # Case IV
+                        alter_key = (num_bodies, l, 
+                                    4*l + 2 - n_pp, S_pp, L_pp, W_pp,
+                                    n_p, S_p, L_p, W_p, 
+                                    4*l + 2 - n, S, L, W)
+                        if alter_key in fun.data:
+                            phase = phaser(S + S_p + S_pp + L + L_p + L_pp + sp.S(ν + ν_pp + (n_p%2))/2)
+                            phase = (phase
+                                    * sp.sqrt(tp1(S_pp)*tp1(L_pp)/tp1(S)/tp1(L))
+                                    * sp.sqrt(sp.binomial(4*l + 2 - n_pp, n_p) / sp.binomial(n, n_p))
+                                    )
+                            return phase * fun.data[alter_key]
+                        else: # Case V
+                            print('V')
+                            alter_key = (num_bodies, l, 
+                                4*l + 2 - n_p, S_p, L_p, W_p,
+                                4*l + 2 - n, S, L, W, 
+                                n_pp, S_pp, L_pp, W_pp)
+                            if alter_key in fun.data:
+                                phase = phaser(S, + S_p - S_pp + L + L_p - L_pp, + sp.S(ν + ν_p - (n_pp%2))/2)
+                                phase = (phase
+                                        * sp.sqrt(tp1(S_p)*tp1(L_p)/tp1(S)/tp1(L))
+                                        * sp.sqrt(sp.binomial(4*l + 2 - n_p, n_pp) / sp.binomial(n, n_pp))
+                                        )
+                                return phase * fun.data[alter_key]
+                            else: # Case VI
+                                alter_key = (num_bodies, l, 
+                                            n, S, L, W,
+                                            n_pp, S_pp, L_pp, W_pp, 
+                                            n_p, S_p, L_p, W_p)
+                                if alter_key in fun.data:
+                                    phase = phaser(n_p*n_pp + S_p + S_pp -S + L_p + L_pp -L)
+                                    return phase * fun.data[alter_key]
+                                else:
+                                    if fill_missing:
+                                        return 0
+                                    else:
+                                        raise Exception("Missing key : %s" % str(key))
+        fun.__doc__ = doc_string
+        print("Loading data for %d-body coefficients of fractional parentage..." % (num_bodies))
+        fun.data = pickle.load(open(os.path.join(module_dir, 'data', 'CFP_%s-body-dict.pkl' % num_bodies),'rb'))
+    return fun
+
+
+CFP_1 = CFP_fun(1)

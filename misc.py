@@ -154,6 +154,36 @@ def square_rational_approx(x, N,min=0):
     squared_approx = sign*sp.sqrt(rational_approx(y,N,min))
     return squared_approx
 
+def clarify_rep(string_rep):
+    '''
+    Replaces letter exponents to integers (as strings).
+    '''
+    RADIX_ATLANTE = ''.maketrans(dict(zip('abcdefghijklmnopqrstuvwxyz'.upper(),list(map(str,range(10,36))))))
+    string_rep = string_rep.strip()
+    string_rep = string_rep.translate(RADIX_ATLANTE)
+    return string_rep
+
+def prime_parser(string_rep):
+    '''
+    From string to quasirational.
+    Assumes that expansion in primes goes up to the 12-th prime.
+    Parameters
+    ----------
+    string_rep (str): string representation of a quasirational number
+    '''
+    NUM_PRIMES = 12
+    PRIMES = list(map(lambda x:sp.S(sp.prime(x)), range(1,NUM_PRIMES+1)))
+    string_rep = clarify_rep(string_rep)
+    num_rep = list(map(int, string_rep.split(' ')))
+    a0 = num_rep[0]
+    if len(num_rep) == 1:
+        num_rep = a0
+    else:
+        tail = sp.sqrt(reduce(sp.core.mul.Mul,[p**a for p,a in zip(PRIMES,num_rep[1:]) if a!=0]))
+        num_rep = a0 * tail
+    return num_rep
+
+
 def double_group_matrix_inverse(double_group_chartable, group_label):
     '''
     Sympy's matrix inversion routine fails or stalls for some of
@@ -389,6 +419,37 @@ def roundsigs(num, sig_figs):
     except:
         return np.nan
 
+def labeled_matrix(a_matrix, basis_labels=[], elbow='', show=True):
+    '''
+    Parameters
+    ----------
+    a_matrix (sp.Matrix of list): square matrix of nested list.
+    basis_labels (list[(str)])  : list of string representing labels for the basis kets.
+    display (bool): if True then the resulting LaTeX expression is displayed.
+    elbow (str) : text display in the top left corner, preferable a math expression.
+
+    If basis_labels is empty then a sequence of integers are used for the labels.
+    Returns
+    -------
+    a_matrix (sp.Matrix) : matrix with added row and column to represent the basis labels.
+    '''
+    from IPython.display import display, Math
+    if isinstance(a_matrix, sp.Matrix):
+        a_matrix = a_matrix.tolist()
+    if len(basis_labels) == 0:
+        basis_labels = list(range(len(a_matrix)))
+    num_rows = len(a_matrix)
+    assert len(a_matrix) == len(a_matrix[0]), "Matrix is not square."
+    assert len(basis_labels) == len(a_matrix), "Basis and matrix dimensions mismatch."
+    basis_kets = [sp.Symbol( '|{%s}\\rangle' % bl) for bl in basis_labels]
+    basis_bras = [sp.Symbol('\\langle{%s}|' % bl) for bl in basis_labels]
+    a_matrix = [[bk]+row for bk, row in zip(basis_bras,a_matrix)]
+    extra_row = [sp.Symbol(elbow)]+basis_kets
+    a_matrix = sp.latex(sp.Matrix([extra_row]+a_matrix))
+    a_matrix = a_matrix.replace('c'*num_rows,('c'*num_rows).replace('c','c|',1)).replace('\\\\','\\\\[0.2cm] \\hline \\\\[-0.2cm] ', 1).replace('\\left[','',1).replace('\\right]','')
+    if show:
+        display(Math(a_matrix))
+    return a_matrix
 class UnitCon():
     '''
     Primary  conversion  factors  in  ConversionFactors.xlsx. To
