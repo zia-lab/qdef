@@ -9,7 +9,8 @@ from functools import lru_cache
 import os
 import pickle
 from notation import *
-from qdef import mrange
+from qdef import mrange, lrange
+from qdefcore import Qet
 
 module_dir = os.path.dirname(__file__)
 
@@ -474,6 +475,55 @@ def CFP_fun(num_bodies, string_notation = False):
         print("Loading data for %d-body coefficients of fractional parentage..." % (num_bodies))
         fun.data = pickle.load(open(os.path.join(module_dir, 'data', 'CFP_%s-body-dict.pkl' % num_bodies),'rb'))
     return fun
+
+# first added on Apr-28 2022-04-28 17:52:05
+def SMSLML_to_SLJMJ(LS_basis):
+    '''
+    This  function  receives  a  dictionary  for  a  basis  in |S,MS,L,ML⟩
+    coupling and returns the corresponding basis in |S,L,J,MJ⟩ coupling.
+    This  is  done  by  bringing  in  the vector coupling coefficients for
+    coupling the L and S angular momenta of a given term.
+    When  this  is carried through all of the the SL terms, there might be
+    repetitions  of  a  given  (SLJ)  term,  these are discriminated by an
+    additional index W that distinguishes them.
+    Parameters
+    ----------
+    LS_basis  (dict): keys are 3-tuples (S, L, W), values are dictionaries
+    whose  keys  are  5-tuples (W, S, MS, L, ML) and whose values are qets
+    whose  keys  are 2n-tuples of ms,ml pairs (ms_1, ml_1, ms_2, ml_2, ...
+    ms_n, ml_n).
+    Returns
+    -------
+    LSJ_basis  (dict):  keys  are  3-tuples  (S,L,J,WJ),  whose values are
+    dictionaries  whose  keys  are 5-tuples (S,L,J,MJ,WJ) and whose values
+    are qets whose keys are 2n-tuples ms,ml pairs (ms_1, ml_1, ms_2, ml_2,
+    ... ms_n, ml_n).
+    '''
+    SLJM_terms = {}
+     # this is just to keep in check the SLJ terms that appear and 
+     # distinguish between the different ones that may appear.
+    term_index = {}
+    for term, term_qets in LS_basis.items():
+        S, L, W = term
+        for J in lrange(S,L):
+            SLJM_sub_term = (S,L,J)
+            if SLJM_sub_term not in term_index:
+                term_index[SLJM_sub_term] = 1
+            WJ = term_index[SLJM_sub_term]
+            SLJM_term = (S,L,J,WJ)
+            term_index[SLJM_sub_term] += 1
+            SLJM_terms[SLJM_term] = {}
+            MJs = mrange(J)
+            for MJ in MJs:
+                sum_qet = Qet({})
+                sum_qet_key = (S,L,J,MJ,WJ)
+                for qet_key, qet in term_qets.items():
+                    (W, S, MS, L, ML) = qet_key
+                    SLvc = VC_coeff((S, MS, L, ML), 
+                                        (S, L, J, MJ))
+                    sum_qet += SLvc*qet
+                SLJM_terms[SLJM_term][sum_qet_key] = sum_qet
+    return SLJM_terms
 
 
 CFP_1 = CFP_fun(1)

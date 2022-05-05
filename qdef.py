@@ -11,7 +11,7 @@
 ######################################################################
 
 
-import os, re, pickle
+import os, re, pickle, sys
 import numpy as np
 from math import ceil
 
@@ -28,7 +28,10 @@ from functools import reduce
 
 from collections import OrderedDict
 from itertools import product, combinations
-from tqdm.notebook import tqdm
+if 'ipykernel' in sys.modules:
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
 
 from matplotlib import pyplot as plt
 
@@ -44,7 +47,9 @@ from sympy import Eijk as εijk
 import warnings
 from functools import lru_cache
 
-
+import multiprocessing
+from joblib import Parallel, delayed
+num_cores = multiprocessing.cpu_count()
 
 module_dir = os.path.dirname(__file__)
 
@@ -1068,7 +1073,7 @@ def trees_dict(l, return_matrix = False):
     return trees_dictionaire
 trees_dict.values = {}
 
-def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_standard_basis=False):
+def hamiltonian_CF_CR_SO_TO_Ubasis(num_electrons, group_label, l, sparse=False):
     '''
     Given  a  crystal field on an an ion with a given number of electrons,
     this  function  provides  the  matrix that represents the hamiltionian
@@ -1093,21 +1098,11 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
 
     In  all  cases  the  basis  used  in this matrix representation of the
     Hamiltonian  is  composed  of  slater  determinants of single-electron
-    states.  If  force_standard_basis=True  then the angular part of these
-    states    is    given    by    standard    spherical    harmonic    if
-    force_standard_basis=False  then  the single-electron states are taken
-    as  the  eigenvectors of the single-electron crystal field. In forming
-    these slater determinants spin=1/2 is assumed.
+    states.
 
     The  Coulomb  repulsion appears as Slater integrals of several orders,
     and  the  crystal  field  contribution as a function of the parameters
     that parametrize it according to the corresponding symmetry group.
-
-    If  the crystal field for a single electron is possible to diagonalize
-    symbolically, then the basis used for the hamiltonian is an eigenbasis
-    for  it, if not, then the single-electron basis is simply the full set
-    of spherical harmonics for the given value of l  (multiplied by radial
-    parts that figure as the parameters of the model hamiltonian).
 
     The  two-electron  and  one-electron operators are evaluated using the
     Slater-Condon rules.
@@ -1126,10 +1121,6 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
     l             (int): angular momentum of pressumed ground state
 
     sparse (Bool): if True then the returned matrix is sp.SparseMatrix
-
-    force_standard_basis  (Bool):  whether  to  force  use of the standard
-    spherical  harmonic basis, instead of allowing for the eigenvectors of
-    the crystal field to be used.
 
     Returns
     ------
@@ -1151,136 +1142,73 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
 
     '''
 
-    uID = (num_electrons, group_label, l, sparse, force_standard_basis)
+    uID = (num_electrons, group_label, l, sparse)
 
-    if uID in hamiltonian_CF_CR_SO_TO.remembered:
-        return hamiltonian_CF_CR_SO_TO.remembered[uID]
+    if uID in hamiltonian_CF_CR_SO_TO_Ubasis.remembered:
+        return hamiltonian_CF_CR_SO_TO_Ubasis.remembered[uID]
 
     LS_dict = LSmatrix(l, S_HALF, high_to_low=True, as_dict=True)
 
     group_index = CPGs.all_group_labels.index(group_label) + 1
 
     cf_field = crystal_splits[group_index]
-    crystal_basis = (len(cf_field['eigen_system']) > 0)
     trees_dictionaire = trees_dict(l)
+
+    # Using uncoupled spherical harmonics basis.
+    single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
+                        for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
+    basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
+                        for spin in [S_DOWN, S_UP] for m in range(-l,l+1)])
+    ham = cf_field['matrices'][0]
+
+    def crystal_energy(qnums, coeff):
+        the_dict = {1:0}
+        γ1, γ2 = qnums
+        γ1idx = single_e_basis.index(γ1) % ham.rows
+        γ2idx = single_e_basis.index(γ2) % ham.rows
+        if γ1.spin != γ2.spin:
+            return {}
+        else:
+            the_dict[1] = coeff * ham[γ1idx, γ2idx]
+            if the_dict[1] == 0:
+                return {}
+            else:
+                return the_dict
     
-    if crystal_basis:
-        eigen_sys = cf_field['eigen_system'][0]
-
-    if crystal_basis and not force_standard_basis:
-        print("Using crystal field basis.")
-        basis_change = OrderedDict()
-        eigen_counter = 0
-        basis_energies = {}
-        for eigen_part in eigen_sys:
-            eigen_energy = eigen_part[0]
-            for eigen_vec in eigen_part[2]:
-                for spin in [S_UP, S_DOWN]:
-                    eigen_label = SpinOrbital(sp.Symbol('\\alpha_{%d}' % (eigen_counter)), spin)
-                    spherical_combo = Qet({(l,m,spin): v for m,v in zip(range(l,-l-1,-1),list(eigen_vec.T)) if v!= 0})
-                    normalizer = sp.S(1)/spherical_combo.norm()
-                    basis_change[eigen_label] = normalizer*spherical_combo
-                    basis_energies[eigen_label] = eigen_energy
-                eigen_counter += 1
-        single_e_basis = list(basis_change.keys())
-
-        def crystal_energy(qnums, coeff):
-            the_dict = {1:0}
-            γ1, γ2 = qnums
-            if γ1.spin != γ2.spin:
-                return {}
+    def spin_energy(qnums, coeff):
+        the_dict = {1:0}
+        γ1, γ2 = qnums
+        m1 = list(basis_change[γ1].dict.keys())[0][1]
+        m2 = list(basis_change[γ2].dict.keys())[0][1]
+        s1, s2  = γ1.spin, γ2.spin
+        the_dict[1] = coeff * sp.Symbol('\\zeta_{SO}') * LS_dict[((m1,s1),(m2,s2))]
+        if the_dict[1] == 0:
+            return {}
+        else:
+            return the_dict
+    
+    def trees_op_two_bod(qnums, coeff):
+        l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
+        if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
+            return {}
+        else:
+            if (m1,m2,m1p,m2p) in trees_dictionaire:
+                return {1: coeff * trees_dictionaire[(m1,m2,m1p,m2p)]}
             else:
-                if γ1.orbital == γ2.orbital:
-                    the_dict[1] = coeff * basis_energies[γ1]
-                if the_dict[1] == 0:
-                    return {}
-                else:
-                    return the_dict
-        
-        def spin_energy(qnums, coeff):
-            the_dict = {1:0}
-            l1, m1, s1, l2, m2, s2 = qnums
-            the_dict[1] += coeff * sp.Symbol('\\zeta_{SO}') * LS_dict[((m1,s1), (m2,s2))]
-            if the_dict[1] == 0:
                 return {}
-            else:
-                return the_dict
-
-        def trees_op_two_bod(qnums, coeff):
-            l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
-            if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
-                return {}
-            else:
-                if (m1,m2,m1p,m2p) in trees_dictionaire:
-                    return {1: coeff * trees_dictionaire[(m1,m2,m1p,m2p)]}
-                else:
-                    return {}
-        def tree_op_one_bod(qnums, coeff):
-            the_dict = {1:0}
-            l1, m1, s1, l2, m2, s2 = qnums
-            if m1 == m2 and s1 == s2:
-                the_dict[1] = coeff * l * (l+1)
-            if the_dict[1] == 0:
-                return {}
-            else:
-                return the_dict
-
-    else:
-        # Using uncoupled spherical harmonics basis.
-        single_e_basis = [SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin) 
-                            for spin in [S_DOWN, S_UP] for m in range(-l,l+1)]
-        basis_change = OrderedDict([(SpinOrbital(sp.Symbol('Y_{%d,%d}' % (l,m)), spin), Qet({(l,m,spin):1})) 
-                            for spin in [S_DOWN, S_UP] for m in range(-l,l+1)])
-        ham = cf_field['matrices'][0]
-
-        def crystal_energy(qnums, coeff):
-            the_dict = {1:0}
-            γ1, γ2 = qnums
-            γ1idx = single_e_basis.index(γ1) % ham.rows
-            γ2idx = single_e_basis.index(γ2) % ham.rows
-            if γ1.spin != γ2.spin:
-                return {}
-            else:
-                the_dict[1] = coeff * ham[γ1idx, γ2idx]
-                if the_dict[1] == 0:
-                    return {}
-                else:
-                    return the_dict
-        
-        def spin_energy(qnums, coeff):
-            the_dict = {1:0}
-            γ1, γ2 = qnums
-            m1 = list(basis_change[γ1].dict.keys())[0][1]
-            m2 = list(basis_change[γ2].dict.keys())[0][1]
-            s1, s2  = γ1.spin, γ2.spin
-            the_dict[1] = coeff * sp.Symbol('\\zeta_{SO}') * LS_dict[((m1,s1),(m2,s2))]
-            if the_dict[1] == 0:
-                return {}
-            else:
-                return the_dict
-        
-        def trees_op_two_bod(qnums, coeff):
-            l1, m1, s1, l2, m2, s2, l1p, m1p, s1p, l2p, m2p, s2p = qnums
-            if not(KroneckerDelta(s1,s1p) and KroneckerDelta(s2,s2p)):
-                return {}
-            else:
-                if (m1,m2,m1p,m2p) in trees_dictionaire:
-                    return {1: coeff * trees_dictionaire[(m1,m2,m1p,m2p)]}
-                else:
-                    return {}
-        
-        def tree_op_one_bod(qnums, coeff):
-            the_dict = {1:0}
-            γ1, γ2 = qnums
-            m1 = list(basis_change[γ1].dict.keys())[0][1]
-            m2 = list(basis_change[γ2].dict.keys())[0][1]
-            s1, s2  = γ1.spin, γ2.spin
-            if m1 == m2 and s1 == s2:
-                the_dict[1] = coeff * l * (l+1)
-            if the_dict[1] == 0:
-                return {}
-            else:
-                return the_dict
+    
+    def tree_op_one_bod(qnums, coeff):
+        the_dict = {1:0}
+        γ1, γ2 = qnums
+        m1 = list(basis_change[γ1].dict.keys())[0][1]
+        m2 = list(basis_change[γ2].dict.keys())[0][1]
+        s1, s2  = γ1.spin, γ2.spin
+        if m1 == m2 and s1 == s2:
+            the_dict[1] = coeff * l * (l+1)
+        if the_dict[1] == 0:
+            return {}
+        else:
+            return the_dict
     
     # add spin up and spin down
     single_e_spin_orbitals = single_e_basis
@@ -1304,15 +1232,13 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
             # one electron operators
             single_braket = single_electron_braket(qet0, qet1)
             crystal_field__matrix_element = single_braket.apply(crystal_energy).as_symbol_sum()
-            if (crystal_basis and not force_standard_basis):
-                single_braket = single_braket_basis_change(single_braket, basis_change)
             trees_matrix_element_onebod = sp.Symbol('\\alpha_T')*single_braket.apply(tree_op_one_bod).as_symbol_sum()
             spinorb_energy_matrix_element = single_braket.apply(spin_energy).as_symbol_sum()
             matrix_element = (coulomb_matrix_element 
-                            + trees_matrix_element_twobody
-                            + trees_matrix_element_onebod
-                            + crystal_field__matrix_element 
-                            + spinorb_energy_matrix_element)
+                              + trees_matrix_element_twobody
+                               + trees_matrix_element_onebod
+                                + crystal_field__matrix_element 
+                                 + spinorb_energy_matrix_element)
             if matrix_element != 0:
                 if sparse:
                     hamiltonian[(idx0,idx1)] = (matrix_element)
@@ -1330,9 +1256,9 @@ def hamiltonian_CF_CR_SO_TO(num_electrons, group_label, l, sparse=False, force_s
     else:
         hamiltonian = sp.Matrix(hamiltonian)
 
-    hamiltonian_CF_CR_SO_TO.remembered[uID] = (hamiltonian, basis_change, slater_dets)
+    hamiltonian_CF_CR_SO_TO_Ubasis.remembered[uID] = (hamiltonian, basis_change, slater_dets)
     return hamiltonian, basis_change, slater_dets
-hamiltonian_CF_CR_SO_TO.remembered = {}
+hamiltonian_CF_CR_SO_TO_Ubasis.remembered = {}
 
 ############################## Hamiltonians ###############################
 ###########################################################################
@@ -2008,7 +1934,6 @@ def group_clebsch_gordan_coeffs(group, Γ1, Γ2, rep_rules = True, verbose=False
 ######################### MultiElectron Foundry ###########################
 
 from collections import namedtuple
-from functools import reduce
 Ψ = namedtuple('Ψ',['electrons','terms','γ','S','M']) 
 
 class CrystalElectronsSCoupling():
@@ -3382,12 +3307,84 @@ def mbasis(l):
     '''
     return sp.Matrix([[sp.Symbol('|%d,%d\\rangle' % (l,ml)) for ml in range(-l,l+1)]])
 
-def lmbasis(lmax):
+def elementary_basis(kind: str, l_orbital: int, num_electrons = None, 
+                              flatten = False, reverse_order = False,
+                              as_qets = False) -> list:
     '''
-    Return a dictionary whose keys correspond to (l,m) up till l=lmax
-    and whose values are coordinate vectors corresponding to them.
-    '''
+    (single electron)
+    A single electron basis is simply all the combinations of the possible
+    ml,  and  ms  for the given orbital angular momentum l. This basis has
+    (2*l+1)*2 elements.
 
+    (multi inequiv electron)
+    A  multi  inequivalent  electron basis is composed of all the possible
+    combinations of num_electrons of the single electron basis. Here it is
+    assumed  that  the  inequivalent electrons still have the same orbital
+    angular momentum l. This basis has ((2l+1)*2)^num_electrons elements.
+
+    (multi equiv electron)
+    A   multi-equiv-electron   basis  is  composed  of  all  the  possible
+    combinations  of  num_electrons  of the single electron basis, with no
+    repeated  (ml,  ms)  single  electron  states,  and  with the ordering
+    considered  to  be  irrelevant.  This  basis has sp.binomial(2*(2l+1),
+    num_electrons) elements.
+
+    (multi equiv electron ordered)
+    A   multi-equiv-electron   basis  is  composed  of  all  the  possible
+    combinations  of  num_electrons  of the single electron basis, with no
+    repeated  (ml,  ms)  single electron states. Different from the multi-
+    euquiv-electron  basis the ordering here is considered to be relevant.
+    This  basis  has sp.binomial(2*(2l+1), num_electrons) * num_electrons!
+    elements.
+
+    Parameters
+    -----------
+    kind  (str):  one  of  "single electron", "multi inequiv electron",
+    "multi equiv electron", or "multi equiv electron ordered".
+
+    l_orbital  (int): orbital angular momentum number.
+
+    num_electrons (int): how many electrons are in the mix.
+
+    flatten   (bool):   if  True  the  returned  tuples  for  the  ml,  ms
+    combinations  are  flattened  into  single tuples. That is, instead of
+    returning
+      [((-1, -1/2), (0, 1/2)), ((-1, -1/2), (2, 1/2)), ...] 
+    it instead returns
+      [(-1, -1/2, 0, 1/2)), (-1,-1/2,2,1/2), ...] 
+    
+    reverse_order (bool): if True the the ms goes before the ml.
+
+    Returns
+    -------
+    A list with tuples representing allowed combinations of 
+    ((ml_1, ms_1), (ml_2, ms_2), ... (ml_n, ms_n)) 
+    '''
+    HALF = sp.S(1)/2
+    S_DOWN, S_UP = -HALF, HALF
+    assert isinstance(l_orbital,int) or isinstance(l_orbital, sp.core.numbers.Integer)
+    if kind == "single electron":
+        if reverse_order:
+            return [(ms, ml) for ms in [S_DOWN, S_UP] for ml in range(-l_orbital,l_orbital+1)]
+        else:
+            return [(ml, ms) for ml in range(-l_orbital,l_orbital+1) for ms in [S_DOWN, S_UP]]
+    elif kind == "multi inequiv electron":
+        assert num_electrons != None, "num_electrons missing"
+        single_e_basis = elementary_basis("single electron", l_orbital, None, flatten, reverse_order)
+        return_basis = list(product(*[single_e_basis for _ in range(num_electrons)]))
+    elif kind == "multi equiv electron":
+        assert num_electrons != None, "num_electrons missing"
+        single_e_basis = elementary_basis("single electron", l_orbital, None, flatten, reverse_order)
+        return_basis = list(combinations(single_e_basis, num_electrons))
+    elif kind == "multi equiv electron ordered":
+        assert num_electrons != None, "num_electrons missing"
+        single_e_basis = elementary_basis("single electron", l_orbital, None, flatten, reverse_order)
+        return_basis = list(permutations(single_e_basis, num_electrons))
+    if flatten:
+        return_basis = [sum(vec, tuple()) for vec in return_basis]
+    if as_qets:
+        return_basis = [Qet({qnums:1}) for qnums in return_basis]
+    return return_basis
 
 def threeHarmonicIntegral(l1, m1, l2, m2, l3, m3):
     '''

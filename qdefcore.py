@@ -813,6 +813,27 @@ class Qet():
     #         other = Qet({})
     #     return (self.dict == other.dict)
 
+def braket(lket, rket):
+    '''
+    Given  two  qets,  spanned  in  a  common orthonormal basis,
+    return the braket that corresponds to it.
+    Parameters
+    ----------
+    lket (qdef.Qet): assumed to be a ket, which is conjugated in
+    the function to give the bra.
+    rket (qdef.Qet): assumed to be a ket.
+    Returns
+    -------
+    <lket|rket> (sp.S)
+    '''
+    lket = lket.dict
+    rket = rket.dict
+    brket = sp.S(0)
+    common_keys = set(lket.keys()).intersection(set(rket.keys()))
+    for ckey in common_keys:
+        brket += sp.conjugate(lket[ckey]) * rket[ckey]
+    return brket
+
 symmetry_bases = pickle.load(open(os.path.join(module_dir,'data',
                                             'symmetry_bases_standard.pkl'),'rb'))
 
