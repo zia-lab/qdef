@@ -156,6 +156,7 @@ data/eigen_ions/
 data/eigen_ions_hr/
 data/lanthanide_tables/
 mathematica/tsk_hypercube.h5
+mathematica/tsk_hypercube_int16.h5.gz
 data/bases/LSMLMS_qets_d_6*
 data/bases/LSMLMS_qets_d_7*
 data/bases/LSMLMS_qets_d_8*
