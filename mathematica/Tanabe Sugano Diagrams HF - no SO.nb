@@ -10,40 +10,41 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1029792,      17397]
-NotebookOptionsPosition[   1028237,      17361]
-NotebookOutlinePosition[   1028743,      17379]
-CellTagsIndexPosition[   1028700,      17376]
+NotebookDataLength[   1031769,      17425]
+NotebookOptionsPosition[   1030114,      17388]
+NotebookOutlinePosition[   1030619,      17406]
+CellTagsIndexPosition[   1030576,      17403]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 
 Cell[CellGroupData[{
-Cell["\<\
-Tanabe - Sugano Diagrams
-~Without Spin - Orbit~
----------------------------------------------------\
-\>", "Title",
+Cell[TextData[{
+ "Tanabe - Sugano Diagrams\n~",
+ StyleBox["Without",
+  FontSlant->"Italic"],
+ " Spin-Orbit~\n--------------------------------------"
+}], "Title",
  CellChangeTimes->{{3.853624329343144*^9, 3.853624337166409*^9}, {
-  3.854791318257571*^9, 3.854791319419077*^9}, {3.870201128271244*^9, 
-  3.8702011473529263`*^9}, {3.87027448298166*^9, 3.870274483305341*^9}, {
-  3.87027837102077*^9, 3.870278379248082*^9}},
+   3.854791318257571*^9, 3.854791319419077*^9}, {3.870201128271244*^9, 
+   3.8702011473529263`*^9}, {3.87027448298166*^9, 3.870274483305341*^9}, {
+   3.87027837102077*^9, 3.870278379248082*^9}, {3.870765651888883*^9, 
+   3.870765652827158*^9}, 3.870766045569701*^9},
  TextAlignment->Center,ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
 
 Cell[TextData[{
  "This notebook can be used to explore the approximate multiplet structure of \
-transition metal ions embedded in high-symmetry positions under the influence \
-of the crystal field of a solid host. \nThis approximation is obtained by \
-applying perturbation theory to the degenerate ground state defined by the \
-free-ion Hamiltonian (which excludes the e-e repulsion). The perturbation \
-terms only include the crystal field (parametrized by a single parameter for \
-the symmetries included here), and the e-e Coulomb repulsion. The spin-orbit \
-term is not included, given this, what is shown here is increasingly \
-inaccurate as one goes down from the iron group row.\nGraphs show the energy \
-levels (with respect to the ground level which is always shown as a \
-horizontal line in the bottom) as a function of the strength of the crystal \
-field.\n\n",
+transition metal ions under the influence of the crystal field of a solid \
+host. \nThis approximation is obtained by applying perturbation theory to the \
+degenerate ground state defined by the free-ion Hamiltonian (which excludes \
+the e-e repulsion). The perturbation terms only include the crystal field \
+(parametrized by a single parameter for the symmetries included here), and \
+the e-e Coulomb repulsion. The spin-orbit term is not included, given this, \
+what is shown here is increasingly inaccurate as one goes down from the iron \
+group row.\nGraphs show the energy levels (with respect to the ground level \
+which is always shown as a horizontal line in the bottom) as a function of \
+the strength of the crystal field.\n\n",
  Cell[BoxData[
   GraphicsBox[
    TagBox[RasterBox[CompressedData["
@@ -15641,20 +15642,35 @@ representations are ",
   FontSlant->"Italic"],
  " but the subscripts have been omitted.)"
 }], "Text",
- CellChangeTimes->CompressedData["
-1:eJwdyH1IE3EAh/FzpDSTsDBT2gIh5li2RKIXadgkzIOKOk0ygmIlYeGGyxR1
-KRiUlm5OW4uLnFFpSCy1N08jetGR1cyXLe1Nh6j4cktr0mbF6ve9Px4+8MRp
-dEyOiKIoBQluLaEztB28eujWHR1cdMo+FhLlwX2fIe/VjsEplZUXfg0fhD29
-w8uKiKsNnP02x6unDR8Eh96veQy3RycJRpje+QbcvLqsQLEIU6QVVwaJ4VKp
-Feq/HWuAe49+EXRtFD2C5069fAaXz5396iIeiPk7DjPXd4rdxEZ5cwRcR2fW
-8ERbQdcNOKLJ5SDVMtwJn6wM7YV9/RI3jMudGYXcuHMMdji093xEoz62BQaj
-TS+g4vKWV/B7rOYnZFnWB63laSv8xLA3XsFkanIVrLMwUdCYdVEC09TXpfBh
-uHgDbHdWyeCZbQeVMKfnXxK07xDthOl+lQoGvP4T0NbAnIR0ZFU+lJlL9XBz
-pacUUsrgeZiXf8EEs3fFmyHbVHcTVreJm+Gltcc5KOnWOWC9i30LX9Mx/XDC
-9jwxQFQaKtJhJG3MgIfauo/AWUuqEV5Vxpvh9Onaa0vE/XeL7sPG6k+tsLh+
-sh3aE0O64FToLwcMm90zAg/XbvLAVPmDeai1MD/g7j/lAfjUk7AEF1yVzG+i
-iCrLgv8BggGddA==
-  "],
+ CellChangeTimes->{{3.8547913222961683`*^9, 3.854791549144754*^9}, {
+   3.854808753212641*^9, 3.854808786437275*^9}, {3.854808827466543*^9, 
+   3.854808932726306*^9}, {3.854809079392231*^9, 3.85480912674338*^9}, {
+   3.8554248857963953`*^9, 3.8554248864839973`*^9}, {3.855424936681253*^9, 
+   3.8554249375652122`*^9}, {3.870199710361212*^9, 3.87019971332672*^9}, {
+   3.87020092406607*^9, 3.870201016909795*^9}, {3.870201074995782*^9, 
+   3.8702010788550167`*^9}, {3.87020124806785*^9, 3.870201318043879*^9}, {
+   3.8702056676224403`*^9, 3.870205719877968*^9}, {3.870206029816202*^9, 
+   3.870206053223709*^9}, {3.870254186633924*^9, 3.870254301857986*^9}, {
+   3.870254539293316*^9, 3.870254550739502*^9}, {3.870254664158046*^9, 
+   3.870254760900489*^9}, {3.870254839294083*^9, 3.870254846433926*^9}, {
+   3.8702687394617577`*^9, 3.8702687527952337`*^9}, {3.8702689324715567`*^9, 
+   3.8702689456418657`*^9}, {3.8702693310656652`*^9, 
+   3.8702693408313723`*^9}, {3.870275674203075*^9, 3.870275679430667*^9}, {
+   3.8702757271562777`*^9, 3.870275746580758*^9}, {3.8702758121980658`*^9, 
+   3.870275820757968*^9}, {3.870275872282556*^9, 3.8702758923063593`*^9}, {
+   3.870275954538015*^9, 3.870275991992846*^9}, {3.870276064069541*^9, 
+   3.8702760739364357`*^9}, {3.870276383747799*^9, 3.870276386581863*^9}, {
+   3.870276492283238*^9, 3.8702764998614683`*^9}, {3.870276575016624*^9, 
+   3.870276591943115*^9}, {3.870276732107596*^9, 3.870276745226605*^9}, {
+   3.870276844582837*^9, 3.870276920302923*^9}, {3.870277067002872*^9, 
+   3.870277171492689*^9}, {3.870277204838449*^9, 3.870277248759004*^9}, {
+   3.870278021957018*^9, 3.8702782120776587`*^9}, {3.870278300446419*^9, 
+   3.870278358146647*^9}, {3.8702787700808*^9, 3.870278793224436*^9}, {
+   3.87028088451305*^9, 3.870281059738929*^9}, {3.870281094798416*^9, 
+   3.870281111174252*^9}, {3.8702811760371923`*^9, 3.87028127168822*^9}, {
+   3.8702814102473173`*^9, 3.87028147342387*^9}, {3.8702815974736643`*^9, 
+   3.870281610580741*^9}, {3.870281667999422*^9, 3.870281673402431*^9}, {
+   3.8702823882759933`*^9, 3.870282419937501*^9}, 3.870284685860914*^9},
  TextAlignment->Center,ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
 
 Cell[TextData[{
@@ -16232,7 +16248,7 @@ Cell[BoxData[{
    3.855851391358921*^9}, {3.8558535032886*^9, 3.855853503888781*^9}, {
    3.870282235232119*^9, 3.870282235409326*^9}},
  CellLabel->"In[1]:=",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90"]
-}, Open  ]],
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -17095,7 +17111,7 @@ Zi51uZU688Ft4rq4cIP7vSF3scHcGh7P+8wP9wC3hdvHRS25cxbfC0vuksV8
            Manipulate`Place[8], 
            Manipulate`Place[9], 
            Manipulate`Place[10]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
-    Typeset`size$$ = {1000., {357., 362.}}, Typeset`update$$ = 0, 
+    Typeset`size$$ = {313., {3., 10.}}, Typeset`update$$ = 0, 
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
@@ -17144,9 +17160,9 @@ $CellContext`sign = If[$CellContext`numElectrons > 5, -1, 1]; If[
             Row[{"| ", $CellContext`multiplicities, " | ", 
                Superscript["d", $CellContext`numElectrons], 
                "| C/B \[TildeTilde] " <> ToString[
-                 Part[$CellContext`gammas, $CellContext`idx]], 
-               " | B \[TildeTilde] " <> ToString[$CellContext`B] <> 
-               " " <> $CellContext`energyUnit, " | ", 
+                 Part[$CellContext`gammas, $CellContext`idx]], ((
+                 " | B \[TildeTilde] " <> ToString[$CellContext`B]) <> 
+                " ") <> $CellContext`energyUnit, " | ", 
                
                Superscript[$CellContext`atom$$, 
                 ToString[$CellContext`charge$$] <> "+"]}, BaseStyle -> 
@@ -17231,8 +17247,9 @@ $CellContext`rightMarginLabels =
 $CellContext`leftMarginLabels = 
               Part[$CellContext`legends, $CellContext`labelonLeftMargin]; \
 $CellContext`rightCallouts = 
-              Map[Callout[{
-                 Sign[$CellContext`fieldTypemultiplier] $CellContext`sign Part[
+              Map[Callout[{(
+                   Sign[$CellContext`fieldTypemultiplier] $CellContext`sign) 
+                  Part[
                     Part[#, 1], 1], 
                   Part[
                    Part[#, 1], 2]}, 
@@ -17244,8 +17261,9 @@ $CellContext`rightCallouts =
                    Part[$CellContext`rightMarginValues, \
 $CellContext`labelonRightMargin]], $CellContext`rightMarginLabels}]]; \
 $CellContext`leftCallouts = 
-              Map[Callout[{
-                 Sign[$CellContext`fieldTypemultiplier] $CellContext`sign Part[
+              Map[Callout[{(
+                   Sign[$CellContext`fieldTypemultiplier] $CellContext`sign) 
+                  Part[
                     Part[#, 1], 1], 
                   Part[
                    Part[#, 1], 2]}, 
@@ -17265,8 +17283,9 @@ $CellContext`Dqrange$$}, {-1, $CellContext`Erange$$}}, PlotStyle ->
                 PointSize[Small]]; Null]; $CellContext`tskfig = 
             ListPlot[$CellContext`plotData, ImageSize -> 1000, Joined -> True,
                PlotLabel -> $CellContext`plotTitle, Frame -> True, 
-              FrameLabel -> {{"E/B", "E/" <> $CellContext`extraUnit$$}, {
-                "Dq_" <> $CellContext`symmetry$$ <> "/B", 
+              FrameLabel -> {{
+                "E/B", "E/" <> $CellContext`extraUnit$$}, {(
+                  "Dq_" <> $CellContext`symmetry$$) <> "/B", 
                  "Dq/" <> $CellContext`extraUnit$$}}, FrameStyle -> 
               Directive[15], 
               FrameTicks -> {{Automatic, $CellContext`extraTicks}, {
@@ -17276,17 +17295,16 @@ $CellContext`Dqrange$$}, {-1, $CellContext`Erange$$}}, PlotStyle ->
               Epilog -> Flatten[{
                  Map[{Purple, Dashed, 
                    
-                   Line[{{$CellContext`sign # \
+                   Line[{{($CellContext`sign #) \
 $CellContext`fieldTypemultiplier, 
-                    0}, {$CellContext`sign # \
+                    0}, {($CellContext`sign #) \
 $CellContext`fieldTypemultiplier, $CellContext`Erange$$}}]}& , 
                   Part[
                    
                    Part[$CellContext`cuts, $CellContext`\[CapitalNu]], \
 $CellContext`idx]], 
-                 
-                 Line[{{$CellContext`Dqrange$$, 0}, {$CellContext`Dqrange$$,
-                     $CellContext`Erange$$}}], 
+                 Line[{{$CellContext`Dqrange$$, 
+                    0}, {$CellContext`Dqrange$$, $CellContext`Erange$$}}], 
                  
                  Line[{{-$CellContext`Dqrange$$, 
                     0}, {-$CellContext`Dqrange$$, $CellContext`Erange$$}}], {
@@ -17342,7 +17360,7 @@ $CellContext`tskfig], "Not a valid ion, try a different charge."],
 $CellContext`charge$$, $CellContext`symmetry$$, $CellContext`spin$$, \
 $CellContext`Dqrange$$, $CellContext`Erange$$, $CellContext`showLabels$$, \
 $CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
-     ImageSizeCache->{1044., {470., 476.}},
+     ImageSizeCache->{357., {179., 185.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -17354,12 +17372,21 @@ $CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
  CellChangeTimes->{3.870283737621195*^9, 3.87028382530464*^9},
- CellLabel->"Out[23]=",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"]
+ CellLabel->"Out[23]=",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Keys", "invrl", 
+   "\"The argument \\!\\(\\*RowBox[{\\\"dset\\\"}]\\) is not a valid \
+Association or a list of rules.\"", 2, 461, 44, 19306434331106992117, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.8707657212478743`*^9},
+ CellLabel->"",ExpressionUUID->"dff8751b-7538-4ad7-9524-dea43ba24b17"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1242, 1052},
+WindowSize->{576, 1052},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
 TaggingRules-><|"TryRealOnly" -> False|>,
 FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
@@ -17379,23 +17406,24 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 462, 9, 221, "Title",ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
-Cell[1045, 33, 950978, 15624, 1182, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
-Cell[952026, 15659, 1080, 20, 80, "Text",ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
+Cell[580, 22, 574, 11, 283, "Title",ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
+Cell[1157, 35, 952330, 15638, 1619, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
+Cell[953490, 15675, 1080, 20, 103, "Text",ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
 Cell[CellGroupData[{
-Cell[953131, 15683, 4790, 138, 531, "Input",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
-Cell[957924, 15823, 2329, 47, 235, "Output",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
+Cell[954595, 15699, 4790, 138, 531, "Input",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
+Cell[959388, 15839, 2329, 47, 235, "Output",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
 }, {2}]],
 Cell[CellGroupData[{
-Cell[960287, 15875, 230, 4, 69, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
-Cell[960520, 15881, 13401, 352, 1071, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
+Cell[961751, 15891, 230, 4, 69, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
+Cell[961984, 15897, 13401, 352, 1617, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
  InitializationCell->True]
-}, Open  ]],
+}, Closed]],
 Cell[CellGroupData[{
-Cell[973958, 16238, 485, 7, 69, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
+Cell[975422, 16254, 485, 7, 93, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
 Cell[CellGroupData[{
-Cell[974468, 16249, 37407, 772, 2179, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
-Cell[1011878, 17023, 16319, 333, 1000, "Output",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"]
+Cell[975932, 16265, 37407, 772, 3619, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+Cell[1013342, 17039, 16374, 335, 390, "Output",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"],
+Cell[1029719, 17376, 355, 7, 28, "Message",ExpressionUUID->"dff8751b-7538-4ad7-9524-dea43ba24b17"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
