@@ -1,9 +1,0 @@
-{},alpha,beta,gamma,det,phi,n
-E,0,0,0,1,0,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  0 }], } }]"
-C_4,Pi/2,0,0,1,Pi/2,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , ,  1 }], } }]"
-C_4^3,-Pi/2,0,0,1,Pi/2,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
-C_2,Pi,0,0,1,Pi,"RowBox[{ {, RowBox[{ 0 , , ,  0 , , , RowBox[{ - ,  1 }]}], } }]"
-C_2^x,Pi,Pi,0,1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - ,  1 }], , ,  0 , , ,  0 }], } }]"
-C_2^y,0,Pi,0,1,Pi,"RowBox[{ {, RowBox[{ 0 , , , RowBox[{ - ,  1 }], , ,  0 }], } }]"
-C_2^x+y,-Pi/2,Pi,0,1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 2 ]]}], , , RowBox[{ - , FractionBox[ 1 , SqrtBox[ 2 ]]}], , ,  0 }], } }]"
-C_2^x-y,Pi/2,Pi,0,1,Pi,"RowBox[{ {, RowBox[{RowBox[{ - , FractionBox[ 1 , SqrtBox[ 2 ]]}], , , FractionBox[ 1 , SqrtBox[ 2 ]], , ,  0 }], } }]"

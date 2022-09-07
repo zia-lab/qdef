@@ -58,16 +58,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
 # Flask stuff:
 instance/
 .webassets-cache
@@ -140,24 +130,21 @@ dmypy.json
 **/Icon?
 crystal_secrets.py
 .DS_Store
-Parameter Tables/.DS_Store
 docs/Makefile
 docs/make.bat
-data/mp_2018.pkl
-clean_vscode_empties.py
-Random.ipynb
+qdef-dev.ipynb
 Icon
 images/Icon
 Icon
 images/Icon
+images/.DS_Store
 
 # big data
-data/eigen_ions/
-data/eigen_ions_hr/
-data/lanthanide_tables/
-mathematica/tsk_hypercube.h5
+/qdef/data/eigen_ions/
+/qdef/data/eigen_ions_hr/
+/qdef/data/lanthanide_tables/
 mathematica/tsk_hypercube_int16.h5.gz
-data/bases/LSMLMS_qets_d_6*
-data/bases/LSMLMS_qets_d_7*
-data/bases/LSMLMS_qets_d_8*
-data/bases/LSMLMS_qets_d_9*
+/qdef/data/bases/LSMLMS_qets_d_6*
+/qdef/data/bases/LSMLMS_qets_d_7*
+/qdef/data/bases/LSMLMS_qets_d_8*
+/qdef/data/bases/LSMLMS_qets_d_9*
