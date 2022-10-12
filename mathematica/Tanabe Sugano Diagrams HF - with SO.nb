@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    133648,       2481]
-NotebookOptionsPosition[    132284,       2449]
-NotebookOutlinePosition[    132748,       2466]
-CellTagsIndexPosition[    132705,       2463]
+NotebookDataLength[    133720,       2482]
+NotebookOptionsPosition[    132354,       2450]
+NotebookOutlinePosition[    132819,       2467]
+CellTagsIndexPosition[    132776,       2464]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -2062,7 +2062,7 @@ Cell[BoxData[{
    3.855865201369298*^9, 3.855865202602509*^9}, 3.856006887758965*^9, {
    3.870282783798983*^9, 3.870282795502919*^9}, {3.870282826955098*^9, 
    3.870282829954739*^9}, 3.870282915248925*^9},
- CellLabel->"In[13]:=",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda"]
+ CellLabel->"In[26]:=",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a515-e8df9e52fcda"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -2073,11 +2073,12 @@ Cell["Diagrams", "Section",
 bb373fa77622"],
 
 Cell["\<\
-The line colors here are not meaningful, and are shown merely as a guide to \
-the eye.\
+The line colors in the graphs here are not meaningful, and are shown merely \
+as a guide to the eye.\
 \>", "Text",
- CellChangeTimes->{{3.8702006390760593`*^9, 
-  3.870200661162017*^9}},ExpressionUUID->"b52f0d7a-5380-4467-914c-\
+ CellChangeTimes->{{3.8702006390760593`*^9, 3.870200661162017*^9}, {
+  3.874429486055852*^9, 
+  3.8744294883815117`*^9}},ExpressionUUID->"b52f0d7a-5380-4467-914c-\
 90b97c1de8c7"],
 
 Cell[CellGroupData[{
@@ -2310,9 +2311,9 @@ HCinetzFZzDuwH4O/wOia2Xx
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`atom$$ = "Cr", $CellContext`charge$$ = 
-    3, $CellContext`Dqrange$$ = {0, 3000}, $CellContext`Erange$$ = {-100, 
-    20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d", 
+   DynamicModuleBox[{$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
+    2, $CellContext`Dqrange$$ = {-2720., 3000}, $CellContext`Erange$$ = {-100,
+     20000}, $CellContext`joined$$ = True, $CellContext`shell$$ = "3d", 
     Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
     Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
     1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
@@ -2447,8 +2448,8 @@ $CellContext`joined$$}}, "DefaultOptions" :> {}],
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1150, 1052},
-WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+WindowSize->{576, 1051},
+WindowMargins->{{0, Automatic}, {Automatic, -37}},
 FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
 StyleDefinitions->FrontEnd`FileName[{"Report"}, "StandardReport.nb", 
   CharacterEncoding -> "UTF-8"],
@@ -2467,7 +2468,7 @@ CellTagsIndex->{}
 Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 520, 10, 283, "Title",ExpressionUUID->"504eb2e7-cc06-4b4c-95ce-3e456dec0fcc"],
-Cell[1103, 34, 108294, 1879, 977, "Text",ExpressionUUID->"4e700d06-f206-41a8-9838-f90ae1d5a2e3"],
+Cell[1103, 34, 108294, 1879, 954, "Text",ExpressionUUID->"4e700d06-f206-41a8-9838-f90ae1d5a2e3"],
 Cell[109400, 1915, 1080, 20, 103, "Text",ExpressionUUID->"3e6f3b6b-d967-4ea4-9109-bf75ce1fd2f8"],
 Cell[CellGroupData[{
 Cell[110505, 1939, 158, 3, 69, "Section",ExpressionUUID->"5fc77d0d-317c-49fd-93f0-8b83ab23a7c9"],
@@ -2476,10 +2477,10 @@ Cell[110666, 1944, 4873, 120, 630, "Input",ExpressionUUID->"c1f6ef9e-2c3f-43d9-a
 }, Closed]],
 Cell[CellGroupData[{
 Cell[115576, 2069, 178, 3, 55, "Section",ExpressionUUID->"db03e039-3fbd-4322-b7bc-bb373fa77622"],
-Cell[115757, 2074, 238, 6, 57, "Text",ExpressionUUID->"b52f0d7a-5380-4467-914c-90b97c1de8c7"],
+Cell[115757, 2074, 303, 7, 57, "Text",ExpressionUUID->"b52f0d7a-5380-4467-914c-90b97c1de8c7"],
 Cell[CellGroupData[{
-Cell[116020, 2084, 9178, 223, 757, "Input",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
-Cell[125201, 2309, 7043, 135, 1006, "Output",ExpressionUUID->"ea3f2ce0-11f6-4d47-8a1b-c8aa3bd328e5"]
+Cell[116085, 2085, 9178, 223, 1160, "Input",ExpressionUUID->"6d05feaf-20f3-417c-bfff-8f34f497d062"],
+Cell[125266, 2310, 7048, 135, 1006, "Output",ExpressionUUID->"ea3f2ce0-11f6-4d47-8a1b-c8aa3bd328e5"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]

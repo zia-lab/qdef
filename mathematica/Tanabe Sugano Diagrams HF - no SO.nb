@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1031769,      17425]
-NotebookOptionsPosition[   1030114,      17388]
-NotebookOutlinePosition[   1030619,      17406]
-CellTagsIndexPosition[   1030576,      17403]
+NotebookDataLength[   1030207,      17396]
+NotebookOptionsPosition[   1028647,      17360]
+NotebookOutlinePosition[   1029156,      17378]
+CellTagsIndexPosition[   1029113,      17375]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -15622,8 +15622,7 @@ ion in cubic, octahedral, and tetrahedral arrangements.\n\n",
    RowBox[{
     SubscriptBox["Dq", "cubic"], "=", 
     RowBox[{
-     RowBox[{
-      RowBox[{"-", "2"}], " ", 
+     RowBox[{"2", " ", 
       SubscriptBox["Dq", "tet"]}], "=", 
      RowBox[{
       RowBox[{"-", 
@@ -15670,7 +15669,8 @@ representations are ",
    3.870281111174252*^9}, {3.8702811760371923`*^9, 3.87028127168822*^9}, {
    3.8702814102473173`*^9, 3.87028147342387*^9}, {3.8702815974736643`*^9, 
    3.870281610580741*^9}, {3.870281667999422*^9, 3.870281673402431*^9}, {
-   3.8702823882759933`*^9, 3.870282419937501*^9}, 3.870284685860914*^9},
+   3.8702823882759933`*^9, 3.870282419937501*^9}, 3.870284685860914*^9, {
+   3.874429092252412*^9, 3.874429092258843*^9}},
  TextAlignment->Center,ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
 
 Cell[TextData[{
@@ -16291,14 +16291,14 @@ Cell[BoxData[
            RowBox[{"Association", "[", 
             RowBox[{"{", 
              RowBox[{
-              RowBox[{"\"\<Cub\>\"", "->", "1"}], ",", 
+              RowBox[{"\"\<Cub\>\"", "->", 
+               FractionBox[
+                RowBox[{"-", "8"}], "9"]}], ",", 
               RowBox[{"\"\<Tet\>\"", "->", 
                FractionBox[
-                RowBox[{"-", "1"}], "2"]}], ",", 
-              RowBox[{"\"\<Oct\>\"", "->", 
-               FractionBox[
-                RowBox[{"-", "9"}], "8"]}]}], "}"}], "]"}], "[", "symmetry", 
-           "]"}]}], ";", "\[IndentingNewLine]", 
+                RowBox[{"-", "4"}], "9"]}], ",", 
+              RowBox[{"\"\<Oct\>\"", "->", "1"}]}], "}"}], "]"}], "[", 
+           "symmetry", "]"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{"Dqs", "=", 
           RowBox[{"DqsCub", "*", "fieldTypemultiplier"}]}], ";", 
          "\[IndentingNewLine]", 
@@ -16323,6 +16323,11 @@ Cell[BoxData[
             RowBox[{"numElectrons", ">", "5"}], ",", 
             RowBox[{"10", "-", "numElectrons"}], ",", "numElectrons"}], 
            "]"}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{"(*", 
+          RowBox[{
+           RowBox[{"Sign", " ", "inversion", " ", "for", " ", "hole"}], "-", 
+           RowBox[{"electron", " ", "equivalency"}]}], "*)"}], 
+         "\[IndentingNewLine]", 
          RowBox[{"sign", "=", 
           RowBox[{"If", "[", 
            RowBox[{
@@ -16789,11 +16794,11 @@ Cell[BoxData[
                     RowBox[{
                     RowBox[{"-", "Dqrange"}], ",", 
                     RowBox[{"vLine", "*", 
-                    RowBox[{"8065.544290", "/", "B"}]}]}], "}"}], ",", 
+                    RowBox[{"8065.54429", "/", "B"}]}]}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{"Dqrange", ",", 
                     RowBox[{"vLine", "*", 
-                    RowBox[{"8065.544290", "/", "B"}]}]}], "}"}]}], "}"}], 
+                    RowBox[{"8065.54429", "/", "B"}]}]}], "}"}]}], "}"}], 
                     "]"}]}], "}"}]}], "\[IndentingNewLine]", "}"}], "]"}]}], 
                 ",", "\[IndentingNewLine]", 
                 RowBox[{"InterpolationOrder", "->", "1"}]}], "]"}]}], ";", 
@@ -16846,9 +16851,9 @@ Cell[BoxData[
           RowBox[{"{", 
            RowBox[{
             RowBox[{"{", 
-             RowBox[{"symmetry", ",", "\"\<Cub\>\""}], "}"}], ",", 
+             RowBox[{"symmetry", ",", "\"\<Oct\>\""}], "}"}], ",", 
             RowBox[{"{", 
-             RowBox[{"\"\<Cub\>\"", ",", "\"\<Tet\>\"", ",", "\"\<Oct\>\""}], 
+             RowBox[{"\"\<Oct\>\"", ",", "\"\<Cub\>\"", ",", "\"\<Tet\>\""}], 
              "}"}]}], "}"}], "]"}], ",", 
          RowBox[{"Control", "[", 
           RowBox[{"{", 
@@ -17034,18 +17039,21 @@ Cell[BoxData[
    3.870200734294517*^9, 3.870200742344739*^9}, {3.870200817984371*^9, 
    3.870200846368353*^9}, {3.870281886354961*^9, 3.870281889452211*^9}, {
    3.870283610986367*^9, 3.870283674619706*^9}, {3.8702837316743593`*^9, 
-   3.8702837346178503`*^9}},
- CellLabel->"In[23]:=",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+   3.8702837346178503`*^9}, {3.874429102171775*^9, 3.874429119515641*^9}, {
+   3.874429164042997*^9, 3.874429164445039*^9}, {3.87442929369381*^9, 
+   3.874429300759345*^9}, {3.87442955671634*^9, 3.8744295674381647`*^9}, {
+   3.874429615202326*^9, 3.874429616644311*^9}},
+ CellLabel->"In[39]:=",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`atom$$ = "Cr", $CellContext`charge$$ = 
-    3, $CellContext`Dqrange$$ = 6, $CellContext`Erange$$ = 
+   DynamicModuleBox[{$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
+    2, $CellContext`Dqrange$$ = 2.6, $CellContext`Erange$$ = 
     30, $CellContext`extraUnit$$ = "eV", $CellContext`shell$$ = 
     "3d", $CellContext`showLabels$$ = False, $CellContext`spin$$ = {
     "1", "2", "3", "4", "5", "6"}, $CellContext`symmetry$$ = 
-    "Oct", $CellContext`vLine$$ = 1, Typeset`show$$ = True, 
+    "Tet", $CellContext`vLine$$ = 1, Typeset`show$$ = True, 
     Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
     Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
     "\"untitled\"", Typeset`specs$$ = {{{
@@ -17054,39 +17062,10 @@ Cell[BoxData[
       Dynamic[
        $CellContext`shellToatoms[$CellContext`shell$$]]}, {{
        Hold[$CellContext`charge$$], 4}, {2, 3, 4, 5, 6, 7}}, {{
-       Hold[$CellContext`symmetry$$], "Cub"}, {"Cub", "Tet", "Oct"}}, {{
+       Hold[$CellContext`symmetry$$], "Oct"}, {"Oct", "Cub", "Tet"}}, {{
        Hold[$CellContext`spin$$], {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
       "1", "2", "3", "4", "5", "6"}}, {{
-       Hold[$CellContext`Dqrange$$], 6, "|Dq/B max|"}, 1, CompressedData["
-1:eJw11k1IHHcYx/HV1dV115d939nX2beBgIeCRAiUzkDA0x6kgiB4sA3dlhBo
-IBAI9OChBAIeAoLUXhoohAY8CIFAIDBDQ4XQLUhtDkIPEskWyRKsNo1GkzTO
-79s9+GdmP/vM8/89s+5UPv/60y96AoHAj2d/zl7mvOOv03NaF2e1rs9o3ZnW
-ajZ5f4rzDseTrJYzcfa6ZDlftj68pixn9ex1znJ+a394RS25/YbcVkPuQUNu
-tSH3TUNuAXcRZ+HCuG5dbrMud78ut1KXu1GXm8c5uBouhNurybVr7Lsmt1yT
-u16Tm8N9jDNxQVynKvekKrdWlbtdlbtWlZvFXcAVcAHcbkVuoyJ3ryK3VJG7
-WpGbwU3iDNypyXxMucem3F1T7pYpdwU3jZvApTk+LMs/LDPfstPy51pmnmXm
-WGJ+JeZWkrNKzKnIfIrMpcg8inKhIvkXyL1A3gVyLsh18uSaJ888OebJL09u
-Occvt5Qjpxz55MjFIA9D7orB/g2546ycl5W7mZVrZuUSWbntjNydjPprZeTG
-M+SXJr80+aXJLy0XTZNfivxS5Jciv5RcN0l+SfJLkl+S/JJy7QT5JcgvQX4J
-8ovLrcXJL05+cfKLy23EyC9GfjHyi5HfmNzdMfIbIz/Ww1H2O+r86u9z1PnO
-LzDCvkbYzzD7GJZrR+XmovQboc8I/UXklobkjCH6CHP9MHMblGsOym0PMJ8B
-+gvRX4j+QvTXT3/99NdHf330F6S/IP310l8v/fXSX4/zvd9fD/0FnI98GOC6
-7+0V/3rv7PP+dd7aqn9qf+bXPbFV70TOeCM3cSzXPJJrvZZb/Jd6r6j3D/UO
-qXdAvQPq/U29fT730v5ZNxruhT3uv79nX/av8xfuOW4X9wy3Y6/75//keNv+
-1vdPcb/zftte8M//wvEj29QNiQss8gV3tT5yf5J3j/R5l3qcf+pO63ruH7q+
-+4n6wT3j/C7+uct+cHu4F7gu7qVLPu4Pygt3oM93DvCHLnnLrb5ymQfXeS3X
-PKLeMfXeUO+EeifUO6XeW+q9o957Ph/wLut+8ri/vE3dbx73n3de96Ncp1du
-LijXDnrcz3L3++SsfrnVfrloyOP7IXcYkmsNyG0PyDUHPb5vchNh+gvT3xD9
-DdFfhP4i9Behvyj9RelvmP6G6W+E/kbob5T+RumPdWLM0+/amPeV/j95/L+i
-n5jcTExuKSa3EaO/uNyFOH3G5dbicp24nJmg74TcckKunZALJdlHUu5Gkv0k
-5bpJOSslt5Bifym5rZRcNC03lWa/abmHafadlhvPyLUycncyzCkjl8jKNbNy
-N7PMLSt3nCU/g/wM8jPIzyC/HPnlyC9Hfjnyy5Nfnvzymtda3uP3m/wK5Fcg
-vwLzL3g8D5BfkfyK5FeU6xY9ni/Ir0R+JfIrcZ+UPZ5XyK9MfmXyK6v/tOnp
-98OUmzbJwZS/ZZIH7jFuB3eKMypykxW5mYrc1Qp5VeTu4TZwu7hA1eN5kByr
-crNVuWtVudu4NdwTXAcXrJFzzeN5lbxrctdrcsu4dVwbt4cL1eVqdeZR93ie
-Zi51uZU688Ft4rq4cIP7vSF3scHcGh7P+8wP9wC3hdvHRS25cxbfC0vuksV8
-/18nmY/D8RR5NDk/zb5neH+Wuc/h5r3/ABWkGZg=
-      "]}, {{
+       Hold[$CellContext`Dqrange$$], 6, "|Dq/B max|"}, 1, 100.}, {{
        Hold[$CellContext`Erange$$], 30, "E/B max"}, 1, 100}, {{
        Hold[$CellContext`showLabels$$], False}, {True, False}}, {{
        Hold[$CellContext`vLine$$], 1, "vLine/eV"}, 0, 2, 0.1}, {{
@@ -17111,7 +17090,7 @@ Zi51uZU688Ft4rq4cIP7vSF3scHcGh7P+8wP9wC3hdvHRS25cxbfC0vuksV8
            Manipulate`Place[8], 
            Manipulate`Place[9], 
            Manipulate`Place[10]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
-    Typeset`size$$ = {313., {3., 10.}}, Typeset`update$$ = 0, 
+    Typeset`size$$ = {1100., {357., 362.}}, Typeset`update$$ = 0, 
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
@@ -17121,7 +17100,7 @@ Zi51uZU688Ft4rq4cIP7vSF3scHcGh7P+8wP9wC3hdvHRS25cxbfC0vuksV8
         "3d", $CellContext`showLabels$$ = 
         False, $CellContext`spin$$ = {
          "1", "2", "3", "4", "5", "6"}, $CellContext`symmetry$$ = 
-        "Cub", $CellContext`vLine$$ = 1}, "ControllerVariables" :> {}, 
+        "Oct", $CellContext`vLine$$ = 1}, "ControllerVariables" :> {}, 
       "OtherVariables" :> {
        Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
@@ -17135,9 +17114,8 @@ $CellContext`charge$$}; If[
 $CellContext`numElectrons = $CellContext`cowanA[{$CellContext`atom$$, \
 $CellContext`charge$$}][
            "d^n"]; $CellContext`fieldTypemultiplier = <|{
-            "Cub" -> 1, "Tet" -> (-1)/2, 
-             "Oct" -> (-9)/
-              8}|>[$CellContext`symmetry$$]; $CellContext`Dqs = \
+            "Cub" -> (-8)/9, "Tet" -> (-4)/9, "Oct" -> 
+             1}|>[$CellContext`symmetry$$]; $CellContext`Dqs = \
 $CellContext`DqsCub $CellContext`fieldTypemultiplier; $CellContext`gamma = \
 $CellContext`cowanA[{$CellContext`atom$$, $CellContext`charge$$}][
            "C/B"]; $CellContext`B = Round[
@@ -17303,6 +17281,7 @@ $CellContext`fieldTypemultiplier, $CellContext`Erange$$}}]}& ,
                    
                    Part[$CellContext`cuts, $CellContext`\[CapitalNu]], \
 $CellContext`idx]], 
+                 
                  Line[{{$CellContext`Dqrange$$, 
                     0}, {$CellContext`Dqrange$$, $CellContext`Erange$$}}], 
                  
@@ -17324,12 +17303,12 @@ $CellContext`tskfig], "Not a valid ion, try a different charge."],
           $CellContext`shellToatoms[$CellContext`shell$$]], ControlType -> 
          SetterBar, ControlPlacement -> 2}, {{$CellContext`charge$$, 4}, {2, 
          3, 4, 5, 6, 7}, ControlType -> RadioButton, ControlPlacement -> 
-         3}, {{$CellContext`symmetry$$, "Cub"}, {"Cub", "Tet", "Oct"}, 
+         3}, {{$CellContext`symmetry$$, "Oct"}, {"Oct", "Cub", "Tet"}, 
          ControlPlacement -> 
          4}, {{$CellContext`spin$$, {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
          "1", "2", "3", "4", "5", "6"}, ControlType -> CheckboxBar, 
          ControlPlacement -> 5}, {{$CellContext`Dqrange$$, 6, "|Dq/B max|"}, 
-         1, $CellContext`Dqs, ControlPlacement -> 
+         1, 100., ControlPlacement -> 
          6}, {{$CellContext`Erange$$, 30, "E/B max"}, 1, 100, 
          ControlPlacement -> 7}, {{$CellContext`showLabels$$, False}, {
          True, False}, ControlPlacement -> 
@@ -17360,7 +17339,7 @@ $CellContext`tskfig], "Not a valid ion, try a different charge."],
 $CellContext`charge$$, $CellContext`symmetry$$, $CellContext`spin$$, \
 $CellContext`Dqrange$$, $CellContext`Erange$$, $CellContext`showLabels$$, \
 $CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
-     ImageSizeCache->{357., {179., 185.}},
+     ImageSizeCache->{1144., {530., 536.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -17371,23 +17350,16 @@ $CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
    Deployed->True,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{3.870283737621195*^9, 3.87028382530464*^9},
- CellLabel->"Out[23]=",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"],
-
-Cell[BoxData[
- TemplateBox[{
-  "Keys", "invrl", 
-   "\"The argument \\!\\(\\*RowBox[{\\\"dset\\\"}]\\) is not a valid \
-Association or a list of rules.\"", 2, 461, 44, 19306434331106992117, "Local"},
-  "MessageTemplate"]], "Message", "MSG",
- CellChangeTimes->{3.8707657212478743`*^9},
- CellLabel->"",ExpressionUUID->"dff8751b-7538-4ad7-9524-dea43ba24b17"]
+ CellChangeTimes->{3.870283737621195*^9, 3.87028382530464*^9, 
+  3.874429122305936*^9, 3.8744291648833017`*^9, 3.874429301804678*^9, 
+  3.874429500440381*^9, 3.874429626930971*^9},
+ CellLabel->"Out[39]=",ExpressionUUID->"8cd0537a-c3ac-44bb-a99c-bf0a64ac24eb"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{576, 1052},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowSize->{576, 1051},
+WindowMargins->{{576, Automatic}, {Automatic, -37}},
 TaggingRules-><|"TryRealOnly" -> False|>,
 FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
 StyleDefinitions->FrontEnd`FileName[{"Report"}, "StandardReport.nb", 
@@ -17407,23 +17379,22 @@ CellTagsIndex->{}
 Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 574, 11, 283, "Title",ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
-Cell[1157, 35, 952330, 15638, 1619, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
-Cell[953490, 15675, 1080, 20, 103, "Text",ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
+Cell[1157, 35, 952358, 15638, 1619, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
+Cell[953518, 15675, 1080, 20, 103, "Text",ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
 Cell[CellGroupData[{
-Cell[954595, 15699, 4790, 138, 531, "Input",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
-Cell[959388, 15839, 2329, 47, 235, "Output",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
+Cell[954623, 15699, 4790, 138, 531, "Input",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
+Cell[959416, 15839, 2329, 47, 235, "Output",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
 }, {2}]],
 Cell[CellGroupData[{
-Cell[961751, 15891, 230, 4, 69, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
-Cell[961984, 15897, 13401, 352, 1617, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
+Cell[961779, 15891, 230, 4, 69, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
+Cell[962012, 15897, 13401, 352, 1617, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
  InitializationCell->True]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[975422, 16254, 485, 7, 93, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
+Cell[975450, 16254, 485, 7, 93, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
 Cell[CellGroupData[{
-Cell[975932, 16265, 37407, 772, 3619, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
-Cell[1013342, 17039, 16374, 335, 390, "Output",ExpressionUUID->"28f849ae-2ca7-45a0-8ce3-96e294636ed6"],
-Cell[1029719, 17376, 355, 7, 28, "Message",ExpressionUUID->"dff8751b-7538-4ad7-9524-dea43ba24b17"]
+Cell[975960, 16265, 37865, 780, 3640, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+Cell[1013828, 17047, 14779, 308, 1092, "Output",ExpressionUUID->"8cd0537a-c3ac-44bb-a99c-bf0a64ac24eb"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
