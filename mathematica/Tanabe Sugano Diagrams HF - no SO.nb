@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1030207,      17396]
-NotebookOptionsPosition[   1028647,      17360]
-NotebookOutlinePosition[   1029156,      17378]
-CellTagsIndexPosition[   1029113,      17375]
+NotebookDataLength[    963084,      15903]
+NotebookOptionsPosition[    961799,      15872]
+NotebookOutlinePosition[    962305,      15890]
+CellTagsIndexPosition[    962262,      15887]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -31,7 +31,7 @@ Cell[TextData[{
    3.8702011473529263`*^9}, {3.87027448298166*^9, 3.870274483305341*^9}, {
    3.87027837102077*^9, 3.870278379248082*^9}, {3.870765651888883*^9, 
    3.870765652827158*^9}, 3.870766045569701*^9},
- TextAlignment->Center,ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
+ TextAlignment->Center,ExpressionUUID->"6f7a4f2e-08d0-4bd2-95ad-81ec651e1ba3"],
 
 Cell[TextData[{
  "This notebook can be used to explore the approximate multiplet structure of \
@@ -15529,107 +15529,12 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYyf8PatysfA==
    PlotRange->{{0, 1031.}, {0, 731.}}]], "Input",
   CellChangeTimes->{{3.854739320081086*^9, 3.85473932120315*^9}},
   TextAlignment->Center,ExpressionUUID->
-  "2c93822c-0f08-4985-b722-32919e25837c"],
+  "6c9ebd81-0000-45c2-a3ac-5af123e5f2b0"],
  "\n\nFinding the matrix elements corresponding to the e-e repulsion requires \
 the values for the Racah parameters B and C. The values for these may be \
 obtained by fitting experimental data but here they are taken from the \
 Hartree-Fock approximation implemented by Cowan and recomputed by Brik and \
-Ma.\n\nThe multiplet structure under crystal field with cubic ",
- Cell[BoxData[
-  FormBox[
-   RowBox[{"(", "O", ")"}], TraditionalForm]],ExpressionUUID->
-  "9908203d-6ad7-4fd8-9d24-75b038542d8f"],
- ", tetrahedral ",
- Cell[BoxData[
-  FormBox[
-   RowBox[{"(", 
-    RowBox[{"T", ",", 
-     SubscriptBox["T", "d"], ",", 
-     SubscriptBox["T", "h"]}]}], TraditionalForm]],ExpressionUUID->
-  "a49bc2e7-0577-4d1a-b6f8-49e1f79f19c6"],
- ") , and octahedral ",
- Cell[BoxData[
-  FormBox[
-   RowBox[{"(", 
-    SubscriptBox["O", "h"]}], TraditionalForm]],ExpressionUUID->
-  "16b9d23c-bb42-47fe-817d-90a2e36d8d6d"],
- ") symmetries are simply related, and can all be explored here by setting \
-the adequate toggle. Roughly speaking, the resulting energy levels can be \
-seen as what arise from the influence of charges arranged around the given \
-ion in cubic, octahedral, and tetrahedral arrangements.\n\n",
- Cell[BoxData[
-  GraphicsBox[{{}, {InsetBox[
-      Graphics3DBox[{
-        {RGBColor[1, 0, 0], SphereBox[{-1, -1, -1}, 0.1], 
-         SphereBox[{-1, -1, 1}, 0.1], SphereBox[{-1, 1, -1}, 0.1], 
-         SphereBox[{-1, 1, 1}, 0.1], SphereBox[{1, -1, -1}, 0.1], 
-         SphereBox[{1, -1, 1}, 0.1], SphereBox[{1, 1, -1}, 0.1], 
-         SphereBox[{1, 1, 1}, 0.1]}, 
-        {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-       ImageSize->300,
-       PlotLabel->FormBox["\"Cubic\"", TraditionalForm]], {161.25, -167.53994503011654},
-       ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-      ContentSelectable->True], InsetBox[
-      Graphics3DBox[{
-        {RGBColor[1, 0, 0], SphereBox[{0, 1, 0}, 0.1], 
-         SphereBox[{0, -1, 0}, 0.1], SphereBox[{1, 0, 0}, 0.1], 
-         SphereBox[{-1, 0, 0}, 0.1], SphereBox[{0, 0, 1}, 0.1], 
-         SphereBox[{0, 0, -1}, 0.1]}, 
-        {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-       ImageSize->300,
-       PlotLabel->FormBox["\"Octahedral\"", TraditionalForm],
-       SphericalRegion->True,
-       ViewAngle->0.5176274012586664,
-       ViewPoint->{2.073239404681101, -1.890991933240868, 1.8909859542829817`},
-       ViewVertical->{0.11409381788742798`, 0.059148346569876865`, 
-        0.9917076554196403}], {483.75, -167.53994503011654}, 
-      ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-      ContentSelectable->True], InsetBox[
-      Graphics3DBox[{
-        {RGBColor[1, 0, 0], 
-         SphereBox[
-          NCache[{1, 0, -2^Rational[-1, 2]}, {1, 0, -0.7071067811865475}], 
-          0.1], SphereBox[
-          NCache[{-1, 0, -2^Rational[-1, 2]}, {-1, 0, -0.7071067811865475}], 
-          0.1], SphereBox[
-          NCache[{0, -1, 2^Rational[-1, 2]}, {0, -1, 0.7071067811865475}], 
-          0.1], SphereBox[
-          NCache[{0, 1, 2^Rational[-1, 2]}, {0, 1, 0.7071067811865475}], 
-          0.1]}, 
-        {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-       ImageSize->300,
-       PlotLabel->FormBox["\"Tetrahedral\"", TraditionalForm],
-       SphericalRegion->True,
-       ViewAngle->0.4753024096237335,
-       ViewPoint->{-1.388409639100356, -1.9748575139858853`, \
--2.371129788414524},
-       ViewVertical->{-0.28256742563834003`, -0.9463623909754172, 
-        0.15669676102400074`}], {806.25, -167.53994503011654}, 
-      ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-      ContentSelectable->True]}, {}},
-   ImageSize->{
-     UpTo[600], Automatic},
-   PlotRange->{{0, 967.5}, {-335.0798900602331, 0}},
-   PlotRangePadding->{6, 5}]], "Output",
-  CellChangeTimes->{{3.870277337932963*^9, 3.8702773966250134`*^9}, {
-    3.870277458140469*^9, 3.8702775939066477`*^9}, {3.8702776525631*^9, 
-    3.870277712505601*^9}, 3.870277840148223*^9, {3.870277873943116*^9, 
-    3.870277917328556*^9}},ExpressionUUID->
-  "9ee35821-befb-48ad-b8db-4b39b421034a"],
- "\n\n",
- Cell[BoxData[
-  FormBox[
-   RowBox[{
-    SubscriptBox["Dq", "cubic"], "=", 
-    RowBox[{
-     RowBox[{"2", " ", 
-      SubscriptBox["Dq", "tet"]}], "=", 
-     RowBox[{
-      RowBox[{"-", 
-       FractionBox["8", "9"]}], 
-      SubscriptBox["Dq", "oct"]}]}]}], TraditionalForm]],ExpressionUUID->
-  "3d5b4a0e-5be3-4bd9-8e4a-3693be927187"],
- "\n\nSince the Hamiltonian is invariant with respect to the corresponding \
+Ma.\n\nSince the Hamiltonian is invariant with respect to the corresponding \
 symmetry group, the labels for their irreducible representations may be used \
 to label the resulting states. For each curve in the graphs these labels may \
 be seen by hovering with the mouse over them. In addition to the label for an \
@@ -15670,8 +15575,9 @@ representations are ",
    3.8702814102473173`*^9, 3.87028147342387*^9}, {3.8702815974736643`*^9, 
    3.870281610580741*^9}, {3.870281667999422*^9, 3.870281673402431*^9}, {
    3.8702823882759933`*^9, 3.870282419937501*^9}, 3.870284685860914*^9, {
-   3.874429092252412*^9, 3.874429092258843*^9}},
- TextAlignment->Center,ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
+   3.874429092252412*^9, 3.874429092258843*^9}, {3.874763808194475*^9, 
+   3.8747638093959303`*^9}},
+ TextAlignment->Center,ExpressionUUID->"95610230-edab-4da4-9d75-2b4b59081dc1"],
 
 Cell[TextData[{
  StyleBox["References:",
@@ -15693,1129 +15599,53 @@ From Free State to Crystal Field.\n* ",
    3.8702011136217403`*^9}, {3.8702055489618683`*^9, 3.870205553826902*^9}, 
    3.870205586010902*^9, {3.870205623621579*^9, 3.870205626593341*^9}, {
    3.870254411554324*^9, 3.870254429325932*^9}},
- TextAlignment->Center,ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[{
- RowBox[{
-  RowBox[{"cube", "=", 
-   RowBox[{"Flatten", "[", 
-    RowBox[{
-     RowBox[{"Table", "[", 
-      RowBox[{
-       RowBox[{"{", 
-        RowBox[{"i", ",", "j", ",", "k"}], "}"}], ",", 
-       RowBox[{"{", 
-        RowBox[{"i", ",", 
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", "1"}], ",", "1"}], "}"}]}], "}"}], ",", 
-       RowBox[{"{", 
-        RowBox[{"j", ",", 
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", "1"}], ",", "1"}], "}"}]}], "}"}], ",", 
-       RowBox[{"{", 
-        RowBox[{"k", ",", 
-         RowBox[{"{", 
-          RowBox[{
-           RowBox[{"-", "1"}], ",", "1"}], "}"}]}], "}"}]}], "]"}], ",", 
-     "2"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"octahedron", "=", 
-   RowBox[{"{", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"0", ",", "1", ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", 
-       RowBox[{"-", "1"}], ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"1", ",", "0", ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"-", "1"}], ",", "0", ",", "0"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", "0", ",", 
-       RowBox[{"-", "1"}]}], "}"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"tetrahedron", "=", 
-   RowBox[{"{", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"1", ",", "0", ",", 
-       RowBox[{"-", 
-        FractionBox["1", 
-         SqrtBox["2"]]}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"-", "1"}], ",", "0", ",", 
-       RowBox[{"-", 
-        FractionBox["1", 
-         SqrtBox["2"]]}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", 
-       RowBox[{"-", "1"}], ",", 
-       FractionBox["1", 
-        SqrtBox["2"]]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", "1", ",", 
-       FractionBox["1", 
-        SqrtBox["2"]]}], "}"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{"GraphicsRow", "[", 
-  RowBox[{"{", "\[IndentingNewLine]", 
-   RowBox[{
-    RowBox[{"Graphics3D", "[", 
-     RowBox[{
-      RowBox[{"{", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{"Red", ",", 
-          RowBox[{
-           RowBox[{
-            RowBox[{"Sphere", "[", 
-             RowBox[{"#", ",", "0.1"}], "]"}], "&"}], "/@", "cube"}]}], "}"}],
-         ",", "\[IndentingNewLine]", 
-        RowBox[{"{", 
-         RowBox[{"Blue", ",", 
-          RowBox[{"Sphere", "[", 
-           RowBox[{
-            RowBox[{"{", 
-             RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",", "0.1"}], "]"}]}], 
-         "}"}]}], "\[IndentingNewLine]", "}"}], ",", 
-      RowBox[{"ImageSize", "->", "300"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"PlotLabel", "->", "\"\<Cubic\>\""}]}], "\[IndentingNewLine]", 
-     "]"}], ",", "\[IndentingNewLine]", 
-    RowBox[{"Graphics3D", "[", 
-     RowBox[{
-      RowBox[{"{", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{"Red", ",", 
-          RowBox[{
-           RowBox[{
-            RowBox[{"Sphere", "[", 
-             RowBox[{"#", ",", "0.1"}], "]"}], "&"}], "/@", "octahedron"}]}], 
-         "}"}], ",", "\[IndentingNewLine]", 
-        RowBox[{"{", 
-         RowBox[{"Blue", ",", 
-          RowBox[{"Sphere", "[", 
-           RowBox[{
-            RowBox[{"{", 
-             RowBox[{"0", ",", "0", ",", "0"}], "}"}], ",", "0.1"}], "]"}]}], 
-         "}"}]}], "\[IndentingNewLine]", "}"}], ",", 
-      RowBox[{"ImageSize", "->", "300"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"PlotLabel", "->", "\"\<Octahedral\>\""}]}], 
-     "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
-    RowBox[{"Graphics3D", "[", 
-     RowBox[{
-      RowBox[{"{", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{"Red", ",", 
-          RowBox[{
-           RowBox[{
-            RowBox[{"Sphere", "[", 
-             RowBox[{"#", ",", "0.1"}], "]"}], "&"}], "/@", "tetrahedron"}]}],
-          "}"}], ",", "\[IndentingNewLine]", 
-        RowBox[{"{", 
-         RowBox[{"Blue", ",", 
-          RowBox[{"Sphere", "[", 
-           RowBox[{
-            RowBox[{"Mean", "[", "tetrahedron", "]"}], ",", "0.1"}], "]"}]}], 
-         "}"}]}], "\[IndentingNewLine]", "}"}], ",", 
-      RowBox[{"ImageSize", "->", "300"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"PlotLabel", "->", "\"\<Tetrahedral\>\""}]}], 
-     "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]", "}"}], 
-  "]"}]}], "Input",
- CellChangeTimes->{{3.870277311023275*^9, 3.870277593556913*^9}, {
-  3.870277633217702*^9, 3.8702777122541428`*^9}, {3.8702778392046957`*^9, 
-  3.870277917053875*^9}},
- CellLabel->
-  "In[205]:=",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
-
-Cell[BoxData[
- GraphicsBox[{{}, {InsetBox[
-     Graphics3DBox[{
-       {RGBColor[1, 0, 0], SphereBox[{-1, -1, -1}, 0.1], 
-        SphereBox[{-1, -1, 1}, 0.1], SphereBox[{-1, 1, -1}, 0.1], 
-        SphereBox[{-1, 1, 1}, 0.1], SphereBox[{1, -1, -1}, 0.1], 
-        SphereBox[{1, -1, 1}, 0.1], SphereBox[{1, 1, -1}, 0.1], 
-        SphereBox[{1, 1, 1}, 0.1]}, 
-       {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-      ImageSize->300,
-      PlotLabel->FormBox["\"Cubic\"", TraditionalForm]], {161.25, -167.53994503011654},
-      ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-     ContentSelectable->True], InsetBox[
-     Graphics3DBox[{
-       {RGBColor[1, 0, 0], SphereBox[{0, 1, 0}, 0.1], 
-        SphereBox[{0, -1, 0}, 0.1], SphereBox[{1, 0, 0}, 0.1], 
-        SphereBox[{-1, 0, 0}, 0.1], SphereBox[{0, 0, 1}, 0.1], 
-        SphereBox[{0, 0, -1}, 0.1]}, 
-       {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-      ImageSize->300,
-      PlotLabel->FormBox["\"Octahedral\"", TraditionalForm]], {483.75, -167.53994503011654},
-      ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-     ContentSelectable->True], InsetBox[
-     Graphics3DBox[{
-       {RGBColor[1, 0, 0], 
-        SphereBox[
-         NCache[{1, 0, -2^Rational[-1, 2]}, {1, 0, -0.7071067811865475}], 
-         0.1], SphereBox[
-         NCache[{-1, 0, -2^Rational[-1, 2]}, {-1, 0, -0.7071067811865475}], 
-         0.1], SphereBox[
-         NCache[{0, -1, 2^Rational[-1, 2]}, {0, -1, 0.7071067811865475}], 
-         0.1], SphereBox[
-         NCache[{0, 1, 2^Rational[-1, 2]}, {0, 1, 0.7071067811865475}], 0.1]}, 
-       {RGBColor[0, 0, 1], SphereBox[{0, 0, 0}, 0.1]}},
-      ImageSize->300,
-      PlotLabel->FormBox["\"Tetrahedral\"", TraditionalForm]], {806.25, -167.53994503011654},
-      ImageScaled[{0.5, 0.5}], {300, 319.1237048192696},
-     ContentSelectable->True]}, {}},
-  ImageSize->{
-    UpTo[600], Automatic},
-  PlotRange->{{0, 967.5}, {-335.0798900602331, 0}},
-  PlotRangePadding->{6, 5}]], "Output",
- CellChangeTimes->{{3.870277337932963*^9, 3.8702773966250134`*^9}, {
-   3.870277458140469*^9, 3.8702775939066477`*^9}, {3.8702776525631*^9, 
-   3.870277712505601*^9}, 3.870277840148223*^9, {3.870277873943116*^9, 
-   3.870277917328556*^9}, 3.870281680333489*^9},
- CellLabel->
-  "Out[208]=",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
-}, {2}]],
+ TextAlignment->Center,ExpressionUUID->"73963e34-576f-4b7e-9318-1e46e06c4c19"],
 
 Cell[CellGroupData[{
 
 Cell["Initialization", "Section",
  CellChangeTimes->{{3.853624345035507*^9, 3.853624352606913*^9}, {
    3.85480901849992*^9, 3.85480902782253*^9}, 
-   3.870281701274008*^9},ExpressionUUID->"d503de9a-4d46-4c70-a2ab-\
-54c17fe8aa69"],
+   3.870281701274008*^9},ExpressionUUID->"c6e3b30c-90c4-424d-919f-\
+7e07eaf178c2"],
 
 Cell[BoxData[{
  RowBox[{
-  RowBox[{"SetDirectory", "[", 
-   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], 
+  RowBox[{"AppendTo", "[", 
+   RowBox[{"$Path", ",", 
+    RowBox[{"NotebookDirectory", "[", "]"}]}], "]"}], 
   ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"LeftSuperscriptRightSubscript", "[", 
-    RowBox[{"a_", ",", "x_", ",", "b_"}], "]"}], ":=", 
-   RowBox[{"Row", "[", 
-    RowBox[{"{", 
-     RowBox[{
-      RowBox[{"Superscript", "[", 
-       RowBox[{"\"\<\[InvisibleSpace]\>\"", ",", "a"}], "]"}], ",", 
-      RowBox[{"Subscript", "[", 
-       RowBox[{"x", ",", "b"}], "]"}]}], "}"}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"LeftSuperscript", "[", 
-    RowBox[{"a_", ",", "x_"}], "]"}], ":=", 
-   RowBox[{"Row", "[", 
-    RowBox[{"{", 
-     RowBox[{
-      RowBox[{"Superscript", "[", 
-       RowBox[{"\"\<\[InvisibleSpace]\>\"", ",", "a"}], "]"}], ",", "x"}], 
-     "}"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"ParseTermSymbol", "[", "termString_", "]"}], ":=", 
-  RowBox[{"(", "\[IndentingNewLine]", 
-   RowBox[{
-    RowBox[{"bits", "=", 
-     RowBox[{"StringSplit", "[", 
-      RowBox[{"termString", ",", "\"\<,\>\""}], "]"}]}], ";", 
-    "\[IndentingNewLine]", 
-    RowBox[{"If", "[", 
-     RowBox[{
-      RowBox[{"StringContainsQ", "[", 
-       RowBox[{
-        RowBox[{"bits", "[", 
-         RowBox[{"[", "2", "]"}], "]"}], ",", "\"\<E\>\""}], " ", "]"}], ",", 
-      "\[IndentingNewLine]", 
-      RowBox[{"Return", "[", 
-       RowBox[{"LeftSuperscript", "[", 
-        RowBox[{
-         RowBox[{"bits", "[", 
-          RowBox[{"[", "1", "]"}], "]"}], ",", 
-         RowBox[{"bits", "[", 
-          RowBox[{"[", "2", "]"}], "]"}]}], "]"}], "]"}], ",", 
-      "\[IndentingNewLine]", 
-      RowBox[{"(", 
-       RowBox[{
-        RowBox[{"chunks", "=", 
-         RowBox[{"StringSplit", "[", 
-          RowBox[{
-           RowBox[{"bits", "[", 
-            RowBox[{"[", "2", "]"}], "]"}], ",", "\"\<_\>\""}], "]"}]}], ";", 
-        "\[IndentingNewLine]", 
-        RowBox[{"Return", "[", 
-         RowBox[{"LeftSuperscriptRightSubscript", "[", 
-          RowBox[{
-           RowBox[{"bits", "[", 
-            RowBox[{"[", "1", "]"}], "]"}], ",", 
-           RowBox[{"chunks", "[", 
-            RowBox[{"[", "1", "]"}], "]"}], ",", 
-           RowBox[{"chunks", "[", 
-            RowBox[{"[", "2", "]"}], "]"}]}], "]"}], "]"}]}], ")"}]}], 
-     "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]", ")"}]}], "\n", 
- RowBox[{
-  RowBox[{"fname", "=", "\"\<./tsk_diag.h5\>\""}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"dset", "=", 
-   RowBox[{"Table", "[", "\[IndentingNewLine]", 
-    RowBox[{
-     RowBox[{"nume", "->", 
-      RowBox[{"(", 
-       RowBox[{"<|", 
-        RowBox[{
-         RowBox[{"\"\<tskData\>\"", " ", "->", " ", 
-          RowBox[{"Import", "[", 
-           RowBox[{"fname", ",", 
-            RowBox[{"ToString", "[", "nume", "]"}]}], "]"}]}], ",", 
-         "\[IndentingNewLine]", 
-         RowBox[{"\"\<terms\>\"", "->", 
-          RowBox[{"(", 
-           RowBox[{
-            RowBox[{
-             RowBox[{"StringSplit", "[", 
-              RowBox[{"#", ",", "\"\<,\>\""}], "]"}], "&"}], "/@", 
-            RowBox[{"Import", "[", 
-             RowBox[{"fname", ",", 
-              RowBox[{
-               RowBox[{"ToString", "[", "nume", "]"}], "<>", 
-               "\"\<-labels\>\""}]}], "]"}]}], ")"}]}], ",", 
-         "\[IndentingNewLine]", 
-         RowBox[{"\"\<tskLabels\>\"", " ", "->", 
-          RowBox[{"ParseTermSymbol", "/@", " ", 
-           RowBox[{"Import", "[", 
-            RowBox[{"fname", ",", 
-             RowBox[{
-              RowBox[{"ToString", "[", "nume", "]"}], "<>", 
-              "\"\<-labels\>\""}]}], "]"}]}]}], ",", "\[IndentingNewLine]", 
-         RowBox[{"\"\<Dqs\>\"", "->", " ", 
-          RowBox[{"Import", "[", 
-           RowBox[{"fname", ",", "\"\<Dqs\>\""}], "]"}]}], ",", 
-         "\[IndentingNewLine]", 
-         RowBox[{"\"\<\[Gamma]s\>\"", "->", "  ", 
-          RowBox[{"Import", "[", 
-           RowBox[{"fname", ",", "\"\<gammas\>\""}], "]"}]}]}], "|>"}], 
-       ")"}]}], ",", 
-     RowBox[{"{", 
-      RowBox[{"nume", ",", "1", ",", "5"}], "}"}]}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"dset", "=", 
-   RowBox[{"Association", "[", "dset", "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"DqsCub", "=", 
-   RowBox[{
-    RowBox[{"dset", "[", 
-     RowBox[{"[", "2", "]"}], "]"}], "[", "\"\<Dqs\>\"", "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"gammas", "=", 
-   RowBox[{
-    RowBox[{"dset", "[", 
-     RowBox[{"[", "2", "]"}], "]"}], "[", "\"\<\[Gamma]s\>\"", "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"cuts", "=", 
-   RowBox[{"Table", "[", 
-    RowBox[{
-     RowBox[{"numElectrons", "->", 
-      RowBox[{"Table", "[", 
-       RowBox[{
-        RowBox[{"(", "\[IndentingNewLine]", 
-         RowBox[{
-          RowBox[{"pdqsp", "=", 
-           RowBox[{"DqsCub", "[", 
-            RowBox[{"[", 
-             RowBox[{"Flatten", "[", 
-              RowBox[{"1", "+", 
-               RowBox[{"Position", "[", 
-                RowBox[{
-                 RowBox[{"Differences", "[", 
-                  RowBox[{
-                   RowBox[{
-                    RowBox[{
-                    RowBox[{"Ordering", "[", "#", "]"}], "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "&"}], "/@", 
-                   RowBox[{"Transpose", "[", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"dset", "[", 
-                    RowBox[{"[", "numElectrons", "]"}], "]"}], "[", 
-                    "\"\<tskData\>\"", "]"}], "[", 
-                    RowBox[{"[", "idx", "]"}], "]"}], "]"}]}], "]"}], ",", 
-                 RowBox[{"_", "?", 
-                  RowBox[{"(", 
-                   RowBox[{
-                    RowBox[{"#", "!=", "0"}], "&"}], ")"}]}]}], "]"}]}], 
-              "]"}], "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
-          RowBox[{"pdqsm", "=", 
-           RowBox[{"DqsCub", "[", 
-            RowBox[{"[", 
-             RowBox[{"Flatten", "[", 
-              RowBox[{"0", "+", 
-               RowBox[{"Position", "[", 
-                RowBox[{
-                 RowBox[{"Differences", "[", 
-                  RowBox[{
-                   RowBox[{
-                    RowBox[{
-                    RowBox[{"Ordering", "[", "#", "]"}], "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "&"}], "/@", 
-                   RowBox[{"Transpose", "[", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"dset", "[", 
-                    RowBox[{"[", "numElectrons", "]"}], "]"}], "[", 
-                    "\"\<tskData\>\"", "]"}], "[", 
-                    RowBox[{"[", "idx", "]"}], "]"}], "]"}]}], "]"}], ",", 
-                 RowBox[{"_", "?", 
-                  RowBox[{"(", 
-                   RowBox[{
-                    RowBox[{"#", "!=", "0"}], "&"}], ")"}]}]}], "]"}]}], 
-              "]"}], "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
-          RowBox[{"pdqs", "=", 
-           RowBox[{
-            RowBox[{"(", 
-             RowBox[{"pdqsp", "+", "pdqsm"}], ")"}], "/", "2"}]}], ";", 
-          "\[IndentingNewLine]", 
-          RowBox[{"pdqs", "=", 
-           RowBox[{"Select", "[", 
-            RowBox[{"pdqs", ",", 
-             RowBox[{
-              RowBox[{
-               RowBox[{"Abs", "[", "#", "]"}], ">", "0.2"}], "&"}]}], 
-            "]"}]}]}], ")"}], ",", 
-        RowBox[{"{", 
-         RowBox[{"idx", ",", "1", ",", 
-          RowBox[{"Length", "[", "gammas", "]"}], ",", "1"}], "}"}]}], 
-       "]"}]}], ",", 
-     RowBox[{"{", 
-      RowBox[{"numElectrons", ",", "1", ",", "5"}], "}"}]}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"cuts", "=", 
-   RowBox[{"Association", "[", "cuts", "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"gammaFun", "[", "gamma_", "]"}], ":=", 
-   RowBox[{
-    RowBox[{"Ordering", "[", 
-     RowBox[{"Abs", "[", 
-      RowBox[{"gammas", "-", "gamma"}], "]"}], "]"}], "[", 
-    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"multiPs", "=", 
-   RowBox[{"<|", 
-    RowBox[{
-     RowBox[{"1", "->", 
-      RowBox[{"{", "\"\<2\>\"", "}"}]}], ",", 
-     RowBox[{"2", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<1\>\"", ",", "\"\<3\>\""}], "}"}]}], ",", 
-     RowBox[{"3", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<2\>\"", ",", "\"\<4\>\""}], "}"}]}], ",", 
-     RowBox[{"4", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<1\>\"", ",", "\"\<3\>\"", ",", "\"\<5\>\""}], "}"}]}], 
-     ",", "\[IndentingNewLine]", 
-     RowBox[{"5", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<2\>\"", ",", "\"\<4\>\"", ",", "\"\<6\>\""}], "}"}]}], 
-     ",", "\[IndentingNewLine]", 
-     RowBox[{"6", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<1\>\"", ",", "\"\<3\>\"", ",", "\"\<5\>\""}], "}"}]}], 
-     ",", "\[IndentingNewLine]", 
-     RowBox[{"7", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<2\>\"", ",", "\"\<4\>\""}], "}"}]}], ",", 
-     "\[IndentingNewLine]", 
-     RowBox[{"8", "->", 
-      RowBox[{"{", 
-       RowBox[{"\"\<1\>\"", ",", "\"\<3\>\""}], "}"}]}], ",", 
-     "\[IndentingNewLine]", 
-     RowBox[{"9", "->", 
-      RowBox[{"{", "\"\<2\>\"", "}"}]}]}], "|>"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"cowandata", "=", 
-   RowBox[{
-    RowBox[{"Import", "[", "\"\<./brik_and_ma_from_cowan.xlsx\>\"", "]"}], 
-    "[", 
-    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"headers", "=", 
-   RowBox[{"cowandata", "[", 
-    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"cowandata", "=", 
-   RowBox[{"cowandata", "[", 
-    RowBox[{"[", 
-     RowBox[{"2", ";;"}], "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"cowanA", "=", 
-   RowBox[{"Association", "[", 
-    RowBox[{
-     RowBox[{
-      RowBox[{
-       RowBox[{"{", 
-        RowBox[{
-         RowBox[{"#", "[", 
-          RowBox[{"[", "1", "]"}], "]"}], ",", 
-         RowBox[{"Round", "[", 
-          RowBox[{"#", "[", 
-           RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "->", 
-       RowBox[{"Association", "[", 
-        RowBox[{"{", 
-         RowBox[{
-          RowBox[{"\"\<d^n\>\"", "->", 
-           RowBox[{"Round", "[", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "4", "]"}], "]"}], "]"}]}], ",", 
-          "\[IndentingNewLine]", 
-          RowBox[{"\"\<B\>\"", "->", 
-           RowBox[{"Round", "[", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "6", "]"}], "]"}], "]"}]}], ",", 
-          "\[IndentingNewLine]", 
-          RowBox[{"\"\<C\>\"", "->", 
-           RowBox[{"#", "[", 
-            RowBox[{"[", "7", "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
-          RowBox[{"\"\<\[Zeta]\>\"", "->", 
-           RowBox[{"#", "[", 
-            RowBox[{"[", "11", "]"}], "]"}]}], ",", "\[IndentingNewLine]", 
-          RowBox[{"\"\<C/B\>\"", "->", 
-           RowBox[{"Round", "[", 
-            RowBox[{
-             RowBox[{
-              RowBox[{"#", "[", 
-               RowBox[{"[", "7", "]"}], "]"}], "/", 
-              RowBox[{"#", "[", 
-               RowBox[{"[", "6", "]"}], "]"}]}], ",", "0.1"}], "]"}]}]}], 
-         "\[IndentingNewLine]", "}"}], "]"}]}], "&"}], "/@", "cowandata"}], 
-    "]"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"shellToatoms", "=", 
-   RowBox[{"<|", 
-    RowBox[{
-     RowBox[{"\"\<3d\>\"", "->", 
-      RowBox[{"StringSplit", "[", 
-       RowBox[{"\"\<Sc Ti V Cr Mn Fe Co Ni Cu Zn\>\"", ",", "\"\< \>\""}], 
-       "]"}]}], ",", "\[IndentingNewLine]", 
-     RowBox[{"\"\<4d\>\"", "->", 
-      RowBox[{"StringSplit", "[", 
-       RowBox[{"\"\<Y Zr Nb Mo Tc Ru Rh Pd Ag Cd\>\"", ",", "\"\< \>\""}], 
-       "]"}]}], ",", "\[IndentingNewLine]", 
-     RowBox[{"\"\<5d\>\"", "->", 
-      RowBox[{"StringSplit", "[", 
-       RowBox[{"\"\<Lu Hf Ta W Re Os Ir Pt Au Hg\>\"", ",", "\"\< \>\""}], 
-       "]"}]}]}], "|>"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"energyStart", "=", "1000"}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"energyDiv", "=", "100"}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-  "energyUnit", "=", "\"\<\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)\>\""}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"evtocm", "=", "8065.544290"}], ";"}]}], "Input",
- InitializationCell->True,
- CellChangeTimes->{{3.853612349849597*^9, 3.853612398190946*^9}, {
-   3.853612452450842*^9, 3.853612509994155*^9}, {3.853612549691975*^9, 
-   3.853612558250197*^9}, 3.853624371115553*^9, {3.853624831614098*^9, 
-   3.853624835938859*^9}, {3.853624904876564*^9, 3.8536249297109137`*^9}, {
-   3.853625211007592*^9, 3.853625241589122*^9}, {3.8536252755144033`*^9, 
-   3.853625283898271*^9}, {3.8537720561327887`*^9, 3.853772057722247*^9}, {
-   3.853870432995945*^9, 3.853870433739007*^9}, {3.854125557118911*^9, 
-   3.854125557532769*^9}, {3.854730825862854*^9, 3.854730835741102*^9}, {
-   3.854739231224828*^9, 3.8547392335608664`*^9}, {3.854739813979814*^9, 
-   3.8547398142943993`*^9}, {3.854791285764823*^9, 3.8547912943841763`*^9}, {
-   3.855136036782008*^9, 3.8551360386911373`*^9}, {3.855851389061496*^9, 
-   3.855851391358921*^9}, {3.8558535032886*^9, 3.855853503888781*^9}, {
-   3.870282235232119*^9, 3.870282235409326*^9}},
- CellLabel->"In[1]:=",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90"]
-}, Closed]],
+ RowBox[{"Get", "[", "\"\<TS_diag.m\>\"", "]"}]}], "Input",
+ CellLabel->"In[1]:=",ExpressionUUID->"d4635de4-fea0-41a5-a925-ec375d81fa38"]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell["Diagrams (Cubic, Octahedral & Tetrahedral Fields)", "Section",
+Cell["Diagrams", "Section",
  CellChangeTimes->{{3.853624383880707*^9, 3.853624387867272*^9}, {
   3.8538701565454884`*^9, 3.853870158319331*^9}, {3.853870249477654*^9, 
   3.8538702511778507`*^9}, {3.854118393778452*^9, 3.854118394449041*^9}, {
   3.854120774486019*^9, 3.854120783800186*^9}, {3.854809032108176*^9, 
-  3.85480903303544*^9}, {3.854809160573432*^9, 
-  3.854809164807341*^9}},ExpressionUUID->"50b4c23b-beb3-4f64-ae31-\
-ec4280b63428"],
+  3.85480903303544*^9}, {3.854809160573432*^9, 3.854809164807341*^9}, {
+  3.87476383430748*^9, 
+  3.874763834497493*^9}},ExpressionUUID->"c03ee64d-c4c7-4caf-a5e4-\
+09a9d90c155b"],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
  RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
   RowBox[{
-   RowBox[{"(", "\[IndentingNewLine]", 
+   RowBox[{"TSKDiagramNoSO", "[", 
     RowBox[{
-     RowBox[{"key", "=", 
-      RowBox[{"{", 
-       RowBox[{"atom", ",", "charge"}], "}"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"MemberQ", "[", 
-         RowBox[{
-          RowBox[{"Keys", "[", "cowanA", "]"}], ",", "key"}], "]"}], ")"}], 
-       ",", 
-       RowBox[{"(", "\[IndentingNewLine]", 
-        RowBox[{
-         RowBox[{"numElectrons", "=", 
-          RowBox[{
-           RowBox[{"cowanA", "[", 
-            RowBox[{"{", 
-             RowBox[{"atom", ",", "charge"}], "}"}], "]"}], "[", 
-           "\"\<d^n\>\"", "]"}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"fieldTypemultiplier", "=", 
-          RowBox[{
-           RowBox[{"Association", "[", 
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"\"\<Cub\>\"", "->", 
-               FractionBox[
-                RowBox[{"-", "8"}], "9"]}], ",", 
-              RowBox[{"\"\<Tet\>\"", "->", 
-               FractionBox[
-                RowBox[{"-", "4"}], "9"]}], ",", 
-              RowBox[{"\"\<Oct\>\"", "->", "1"}]}], "}"}], "]"}], "[", 
-           "symmetry", "]"}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"Dqs", "=", 
-          RowBox[{"DqsCub", "*", "fieldTypemultiplier"}]}], ";", 
-         "\[IndentingNewLine]", 
-         RowBox[{"gamma", "=", 
-          RowBox[{
-           RowBox[{"cowanA", "[", 
-            RowBox[{"{", 
-             RowBox[{"atom", ",", "charge"}], "}"}], "]"}], "[", 
-           "\"\<C/B\>\"", "]"}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"B", "=", 
-          RowBox[{"Round", "[", 
-           RowBox[{
-            RowBox[{
-             RowBox[{"cowanA", "[", "key", "]"}], "[", "\"\<B\>\"", "]"}], 
-            ",", "1"}], "]"}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"idx", "=", 
-          RowBox[{"gammaFun", "[", "gamma", "]"}]}], ";", 
-         "\[IndentingNewLine]", 
-         RowBox[{"\[CapitalNu]", "=", 
-          RowBox[{"If", "[", 
-           RowBox[{
-            RowBox[{"numElectrons", ">", "5"}], ",", 
-            RowBox[{"10", "-", "numElectrons"}], ",", "numElectrons"}], 
-           "]"}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"(*", 
-          RowBox[{
-           RowBox[{"Sign", " ", "inversion", " ", "for", " ", "hole"}], "-", 
-           RowBox[{"electron", " ", "equivalency"}]}], "*)"}], 
-         "\[IndentingNewLine]", 
-         RowBox[{"sign", "=", 
-          RowBox[{"If", "[", 
-           RowBox[{
-            RowBox[{"numElectrons", ">", "5"}], ",", 
-            RowBox[{"-", "1"}], ",", "1"}], "]"}]}], ";", 
-         "\[IndentingNewLine]", 
-         RowBox[{"If", "[", 
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{
-             RowBox[{"MemberQ", "[", 
-              RowBox[{
-               RowBox[{"Keys", "[", "dset", "]"}], ",", "\[CapitalNu]"}], 
-              "]"}], "&&", 
-             RowBox[{"NumericQ", "[", "B", "]"}]}], ")"}], ",", 
-           RowBox[{"(", "\[IndentingNewLine]", 
-            RowBox[{
-             RowBox[{"multiplicities", "=", 
-              RowBox[{"StringJoin", "[", 
-               RowBox[{"Riffle", "[", 
-                RowBox[{
-                 RowBox[{"DeleteDuplicates", "[", 
-                  RowBox[{"First", "/@", 
-                   RowBox[{
-                    RowBox[{"dset", "[", "\[CapitalNu]", "]"}], "[", 
-                    "\"\<terms\>\"", "]"}]}], "]"}], ",", "\"\<,\>\""}], 
-                "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"plotTitle", "=", 
-              RowBox[{"Row", "[", 
-               RowBox[{
-                RowBox[{"{", 
-                 RowBox[{
-                 "\"\<| \>\"", ",", "multiplicities", ",", "\"\< | \>\"", ",", 
-                  RowBox[{"Superscript", "[", 
-                   RowBox[{"\"\<d\>\"", ",", "numElectrons"}], "]"}], ",", 
-                  RowBox[{"\"\<| C/B \[TildeTilde] \>\"", "<>", 
-                   RowBox[{"ToString", "[", 
-                    RowBox[{"gammas", "[", 
-                    RowBox[{"[", "idx", "]"}], "]"}], "]"}]}], ",", 
-                  RowBox[{"\"\< | B \[TildeTilde] \>\"", "<>", 
-                   RowBox[{"ToString", "[", "B", "]"}], "<>", "\"\< \>\"", "<>",
-                    "energyUnit"}], ",", "\"\< | \>\"", ",", 
-                  RowBox[{"Superscript", "[", 
-                   RowBox[{"atom", ",", 
-                    RowBox[{
-                    RowBox[{"ToString", "[", "charge", "]"}], "<>", 
-                    "\"\<+\>\""}]}], "]"}]}], "}"}], ",", 
-                RowBox[{"BaseStyle", "->", "\"\<Title\>\""}]}], "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"plotTitle", "=", 
-              RowBox[{"Framed", "[", "plotTitle", "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"legends", "=", 
-              RowBox[{
-               RowBox[{"dset", "[", "\[CapitalNu]", "]"}], "[", 
-               "\"\<tskLabels\>\"", "]"}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"mask", "=", 
-              RowBox[{
-               RowBox[{
-                RowBox[{"(", 
-                 RowBox[{"MemberQ", "[", 
-                  RowBox[{"spin", ",", 
-                   RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}]}], "]"}], ")"}], "&"}], "/@", 
-               RowBox[{
-                RowBox[{"dset", "[", "\[CapitalNu]", "]"}], "[", 
-                "\"\<terms\>\"", "]"}]}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"legends", "=", 
-              RowBox[{"Pick", "[", 
-               RowBox[{"legends", ",", "mask"}], "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"maskedData", "=", 
-              RowBox[{"Pick", "[", 
-               RowBox[{
-                RowBox[{
-                 RowBox[{
-                  RowBox[{"dset", "[", "\[CapitalNu]", "]"}], "[", 
-                  "\"\<tskData\>\"", "]"}], "[", 
-                 RowBox[{"[", "idx", "]"}], "]"}], ",", "mask"}], "]"}]}], 
-             ";", "\[IndentingNewLine]", 
-             RowBox[{"Dqindices", "=", 
-              RowBox[{"First", "/@", 
-               RowBox[{"Select", "[", 
-                RowBox[{
-                 RowBox[{"Transpose", "[", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"Range", "[", 
-                    RowBox[{"Length", "[", "Dqs", "]"}], "]"}], ",", "Dqs"}], 
-                   "}"}], "]"}], ",", 
-                 RowBox[{
-                  RowBox[{
-                   RowBox[{"Abs", "[", 
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "2", "]"}], "]"}], "]"}], "<=", "Dqrange"}], 
-                  "&"}]}], "]"}]}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"rightMarginValues", "=", 
-              RowBox[{
-               RowBox[{
-                RowBox[{"#", "[", 
-                 RowBox[{"[", 
-                  RowBox[{"Dqindices", "[", 
-                   RowBox[{"[", 
-                    RowBox[{"-", "1"}], "]"}], "]"}], "]"}], "]"}], "&"}], "/@",
-                "maskedData"}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"leftMarginValues", "=", 
-              RowBox[{
-               RowBox[{
-                RowBox[{"#", "[", 
-                 RowBox[{"[", 
-                  RowBox[{"Dqindices", "[", 
-                   RowBox[{"[", "1", "]"}], "]"}], "]"}], "]"}], "&"}], "/@", 
-               "maskedData"}]}], ";", "\[IndentingNewLine]", 
-             "\[IndentingNewLine]", 
-             RowBox[{"maskedData", "=", 
-              RowBox[{"(", 
-               RowBox[{
-                RowBox[{
-                 RowBox[{"#", "[", 
-                  RowBox[{"[", "Dqindices", "]"}], "]"}], "&"}], "/@", 
-                "maskedData"}], ")"}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"signedDqs", "=", 
-              RowBox[{"sign", "*", "Dqs"}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"signedDqs", "=", 
-              RowBox[{"signedDqs", "[", 
-               RowBox[{"[", "Dqindices", "]"}], "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"plotData", "=", 
-              RowBox[{
-               RowBox[{
-                RowBox[{"Tooltip", "[", 
-                 RowBox[{
-                  RowBox[{"#", "[", 
-                   RowBox[{"[", "1", "]"}], "]"}], ",", 
-                  RowBox[{"#", "[", 
-                   RowBox[{"[", "2", "]"}], "]"}]}], "]"}], "&"}], "/@", 
-               RowBox[{"Transpose", "[", 
-                RowBox[{"{", 
-                 RowBox[{
-                  RowBox[{"(", 
-                   RowBox[{
-                    RowBox[{
-                    RowBox[{"Transpose", "[", 
-                    RowBox[{"{", 
-                    RowBox[{"signedDqs", ",", "#"}], "}"}], "]"}], "&"}], "/@",
-                     "maskedData"}], ")"}], ",", "legends"}], "}"}], 
-                "]"}]}]}], ";", "\[IndentingNewLine]", 
-             RowBox[{"If", "[", 
-              RowBox[{
-               RowBox[{
-               "extraUnit", "==", 
-                "\"\<\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)\>\""}], ",", 
-               RowBox[{"(", "\[IndentingNewLine]", 
-                RowBox[{"(*", 
-                 RowBox[{"right", " ", "frame", " ", "labels"}], "*)"}], 
-                "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"extraTicks", "=", 
-                  RowBox[{"Table", "[", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"ee", "/", "B"}], ",", "ee"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"ee", ",", "0", ",", 
-                    RowBox[{"B", "*", "Erange"}], ",", 
-                    RowBox[{"Round", "[", 
-                    RowBox[{
-                    RowBox[{"B", "*", 
-                    RowBox[{"Erange", "/", "10"}]}], ",", 
-                    SuperscriptBox["10", 
-                    RowBox[{
-                    RowBox[{"Floor", "[", 
-                    RowBox[{"Log10", "[", 
-                    RowBox[{"B", "*", "Erange"}], "]"}], "]"}], "-", "2"}]]}],
-                     "]"}]}], "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
-                 RowBox[{"(*", 
-                  RowBox[{"top", " ", "frame", " ", "labels"}], "*)"}], 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"moTicks", "=", 
-                  RowBox[{"Table", "[", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"ee", "/", "B"}], ",", "ee"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"ee", ",", "0", ",", 
-                    RowBox[{"B", "*", "Dqrange"}], ",", 
-                    RowBox[{"Round", "[", 
-                    RowBox[{
-                    RowBox[{"B", "*", 
-                    RowBox[{"Dqrange", "/", "10"}]}], ",", 
-                    SuperscriptBox["10", 
-                    RowBox[{
-                    RowBox[{"Floor", "[", 
-                    RowBox[{"Log10", "[", 
-                    RowBox[{"B", "*", "Dqrange"}], "]"}], "]"}], "-", 
-                    "2"}]]}], "]"}]}], "}"}]}], "]"}]}], ";"}], ")"}], ",", 
-               "\[IndentingNewLine]", 
-               RowBox[{"(", "\[IndentingNewLine]", 
-                RowBox[{"(*", 
-                 RowBox[{"right", " ", "frame", " ", "labels"}], "*)"}], 
-                "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"extraTicks", "=", 
-                  RowBox[{"Table", "[", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"ee", "/", "B"}], "*", "evtocm"}], ",", "ee"}], 
-                    "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"ee", ",", "0", ",", 
-                    RowBox[{"B", "*", 
-                    RowBox[{"Erange", "/", "evtocm"}]}], ",", "0.5"}], 
-                    "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
-                 RowBox[{"(*", 
-                  RowBox[{"top", " ", "frame", " ", "labels"}], "*)"}], 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"moTicks", "=", 
-                  RowBox[{"Table", "[", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"ee", "/", "B"}], "*", "evtocm"}], ",", "ee"}], 
-                    "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"ee", ",", "0", ",", 
-                    RowBox[{"B", "*", 
-                    RowBox[{"Dqrange", "/", "evtocm"}]}], ",", "0.1"}], 
-                    "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", ")"}]}], 
-              "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-             RowBox[{"moTicks", "=", 
-              RowBox[{"Join", "[", 
-               RowBox[{
-                RowBox[{
-                 RowBox[{
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"-", 
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}]}], ",", 
-                    RowBox[{"-", 
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "2", "]"}], "]"}]}]}], "}"}], "&"}], "/@", 
-                 "moTicks"}], ",", "moTicks"}], "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"If", "[", 
-              RowBox[{"showLabels", ",", 
-               RowBox[{"(", "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"labelonRightMargin", "=", 
-                  RowBox[{"Flatten", "[", 
-                   RowBox[{"Position", "[", 
-                    RowBox[{"rightMarginValues", ",", 
-                    RowBox[{"x_", "/;", 
-                    RowBox[{
-                    RowBox[{"Abs", "[", "x", "]"}], "<=", "Erange"}]}]}], 
-                    "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
-                 RowBox[{"labelonLeftMargin", "=", 
-                  RowBox[{"Flatten", "[", 
-                   RowBox[{"Position", "[", 
-                    RowBox[{"leftMarginValues", ",", 
-                    RowBox[{"x_", "/;", 
-                    RowBox[{
-                    RowBox[{"Abs", "[", "x", "]"}], "<=", "Erange"}]}]}], 
-                    "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
-                 RowBox[{"rightMarginLabels", "=", 
-                  RowBox[{"legends", "[", 
-                   RowBox[{"[", "labelonRightMargin", "]"}], "]"}]}], ";", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"leftMarginLabels", "=", 
-                  RowBox[{"legends", "[", 
-                   RowBox[{"[", "labelonLeftMargin", "]"}], "]"}]}], ";", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"rightCallouts", "=", 
-                  RowBox[{
-                   RowBox[{
-                    RowBox[{"Callout", "[", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"Sign", "[", "fieldTypemultiplier", "]"}], "*", 
-                    "sign", "*", 
-                    RowBox[{
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "[", 
-                    RowBox[{"[", "1", "]"}], "]"}]}], ",", 
-                    RowBox[{
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "[", 
-                    RowBox[{"[", "2", "]"}], "]"}]}], "}"}], ",", 
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "2", "]"}], "]"}], ",", "Right", ",", 
-                    RowBox[{"Appearance", "\[Rule]", "\"\<Frame\>\""}], ",", 
-                    RowBox[{"LabelVisibility", "->", "All"}]}], "]"}], "&"}], 
-                   "/@", 
-                   RowBox[{"Transpose", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{"Dqrange", ",", "#"}], "}"}], "&"}], "/@", 
-                    RowBox[{"rightMarginValues", "[", 
-                    RowBox[{"[", "labelonRightMargin", "]"}], "]"}]}], ",", 
-                    "rightMarginLabels"}], "}"}], "]"}]}]}], ";", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"leftCallouts", "=", 
-                  RowBox[{
-                   RowBox[{
-                    RowBox[{"Callout", "[", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"Sign", "[", "fieldTypemultiplier", "]"}], "*", 
-                    "sign", "*", 
-                    RowBox[{
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "[", 
-                    RowBox[{"[", "1", "]"}], "]"}]}], ",", 
-                    RowBox[{
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "1", "]"}], "]"}], "[", 
-                    RowBox[{"[", "2", "]"}], "]"}]}], "}"}], ",", 
-                    RowBox[{"#", "[", 
-                    RowBox[{"[", "2", "]"}], "]"}], ",", "Left", ",", 
-                    RowBox[{"Appearance", "\[Rule]", "\"\<Frame\>\""}], ",", 
-                    RowBox[{"LabelVisibility", "->", "All"}]}], "]"}], "&"}], 
-                   "/@", 
-                   RowBox[{"Transpose", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "Dqrange"}], ",", "#"}], "}"}], "&"}], "/@", 
-                    
-                    RowBox[{"leftMarginValues", "[", 
-                    RowBox[{"[", "labelonLeftMargin", "]"}], "]"}]}], ",", 
-                    "leftMarginLabels"}], "}"}], "]"}]}]}], ";", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"callouts", " ", "=", " ", 
-                  RowBox[{"Join", "[", 
-                   RowBox[{"rightCallouts", ",", "leftCallouts"}], "]"}]}], 
-                 ";", "\[IndentingNewLine]", 
-                 RowBox[{"calloutPlot", "=", 
-                  RowBox[{"ListPlot", "[", 
-                   RowBox[{"callouts", ",", 
-                    RowBox[{"PlotRange", "->", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "Dqrange"}], ",", "Dqrange"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "1"}], ",", "Erange"}], "}"}]}], "}"}]}], 
-                    ",", 
-                    RowBox[{"PlotStyle", "\[Rule]", 
-                    RowBox[{"PointSize", "[", "Small", "]"}]}]}], "]"}]}], 
-                 ";"}], "\[IndentingNewLine]", ")"}]}], "]"}], ";", 
-             "\[IndentingNewLine]", "\[IndentingNewLine]", 
-             RowBox[{"tskfig", "=", 
-              RowBox[{"ListPlot", "[", 
-               RowBox[{"plotData", ",", "\[IndentingNewLine]", 
-                RowBox[{"ImageSize", "->", "1000"}], ",", 
-                "\[IndentingNewLine]", 
-                RowBox[{"Joined", "->", "True"}], ",", "\[IndentingNewLine]", 
-                
-                RowBox[{"PlotLabel", "->", "plotTitle"}], ",", 
-                "\[IndentingNewLine]", 
-                RowBox[{"Frame", "->", "True"}], ",", "\[IndentingNewLine]", 
-                RowBox[{"FrameLabel", "->", 
-                 RowBox[{"{", 
-                  RowBox[{
-                   RowBox[{"{", 
-                    RowBox[{"\"\<E/B\>\"", ",", 
-                    RowBox[{"\"\<E/\>\"", "<>", "extraUnit"}]}], "}"}], ",", 
-                   "\[IndentingNewLine]", 
-                   RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{
-                    "\"\<Dq_\>\"", "<>", "symmetry", "<>", "\"\</B\>\""}], 
-                    ",", "\[IndentingNewLine]", 
-                    RowBox[{"\"\<Dq/\>\"", "<>", "extraUnit"}]}], "}"}]}], 
-                  "}"}]}], ",", "\[IndentingNewLine]", 
-                RowBox[{"FrameStyle", "->", 
-                 RowBox[{"Directive", "[", "15", "]"}]}], ",", 
-                "\[IndentingNewLine]", 
-                RowBox[{"FrameTicks", "->", 
-                 RowBox[{"{", 
-                  RowBox[{
-                   RowBox[{"{", 
-                    RowBox[{"Automatic", ",", "extraTicks"}], "}"}], ",", 
-                   RowBox[{"{", 
-                    RowBox[{"Automatic", ",", "moTicks"}], "}"}]}], "}"}]}], 
-                ",", "\[IndentingNewLine]", 
-                RowBox[{"PlotRange", "->", 
-                 RowBox[{"{", 
-                  RowBox[{
-                   RowBox[{"{", 
-                    RowBox[{"0", ",", 
-                    RowBox[{"Dqrange", "*", "1.1"}]}], "}"}], ",", 
-                   RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "1"}], ",", "Erange"}], "}"}]}], "}"}]}], 
-                ",", "\[IndentingNewLine]", 
-                RowBox[{"Epilog", "->", 
-                 RowBox[{"Flatten", "[", 
-                  RowBox[{"{", "\[IndentingNewLine]", 
-                   RowBox[{
-                    RowBox[{
-                    RowBox[{
-                    RowBox[{"(", 
-                    RowBox[{"{", 
-                    RowBox[{"Purple", ",", "Dashed", ",", 
-                    RowBox[{"Line", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"sign", "*", "#", "*", "fieldTypemultiplier"}], 
-                    ",", "0"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"sign", "*", "#", "*", "fieldTypemultiplier"}], 
-                    ",", "Erange"}], "}"}]}], "}"}], "]"}]}], "}"}], ")"}], 
-                    "&"}], "/@", 
-                    RowBox[{
-                    RowBox[{"cuts", "[", 
-                    RowBox[{"[", "\[CapitalNu]", "]"}], "]"}], "[", 
-                    RowBox[{"[", "idx", "]"}], "]"}]}], ",", 
-                    "\[IndentingNewLine]", 
-                    RowBox[{"Line", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{"Dqrange", ",", "0"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"Dqrange", ",", "Erange"}], "}"}]}], "}"}], "]"}],
-                     ",", "\[IndentingNewLine]", 
-                    RowBox[{"Line", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "Dqrange"}], ",", "0"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "Dqrange"}], ",", "Erange"}], "}"}]}], "}"}],
-                     "]"}], ",", "\[IndentingNewLine]", 
-                    RowBox[{"{", 
-                    RowBox[{"Thick", ",", "Orange", ",", "Dashed", ",", 
-                    RowBox[{"Line", "[", 
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{
-                    RowBox[{"-", "Dqrange"}], ",", 
-                    RowBox[{"vLine", "*", 
-                    RowBox[{"8065.54429", "/", "B"}]}]}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"Dqrange", ",", 
-                    RowBox[{"vLine", "*", 
-                    RowBox[{"8065.54429", "/", "B"}]}]}], "}"}]}], "}"}], 
-                    "]"}]}], "}"}]}], "\[IndentingNewLine]", "}"}], "]"}]}], 
-                ",", "\[IndentingNewLine]", 
-                RowBox[{"InterpolationOrder", "->", "1"}]}], "]"}]}], ";", 
-             "\[IndentingNewLine]", 
-             RowBox[{"If", "[", 
-              RowBox[{"showLabels", ",", 
-               RowBox[{"Show", "[", 
-                RowBox[{"tskfig", ",", "calloutPlot"}], "]"}], ",", 
-               "\[IndentingNewLine]", "tskfig"}], "]"}]}], ")"}], ",", 
-           "\"\<Not a valid ion, try a different charge.\>\""}], "]"}]}], 
-        ")"}], ",", "\[IndentingNewLine]", "\"\<Missing\>\""}], "]"}]}], 
-    ")"}], ",", "\[IndentingNewLine]", 
+    "shell", ",", "atom", ",", "charge", ",", "spin", ",", "Dqrange", ",", 
+     "Erange", ",", "showLabels", ",", "vLine", ",", "extraUnit"}], "]"}], 
+   ",", "\[IndentingNewLine]", 
    RowBox[{"Row", "[", "\[IndentingNewLine]", 
     RowBox[{"{", "\[IndentingNewLine]", 
      RowBox[{
       RowBox[{"Column", "[", 
-       RowBox[{"{", 
+       RowBox[{"{", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{"Control", "[", 
           RowBox[{"{", 
@@ -16845,31 +15675,22 @@ Cell[BoxData[
         "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
       RowBox[{"Spacer", "[", "20", "]"}], ",", "\[IndentingNewLine]", 
       RowBox[{"Column", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         RowBox[{"Control", "[", 
-          RowBox[{"{", 
-           RowBox[{
-            RowBox[{"{", 
-             RowBox[{"symmetry", ",", "\"\<Oct\>\""}], "}"}], ",", 
-            RowBox[{"{", 
-             RowBox[{"\"\<Oct\>\"", ",", "\"\<Cub\>\"", ",", "\"\<Tet\>\""}], 
-             "}"}]}], "}"}], "]"}], ",", 
-         RowBox[{"Control", "[", 
-          RowBox[{"{", 
-           RowBox[{
-            RowBox[{"{", 
-             RowBox[{"spin", ",", 
-              RowBox[{"{", 
-               RowBox[{
-               "\"\<1\>\"", ",", "\"\<2\>\"", ",", "\"\<3\>\"", ",", 
-                "\"\<4\>\"", ",", "\"\<5\>\"", ",", "\"\<6\>\""}], "}"}], 
-              ",", "\"\<2S+1\>\""}], "}"}], ",", 
-            RowBox[{"{", 
-             RowBox[{
-             "\"\<1\>\"", ",", "\"\<2\>\"", ",", "\"\<3\>\"", ",", 
-              "\"\<4\>\"", ",", "\"\<5\>\"", ",", "\"\<6\>\""}], "}"}], ",", 
-            RowBox[{"ControlType", "->", "CheckboxBar"}]}], "}"}], "]"}]}], 
+       RowBox[{"{", "\[IndentingNewLine]", 
+        RowBox[{"Control", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"spin", ",", 
+             RowBox[{"{", 
+              RowBox[{
+              "\"\<1\>\"", ",", "\"\<2\>\"", ",", "\"\<3\>\"", ",", 
+               "\"\<4\>\"", ",", "\"\<5\>\"", ",", "\"\<6\>\""}], "}"}], ",", 
+             "\"\<2S+1\>\""}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "\"\<1\>\"", ",", "\"\<2\>\"", ",", "\"\<3\>\"", ",", "\"\<4\>\"",
+              ",", "\"\<5\>\"", ",", "\"\<6\>\""}], "}"}], ",", 
+           RowBox[{"ControlType", "->", "CheckboxBar"}]}], "}"}], "]"}], 
         "}"}], "]"}], ",", "\[IndentingNewLine]", 
       RowBox[{"Spacer", "[", "20", "]"}], ",", "\[IndentingNewLine]", 
       RowBox[{"Column", "[", 
@@ -16924,152 +15745,36 @@ Cell[BoxData[
    RowBox[{"TrackedSymbols", ":>", 
     RowBox[{"{", 
      RowBox[{
-     "shell", ",", " ", "atom", ",", " ", "charge", ",", " ", "symmetry", ",",
-       "spin", ",", " ", "Dqrange", ",", "Erange", ",", "showLabels", ",", 
-      "vLine", ",", "extraUnit"}], "}"}]}]}], "]"}]], "Input",
- CellChangeTimes->{{3.8536009216053658`*^9, 3.8536009466838818`*^9}, {
-   3.853601159082274*^9, 3.853601210841264*^9}, {3.8536012558320723`*^9, 
-   3.8536014372459908`*^9}, {3.85360147386462*^9, 3.853601475089336*^9}, {
-   3.8536017502736692`*^9, 3.853601775806223*^9}, {3.853601811002123*^9, 
-   3.8536018133924437`*^9}, {3.8536019587539377`*^9, 3.853601989195045*^9}, {
-   3.853606217205777*^9, 3.853606217369171*^9}, {3.8536063408023663`*^9, 
-   3.853606411629517*^9}, {3.853606578301756*^9, 3.853606595536786*^9}, {
-   3.8536068817392883`*^9, 3.853606896860691*^9}, {3.853606929711419*^9, 
-   3.853606977069604*^9}, {3.853608234026328*^9, 3.853608234196192*^9}, {
-   3.853608728635015*^9, 3.853608789845446*^9}, {3.853608832723064*^9, 
-   3.85360883521152*^9}, {3.853608884260477*^9, 3.853608884916831*^9}, {
-   3.853610819217906*^9, 3.853610819473442*^9}, {3.853610854692285*^9, 
-   3.8536108548992243`*^9}, {3.853612674337954*^9, 3.853612689100333*^9}, {
-   3.853613478923686*^9, 3.8536136031671677`*^9}, {3.85361370889261*^9, 
-   3.853613735499177*^9}, {3.8536138060678988`*^9, 3.853613809061842*^9}, {
-   3.853614025552641*^9, 3.853614068263761*^9}, {3.8536141137601643`*^9, 
-   3.853614119422389*^9}, {3.8536141510127783`*^9, 3.853614190747239*^9}, 
-   3.853614285312085*^9, {3.853614431016226*^9, 3.853614467883788*^9}, {
-   3.85361455269149*^9, 3.853614552799382*^9}, {3.853614675053718*^9, 
-   3.853614675151452*^9}, {3.853615357659811*^9, 3.853615380229825*^9}, {
-   3.853615625791251*^9, 3.8536156335734367`*^9}, {3.853615693288389*^9, 
-   3.853615838580266*^9}, {3.853615959105421*^9, 3.853615987902364*^9}, {
-   3.853616269743499*^9, 3.853616353347197*^9}, {3.853616429424691*^9, 
-   3.853616502467548*^9}, {3.8536165510428247`*^9, 3.8536165514097223`*^9}, {
-   3.8536165844675303`*^9, 3.8536165880286427`*^9}, {3.853616645935499*^9, 
-   3.853616694170062*^9}, {3.853616824060754*^9, 3.853616879714541*^9}, 
-   3.853616921105433*^9, {3.853616957220334*^9, 3.853616963922604*^9}, {
-   3.853617033718631*^9, 3.853617036304071*^9}, {3.8536170994307623`*^9, 
-   3.8536171328120613`*^9}, {3.853617256929873*^9, 3.853617391077935*^9}, {
-   3.853617593124721*^9, 3.853617716953244*^9}, {3.853617776971525*^9, 
-   3.853617791936433*^9}, {3.853617888467618*^9, 3.8536179231233797`*^9}, {
-   3.853617983382071*^9, 3.8536179835688667`*^9}, {3.853618031533538*^9, 
-   3.85361804056619*^9}, {3.853618100747939*^9, 3.8536181099573803`*^9}, {
-   3.8536181865725117`*^9, 3.8536182130323153`*^9}, {3.853618321666317*^9, 
-   3.8536183243258257`*^9}, {3.8536184127746477`*^9, 3.8536185035087*^9}, {
-   3.853618537975567*^9, 3.853618538848971*^9}, {3.853618612683256*^9, 
-   3.8536186138872347`*^9}, {3.853618814093966*^9, 3.853618927943499*^9}, {
-   3.853619126255541*^9, 3.853619174406446*^9}, {3.853619328595373*^9, 
-   3.853619336700964*^9}, {3.853619473149303*^9, 3.853619474132144*^9}, {
-   3.8536195190838423`*^9, 3.853619564691112*^9}, {3.8536195951456947`*^9, 
-   3.8536196800310993`*^9}, {3.853619733667818*^9, 3.8536198085609903`*^9}, {
-   3.85361985485821*^9, 3.853619881276952*^9}, {3.853620124046821*^9, 
-   3.853620134555637*^9}, {3.853620172407504*^9, 3.853620183587596*^9}, {
-   3.853620498161766*^9, 3.853620565973762*^9}, {3.853620602491578*^9, 
-   3.853620603267816*^9}, {3.8536206391289177`*^9, 3.853620672122596*^9}, {
-   3.8536208171242523`*^9, 3.853621040929266*^9}, {3.8536212081042547`*^9, 
-   3.853621268833705*^9}, {3.853621299721842*^9, 3.853621397422217*^9}, {
-   3.8536214571162357`*^9, 3.8536215163191547`*^9}, {3.853621569486532*^9, 
-   3.853621578622867*^9}, {3.853621617130509*^9, 3.853621785908531*^9}, {
-   3.853621871009778*^9, 3.8536219108650312`*^9}, {3.853621960008925*^9, 
-   3.8536219761352797`*^9}, {3.853622090902947*^9, 3.853622134031472*^9}, {
-   3.853622212733514*^9, 3.853622212772901*^9}, {3.853622260714139*^9, 
-   3.853622261558795*^9}, {3.8536223965861464`*^9, 3.8536223997333307`*^9}, {
-   3.8536225233382483`*^9, 3.853622544493726*^9}, {3.853622751672182*^9, 
-   3.853622753780727*^9}, {3.853622855559314*^9, 3.853622855753108*^9}, {
-   3.853622942838141*^9, 3.853622964094882*^9}, {3.853624750273882*^9, 
-   3.8536247563461027`*^9}, {3.85362529153328*^9, 3.853625292381137*^9}, {
-   3.8536275987771187`*^9, 3.853627609191716*^9}, 3.8537718886462*^9, {
-   3.853771944895073*^9, 3.853771955510858*^9}, {3.85386818597865*^9, 
-   3.853868188497676*^9}, 3.8538682528599787`*^9, {3.85386830797576*^9, 
-   3.853868332859774*^9}, 3.8538688177527323`*^9, {3.853868889308196*^9, 
-   3.85386889551619*^9}, {3.8538691855315647`*^9, 3.85386919943672*^9}, {
-   3.853869250329185*^9, 3.8538692657395697`*^9}, {3.853869296957615*^9, 
-   3.853869339554111*^9}, {3.853869429985548*^9, 3.8538694989815063`*^9}, {
-   3.853869536489532*^9, 3.853869547146689*^9}, {3.853869619147588*^9, 
-   3.853869633642535*^9}, 3.853869766170916*^9, 3.853869959198758*^9, {
-   3.853869989404443*^9, 3.8538699896107073`*^9}, {3.8538705934670343`*^9, 
-   3.853870594279673*^9}, {3.853870636955825*^9, 3.8538706413719063`*^9}, {
-   3.853935933318293*^9, 3.853936012293933*^9}, {3.8539360694204197`*^9, 
-   3.853936130249127*^9}, {3.8541185642317133`*^9, 3.85411868021085*^9}, {
-   3.854118718343808*^9, 3.854118771090082*^9}, {3.85411883260382*^9, 
-   3.85411883485616*^9}, {3.8541188803099546`*^9, 3.8541189145808897`*^9}, 
-   3.854118947499268*^9, {3.854119003211011*^9, 3.8541190034821157`*^9}, {
-   3.854119100521297*^9, 3.854119113176137*^9}, {3.854119149722887*^9, 
-   3.854119150466649*^9}, 3.8541191861168213`*^9, {3.854119270492778*^9, 
-   3.854119280749095*^9}, {3.854119394616962*^9, 3.854119472243795*^9}, {
-   3.8541195359821377`*^9, 3.85411959825154*^9}, {3.854119850397089*^9, 
-   3.854119937260104*^9}, {3.854119975326363*^9, 3.854120023578925*^9}, {
-   3.85412005483532*^9, 3.854120079697339*^9}, {3.854120231287362*^9, 
-   3.854120262710842*^9}, {3.854120304206918*^9, 3.8541203043346786`*^9}, {
-   3.854120366429983*^9, 3.854120366939148*^9}, {3.854120428461714*^9, 
-   3.85412045425846*^9}, {3.8541206448658743`*^9, 3.854120652369987*^9}, {
-   3.854120687926044*^9, 3.854120700639719*^9}, {3.854125322328659*^9, 
-   3.8541255294873743`*^9}, {3.854125562996078*^9, 3.8541255782177143`*^9}, {
-   3.8541256235118847`*^9, 3.8541256737704363`*^9}, {3.854125887328259*^9, 
-   3.854125926440776*^9}, 3.854734740009761*^9, {3.8547348182051163`*^9, 
-   3.85473481904038*^9}, {3.854734884544449*^9, 3.8547348886898317`*^9}, {
-   3.8547349740985737`*^9, 3.854734976418014*^9}, {3.854735057347925*^9, 
-   3.85473505782304*^9}, {3.854735404999713*^9, 3.854735413868894*^9}, {
-   3.8547354952896338`*^9, 3.854735496160452*^9}, {3.854735556617898*^9, 
-   3.854735579430337*^9}, 3.85473561507309*^9, {3.854735649004344*^9, 
-   3.85473567838551*^9}, {3.854735761089449*^9, 3.8547357889970407`*^9}, {
-   3.854736757752798*^9, 3.8547367654568644`*^9}, {3.85473702911207*^9, 
-   3.854737119964085*^9}, {3.854737261281021*^9, 3.854737267152636*^9}, {
-   3.854737300160511*^9, 3.854737311196683*^9}, {3.854737352552389*^9, 
-   3.854737360690445*^9}, {3.854737407482692*^9, 3.854737409373925*^9}, {
-   3.8547374670524282`*^9, 3.8547374705760527`*^9}, {3.8547375236128273`*^9, 
-   3.854737545806253*^9}, {3.8547379476158752`*^9, 3.854738025241485*^9}, {
-   3.854738061394071*^9, 3.8547382130088463`*^9}, {3.8547382532170553`*^9, 
-   3.85473827320286*^9}, {3.8547384307137127`*^9, 3.854738505011271*^9}, {
-   3.85473854542686*^9, 3.854738547778661*^9}, {3.8547386076107407`*^9, 
-   3.854738662392519*^9}, {3.8547387343445263`*^9, 3.854738765275096*^9}, {
-   3.854738866012397*^9, 3.854738882743785*^9}, {3.854739221614328*^9, 
-   3.854739222063244*^9}, {3.8547392642470207`*^9, 3.85473926488482*^9}, {
-   3.854739396217799*^9, 3.854739401108944*^9}, {3.8547394672224627`*^9, 
-   3.854739482600411*^9}, {3.85473963393939*^9, 3.854739635978753*^9}, {
-   3.854739673099765*^9, 3.854739674260429*^9}, {3.854739811370934*^9, 
-   3.8547398126866007`*^9}, {3.8547399423561277`*^9, 3.854739944981019*^9}, {
-   3.8554249611980267`*^9, 3.855424961806219*^9}, 3.855851405498592*^9, {
-   3.870200734294517*^9, 3.870200742344739*^9}, {3.870200817984371*^9, 
-   3.870200846368353*^9}, {3.870281886354961*^9, 3.870281889452211*^9}, {
-   3.870283610986367*^9, 3.870283674619706*^9}, {3.8702837316743593`*^9, 
-   3.8702837346178503`*^9}, {3.874429102171775*^9, 3.874429119515641*^9}, {
-   3.874429164042997*^9, 3.874429164445039*^9}, {3.87442929369381*^9, 
-   3.874429300759345*^9}, {3.87442955671634*^9, 3.8744295674381647`*^9}, {
-   3.874429615202326*^9, 3.874429616644311*^9}},
- CellLabel->"In[39]:=",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
+     "shell", ",", " ", "atom", ",", " ", "charge", ",", "spin", ",", " ", 
+      "Dqrange", ",", "Erange", ",", "showLabels", ",", "vLine", ",", 
+      "extraUnit"}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.874764830311792*^9, 3.87476485977247*^9}, {
+   3.874764969954924*^9, 3.8747649852366657`*^9}, 3.8747652518391247`*^9, {
+   3.87476535602009*^9, 3.874765356649211*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"1f2c6e02-0c5f-428d-987c-b9cb5001b746"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
-    2, $CellContext`Dqrange$$ = 2.6, $CellContext`Erange$$ = 
-    30, $CellContext`extraUnit$$ = "eV", $CellContext`shell$$ = 
-    "3d", $CellContext`showLabels$$ = False, $CellContext`spin$$ = {
-    "1", "2", "3", "4", "5", "6"}, $CellContext`symmetry$$ = 
-    "Tet", $CellContext`vLine$$ = 1, Typeset`show$$ = True, 
+   DynamicModuleBox[{tsDIAG`atom$$ = "Ni", tsDIAG`charge$$ = 4, 
+    tsDIAG`Dqrange$$ = 6, tsDIAG`Erange$$ = 30, tsDIAG`extraUnit$$ = "eV", 
+    tsDIAG`shell$$ = "3d", tsDIAG`showLabels$$ = False, tsDIAG`spin$$ = {
+    "1", "2", "3", "4", "5", "6"}, tsDIAG`vLine$$ = 1, Typeset`show$$ = True, 
     Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
     Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
     "\"untitled\"", Typeset`specs$$ = {{{
-       Hold[$CellContext`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
-       Hold[$CellContext`atom$$], "Cu"}, 
+       Hold[tsDIAG`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
+       Hold[tsDIAG`atom$$], "Cu"}, 
       Dynamic[
-       $CellContext`shellToatoms[$CellContext`shell$$]]}, {{
-       Hold[$CellContext`charge$$], 4}, {2, 3, 4, 5, 6, 7}}, {{
-       Hold[$CellContext`symmetry$$], "Oct"}, {"Oct", "Cub", "Tet"}}, {{
-       Hold[$CellContext`spin$$], {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
+       tsDIAG`shellToatoms[tsDIAG`shell$$]]}, {{
+       Hold[tsDIAG`charge$$], 4}, {2, 3, 4, 5, 6, 7}}, {{
+       Hold[tsDIAG`spin$$], {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
       "1", "2", "3", "4", "5", "6"}}, {{
-       Hold[$CellContext`Dqrange$$], 6, "|Dq/B max|"}, 1, 100.}, {{
-       Hold[$CellContext`Erange$$], 30, "E/B max"}, 1, 100}, {{
-       Hold[$CellContext`showLabels$$], False}, {True, False}}, {{
-       Hold[$CellContext`vLine$$], 1, "vLine/eV"}, 0, 2, 0.1}, {{
-       Hold[$CellContext`extraUnit$$], "eV"}, {
+       Hold[tsDIAG`Dqrange$$], 6, "|Dq/B max|"}, 1, 100.}, {{
+       Hold[tsDIAG`Erange$$], 30, "E/B max"}, 1, 100}, {{
+       Hold[tsDIAG`showLabels$$], False}, {True, False}}, {{
+       Hold[tsDIAG`vLine$$], 1, "vLine/eV"}, 0, 2, 0.1}, {{
+       Hold[tsDIAG`extraUnit$$], "eV"}, {
       "eV", "\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)"}}, {
       Hold[
        Row[{
@@ -17079,243 +15784,51 @@ Cell[BoxData[
            Manipulate`Place[3]}], 
          Spacer[20], 
          Column[{
-           Manipulate`Place[4], 
-           Manipulate`Place[5]}], 
+           Manipulate`Place[4]}], 
          Spacer[20], 
          Column[{
-           Manipulate`Place[6], 
-           Manipulate`Place[7]}], 
+           Manipulate`Place[5], 
+           Manipulate`Place[6]}], 
          Spacer[20], 
          Column[{
+           Manipulate`Place[7], 
            Manipulate`Place[8], 
-           Manipulate`Place[9], 
-           Manipulate`Place[10]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
-    Typeset`size$$ = {1100., {357., 362.}}, Typeset`update$$ = 0, 
+           Manipulate`Place[9]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
+    Typeset`size$$ = {1000., {357., 362.}}, Typeset`update$$ = 0, 
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
-      "Variables" :> {$CellContext`atom$$ = "Cu", $CellContext`charge$$ = 
-        4, $CellContext`Dqrange$$ = 6, $CellContext`Erange$$ = 
-        30, $CellContext`extraUnit$$ = "eV", $CellContext`shell$$ = 
-        "3d", $CellContext`showLabels$$ = 
-        False, $CellContext`spin$$ = {
-         "1", "2", "3", "4", "5", "6"}, $CellContext`symmetry$$ = 
-        "Oct", $CellContext`vLine$$ = 1}, "ControllerVariables" :> {}, 
+      "Variables" :> {
+       tsDIAG`atom$$ = "Cu", tsDIAG`charge$$ = 4, tsDIAG`Dqrange$$ = 6, 
+        tsDIAG`Erange$$ = 30, tsDIAG`extraUnit$$ = "eV", tsDIAG`shell$$ = 
+        "3d", tsDIAG`showLabels$$ = False, 
+        tsDIAG`spin$$ = {"1", "2", "3", "4", "5", "6"}, tsDIAG`vLine$$ = 1}, 
+      "ControllerVariables" :> {}, 
       "OtherVariables" :> {
        Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
         Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, 
-      "Body" :> ($CellContext`key = {$CellContext`atom$$, \
-$CellContext`charge$$}; If[
-         MemberQ[
-          
-          Keys[$CellContext`cowanA], $CellContext`key], \
-$CellContext`numElectrons = $CellContext`cowanA[{$CellContext`atom$$, \
-$CellContext`charge$$}][
-           "d^n"]; $CellContext`fieldTypemultiplier = <|{
-            "Cub" -> (-8)/9, "Tet" -> (-4)/9, "Oct" -> 
-             1}|>[$CellContext`symmetry$$]; $CellContext`Dqs = \
-$CellContext`DqsCub $CellContext`fieldTypemultiplier; $CellContext`gamma = \
-$CellContext`cowanA[{$CellContext`atom$$, $CellContext`charge$$}][
-           "C/B"]; $CellContext`B = Round[
-            $CellContext`cowanA[$CellContext`key]["B"], 
-            1]; $CellContext`idx = $CellContext`gammaFun[$CellContext`gamma]; \
-$CellContext`\[CapitalNu] = 
-          If[$CellContext`numElectrons > 5, 
-            10 - $CellContext`numElectrons, $CellContext`numElectrons]; \
-$CellContext`sign = If[$CellContext`numElectrons > 5, -1, 1]; If[
-           And[
-            MemberQ[
-             Keys[$CellContext`dset], $CellContext`\[CapitalNu]], 
-            NumericQ[$CellContext`B]], $CellContext`multiplicities = 
-            StringJoin[
-              Riffle[
-               DeleteDuplicates[
-                Map[First, 
-                 $CellContext`dset[$CellContext`\[CapitalNu]]["terms"]]], 
-               ","]]; $CellContext`plotTitle = 
-            Row[{"| ", $CellContext`multiplicities, " | ", 
-               Superscript["d", $CellContext`numElectrons], 
-               "| C/B \[TildeTilde] " <> ToString[
-                 Part[$CellContext`gammas, $CellContext`idx]], ((
-                 " | B \[TildeTilde] " <> ToString[$CellContext`B]) <> 
-                " ") <> $CellContext`energyUnit, " | ", 
-               
-               Superscript[$CellContext`atom$$, 
-                ToString[$CellContext`charge$$] <> "+"]}, BaseStyle -> 
-              "Title"]; $CellContext`plotTitle = 
-            Framed[$CellContext`plotTitle]; $CellContext`legends = \
-$CellContext`dset[$CellContext`\[CapitalNu]]["tskLabels"]; $CellContext`mask = 
-            Map[MemberQ[$CellContext`spin$$, 
-               Part[#, 1]]& , 
-              $CellContext`dset[$CellContext`\[CapitalNu]][
-              "terms"]]; $CellContext`legends = 
-            Pick[$CellContext`legends, $CellContext`mask]; \
-$CellContext`maskedData = Pick[
-              Part[
-               $CellContext`dset[$CellContext`\[CapitalNu]][
-               "tskData"], $CellContext`idx], $CellContext`mask]; \
-$CellContext`Dqindices = Map[First, 
-              Select[
-               Transpose[{
-                 Range[
-                  Length[$CellContext`Dqs]], $CellContext`Dqs}], Abs[
-                 
-                 Part[#, 
-                  2]] <= $CellContext`Dqrange$$& ]]; \
-$CellContext`rightMarginValues = Map[Part[#, 
-               
-               Part[$CellContext`Dqindices, -1]]& , $CellContext`maskedData]; \
-$CellContext`leftMarginValues = Map[Part[#, 
-               
-               Part[$CellContext`Dqindices, 
-                1]]& , $CellContext`maskedData]; $CellContext`maskedData = 
-            Map[Part[#, $CellContext`Dqindices]& , $CellContext`maskedData]; \
-$CellContext`signedDqs = $CellContext`sign $CellContext`Dqs; \
-$CellContext`signedDqs = 
-            Part[$CellContext`signedDqs, $CellContext`Dqindices]; \
-$CellContext`plotData = Map[Tooltip[
-               Part[#, 1], 
-               Part[#, 2]]& , 
-              Transpose[{
-                Map[
-                Transpose[{$CellContext`signedDqs, #}]& , \
-$CellContext`maskedData], $CellContext`legends}]]; 
-           If[$CellContext`extraUnit$$ == 
-             "\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)", \
-$CellContext`extraTicks = 
-              Table[{$CellContext`ee/$CellContext`B, $CellContext`ee}, \
-{$CellContext`ee, 0, $CellContext`B $CellContext`Erange$$, 
-                 Round[$CellContext`B ($CellContext`Erange$$/10), 10^(Floor[
-                    Log10[$CellContext`B $CellContext`Erange$$]] - 
-                   2)]}]; $CellContext`moTicks = 
-              Table[{$CellContext`ee/$CellContext`B, $CellContext`ee}, \
-{$CellContext`ee, 0, $CellContext`B $CellContext`Dqrange$$, 
-                 Round[$CellContext`B ($CellContext`Dqrange$$/10), 10^(Floor[
-                    Log10[$CellContext`B $CellContext`Dqrange$$]] - 2)]}]; 
-             Null, $CellContext`extraTicks = 
-              Table[{($CellContext`ee/$CellContext`B) $CellContext`evtocm, \
-$CellContext`ee}, {$CellContext`ee, 
-                 0, $CellContext`B \
-($CellContext`Erange$$/$CellContext`evtocm), 0.5}]; $CellContext`moTicks = 
-              Table[{($CellContext`ee/$CellContext`B) $CellContext`evtocm, \
-$CellContext`ee}, {$CellContext`ee, 
-                 0, $CellContext`B \
-($CellContext`Dqrange$$/$CellContext`evtocm), 0.1}]; 
-             Null]; $CellContext`moTicks = Join[
-              
-              Map[{-Part[#, 1], -
-                Part[#, 2]}& , $CellContext`moTicks], $CellContext`moTicks]; 
-           If[$CellContext`showLabels$$, $CellContext`labelonRightMargin = 
-              Flatten[
-                Position[$CellContext`rightMarginValues, 
-                 Condition[
-                  Pattern[$CellContext`x$, 
-                   Blank[]], 
-                  Abs[$CellContext`x$] <= $CellContext`Erange$$]]]; \
-$CellContext`labelonLeftMargin = Flatten[
-                Position[$CellContext`leftMarginValues, 
-                 Condition[
-                  Pattern[$CellContext`x$, 
-                   Blank[]], 
-                  Abs[$CellContext`x$] <= $CellContext`Erange$$]]]; \
-$CellContext`rightMarginLabels = 
-              Part[$CellContext`legends, $CellContext`labelonRightMargin]; \
-$CellContext`leftMarginLabels = 
-              Part[$CellContext`legends, $CellContext`labelonLeftMargin]; \
-$CellContext`rightCallouts = 
-              Map[Callout[{(
-                   Sign[$CellContext`fieldTypemultiplier] $CellContext`sign) 
-                  Part[
-                    Part[#, 1], 1], 
-                  Part[
-                   Part[#, 1], 2]}, 
-                 Part[#, 2], Right, Appearance -> "Frame", LabelVisibility -> 
-                 All]& , 
-                Transpose[{
-                  Map[{$CellContext`Dqrange$$, #}& , 
-                   
-                   Part[$CellContext`rightMarginValues, \
-$CellContext`labelonRightMargin]], $CellContext`rightMarginLabels}]]; \
-$CellContext`leftCallouts = 
-              Map[Callout[{(
-                   Sign[$CellContext`fieldTypemultiplier] $CellContext`sign) 
-                  Part[
-                    Part[#, 1], 1], 
-                  Part[
-                   Part[#, 1], 2]}, 
-                 Part[#, 2], Left, Appearance -> "Frame", LabelVisibility -> 
-                 All]& , 
-                Transpose[{
-                  Map[{-$CellContext`Dqrange$$, #}& , 
-                   
-                   Part[$CellContext`leftMarginValues, \
-$CellContext`labelonLeftMargin]], $CellContext`leftMarginLabels}]]; \
-$CellContext`callouts = 
-              Join[$CellContext`rightCallouts, $CellContext`leftCallouts]; \
-$CellContext`calloutPlot = 
-              ListPlot[$CellContext`callouts, 
-                PlotRange -> {{-$CellContext`Dqrange$$, \
-$CellContext`Dqrange$$}, {-1, $CellContext`Erange$$}}, PlotStyle -> 
-                PointSize[Small]]; Null]; $CellContext`tskfig = 
-            ListPlot[$CellContext`plotData, ImageSize -> 1000, Joined -> True,
-               PlotLabel -> $CellContext`plotTitle, Frame -> True, 
-              FrameLabel -> {{
-                "E/B", "E/" <> $CellContext`extraUnit$$}, {(
-                  "Dq_" <> $CellContext`symmetry$$) <> "/B", 
-                 "Dq/" <> $CellContext`extraUnit$$}}, FrameStyle -> 
-              Directive[15], 
-              FrameTicks -> {{Automatic, $CellContext`extraTicks}, {
-                Automatic, $CellContext`moTicks}}, 
-              PlotRange -> {{
-                0, $CellContext`Dqrange$$ 1.1}, {-1, $CellContext`Erange$$}}, 
-              Epilog -> Flatten[{
-                 Map[{Purple, Dashed, 
-                   
-                   Line[{{($CellContext`sign #) \
-$CellContext`fieldTypemultiplier, 
-                    0}, {($CellContext`sign #) \
-$CellContext`fieldTypemultiplier, $CellContext`Erange$$}}]}& , 
-                  Part[
-                   
-                   Part[$CellContext`cuts, $CellContext`\[CapitalNu]], \
-$CellContext`idx]], 
-                 
-                 Line[{{$CellContext`Dqrange$$, 
-                    0}, {$CellContext`Dqrange$$, $CellContext`Erange$$}}], 
-                 
-                 Line[{{-$CellContext`Dqrange$$, 
-                    0}, {-$CellContext`Dqrange$$, $CellContext`Erange$$}}], {
-                 Thick, Orange, Dashed, 
-                  
-                  Line[{{-$CellContext`Dqrange$$, $CellContext`vLine$$ (
-                    8065.54429/$CellContext`B)}, {$CellContext`Dqrange$$, \
-$CellContext`vLine$$ (8065.54429/$CellContext`B)}}]}}], InterpolationOrder -> 
-              1]; If[$CellContext`showLabels$$, 
-             
-             Show[$CellContext`tskfig, $CellContext`calloutPlot], \
-$CellContext`tskfig], "Not a valid ion, try a different charge."], 
-         "Missing"]), 
-      "Specifications" :> {{{$CellContext`shell$$, "3d"}, {"3d", "4d", "5d"}, 
-         ControlPlacement -> 1}, {{$CellContext`atom$$, "Cu"}, 
+         Typeset`skipInitDone$$}, "Body" :> 
+      tsDIAG`TSKDiagramNoSO[
+       tsDIAG`shell$$, tsDIAG`atom$$, tsDIAG`charge$$, tsDIAG`spin$$, 
+        tsDIAG`Dqrange$$, tsDIAG`Erange$$, tsDIAG`showLabels$$, 
+        tsDIAG`vLine$$, tsDIAG`extraUnit$$], 
+      "Specifications" :> {{{tsDIAG`shell$$, "3d"}, {"3d", "4d", "5d"}, 
+         ControlPlacement -> 1}, {{tsDIAG`atom$$, "Cu"}, 
          Dynamic[
-          $CellContext`shellToatoms[$CellContext`shell$$]], ControlType -> 
-         SetterBar, ControlPlacement -> 2}, {{$CellContext`charge$$, 4}, {2, 
-         3, 4, 5, 6, 7}, ControlType -> RadioButton, ControlPlacement -> 
-         3}, {{$CellContext`symmetry$$, "Oct"}, {"Oct", "Cub", "Tet"}, 
-         ControlPlacement -> 
-         4}, {{$CellContext`spin$$, {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
+          tsDIAG`shellToatoms[tsDIAG`shell$$]], ControlType -> SetterBar, 
+         ControlPlacement -> 2}, {{tsDIAG`charge$$, 4}, {2, 3, 4, 5, 6, 7}, 
+         ControlType -> RadioButton, ControlPlacement -> 3}, {{
+         tsDIAG`spin$$, {"1", "2", "3", "4", "5", "6"}, "2S+1"}, {
          "1", "2", "3", "4", "5", "6"}, ControlType -> CheckboxBar, 
-         ControlPlacement -> 5}, {{$CellContext`Dqrange$$, 6, "|Dq/B max|"}, 
-         1, 100., ControlPlacement -> 
-         6}, {{$CellContext`Erange$$, 30, "E/B max"}, 1, 100, 
-         ControlPlacement -> 7}, {{$CellContext`showLabels$$, False}, {
-         True, False}, ControlPlacement -> 
-         8}, {{$CellContext`vLine$$, 1, "vLine/eV"}, 0, 2, 0.1, 
-         ControlPlacement -> 9}, {{$CellContext`extraUnit$$, "eV"}, {
+         ControlPlacement -> 4}, {{tsDIAG`Dqrange$$, 6, "|Dq/B max|"}, 1, 
+         100., ControlPlacement -> 5}, {{tsDIAG`Erange$$, 30, "E/B max"}, 1, 
+         100, ControlPlacement -> 6}, {{tsDIAG`showLabels$$, False}, {
+         True, False}, ControlPlacement -> 7}, {{
+         tsDIAG`vLine$$, 1, "vLine/eV"}, 0, 2, 0.1, ControlPlacement -> 8}, {{
+         tsDIAG`extraUnit$$, "eV"}, {
          "eV", "\!\(\*SuperscriptBox[\(cm\), \(-1\)]\)"}, ControlPlacement -> 
-         10}, 
+         9}, 
         Row[{
           Column[{
             Manipulate`Place[1], 
@@ -17323,23 +15836,22 @@ $CellContext`tskfig], "Not a valid ion, try a different charge."],
             Manipulate`Place[3]}], 
           Spacer[20], 
           Column[{
-            Manipulate`Place[4], 
-            Manipulate`Place[5]}], 
+            Manipulate`Place[4]}], 
           Spacer[20], 
           Column[{
-            Manipulate`Place[6], 
-            Manipulate`Place[7]}], 
+            Manipulate`Place[5], 
+            Manipulate`Place[6]}], 
           Spacer[20], 
           Column[{
+            Manipulate`Place[7], 
             Manipulate`Place[8], 
-            Manipulate`Place[9], 
-            Manipulate`Place[10]}]}]}, 
+            Manipulate`Place[9]}]}]}, 
       "Options" :> {
-       TrackedSymbols :> {$CellContext`shell$$, $CellContext`atom$$, \
-$CellContext`charge$$, $CellContext`symmetry$$, $CellContext`spin$$, \
-$CellContext`Dqrange$$, $CellContext`Erange$$, $CellContext`showLabels$$, \
-$CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
-     ImageSizeCache->{1144., {530., 536.}},
+       TrackedSymbols :> {
+         tsDIAG`shell$$, tsDIAG`atom$$, tsDIAG`charge$$, tsDIAG`spin$$, 
+          tsDIAG`Dqrange$$, tsDIAG`Erange$$, tsDIAG`showLabels$$, 
+          tsDIAG`vLine$$, tsDIAG`extraUnit$$}}, "DefaultOptions" :> {}],
+     ImageSizeCache->{1078., {427., 433.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -17350,16 +15862,16 @@ $CellContext`vLine$$, $CellContext`extraUnit$$}}, "DefaultOptions" :> {}],
    Deployed->True,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{3.870283737621195*^9, 3.87028382530464*^9, 
-  3.874429122305936*^9, 3.8744291648833017`*^9, 3.874429301804678*^9, 
-  3.874429500440381*^9, 3.874429626930971*^9},
- CellLabel->"Out[39]=",ExpressionUUID->"8cd0537a-c3ac-44bb-a99c-bf0a64ac24eb"]
+ CellChangeTimes->{{3.8747657207777576`*^9, 3.87476572681264*^9}, {
+   3.874765779193091*^9, 3.8747657985006113`*^9}, 3.874765850677278*^9, 
+   3.874765967453238*^9, 3.8747660483*^9},
+ CellLabel->"Out[4]=",ExpressionUUID->"7d09adea-7744-4311-9fca-c52b9dffec09"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{576, 1051},
-WindowMargins->{{576, Automatic}, {Automatic, -37}},
+WindowSize->{1287, 1051},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
 TaggingRules-><|"TryRealOnly" -> False|>,
 FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
 StyleDefinitions->FrontEnd`FileName[{"Report"}, "StandardReport.nb", 
@@ -17378,23 +15890,18 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 574, 11, 283, "Title",ExpressionUUID->"519a75fd-c114-4f13-b411-0bbd368d9312"],
-Cell[1157, 35, 952358, 15638, 1619, "Text",ExpressionUUID->"34889562-ad56-4ddc-ba15-cf95fa021e31"],
-Cell[953518, 15675, 1080, 20, 103, "Text",ExpressionUUID->"f47df8b3-8a8a-4815-bd1a-bdba537ae4af"],
+Cell[580, 22, 574, 11, 221, "Title",ExpressionUUID->"6f7a4f2e-08d0-4bd2-95ad-81ec651e1ba3"],
+Cell[1157, 35, 948332, 15544, 776, "Text",ExpressionUUID->"95610230-edab-4da4-9d75-2b4b59081dc1"],
+Cell[949492, 15581, 1080, 20, 80, "Text",ExpressionUUID->"73963e34-576f-4b7e-9318-1e46e06c4c19"],
 Cell[CellGroupData[{
-Cell[954623, 15699, 4790, 138, 531, "Input",ExpressionUUID->"6b0430c0-7e6c-4c3f-ad54-0a5697423d18"],
-Cell[959416, 15839, 2329, 47, 235, "Output",ExpressionUUID->"9168c0de-a27b-4a11-a232-e2c09a838267"]
-}, {2}]],
+Cell[950597, 15605, 230, 4, 69, "Section",ExpressionUUID->"c6e3b30c-90c4-424d-919f-7e07eaf178c2"],
+Cell[950830, 15611, 304, 7, 63, "Input",ExpressionUUID->"d4635de4-fea0-41a5-a925-ec375d81fa38"]
+}, Open  ]],
 Cell[CellGroupData[{
-Cell[961779, 15891, 230, 4, 69, "Section",ExpressionUUID->"d503de9a-4d46-4c70-a2ab-54c17fe8aa69"],
-Cell[962012, 15897, 13401, 352, 1617, "Input",ExpressionUUID->"1c7dfbae-7d1b-4f4e-8350-57b5d7628a90",
- InitializationCell->True]
-}, Closed]],
+Cell[951171, 15623, 492, 8, 69, "Section",ExpressionUUID->"c03ee64d-c4c7-4caf-a5e4-09a9d90c155b"],
 Cell[CellGroupData[{
-Cell[975450, 16254, 485, 7, 93, "Section",ExpressionUUID->"50b4c23b-beb3-4f64-ae31-ec4280b63428"],
-Cell[CellGroupData[{
-Cell[975960, 16265, 37865, 780, 3640, "Input",ExpressionUUID->"69d8b831-f34d-4bf5-b9ce-821c4ff2f026"],
-Cell[1013828, 17047, 14779, 308, 1092, "Output",ExpressionUUID->"8cd0537a-c3ac-44bb-a99c-bf0a64ac24eb"]
+Cell[951688, 15635, 4955, 118, 543, "Input",ExpressionUUID->"1f2c6e02-0c5f-428d-987c-b9cb5001b746"],
+Cell[956646, 15755, 5113, 112, 886, "Output",ExpressionUUID->"7d09adea-7744-4311-9fca-c52b9dffec09"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]

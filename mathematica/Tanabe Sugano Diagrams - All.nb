@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1235045,      20895]
-NotebookOptionsPosition[   1232054,      20834]
-NotebookOutlinePosition[   1232573,      20853]
-CellTagsIndexPosition[   1232530,      20850]
+NotebookDataLength[   1237741,      20954]
+NotebookOptionsPosition[   1234188,      20884]
+NotebookOutlinePosition[   1234711,      20903]
+CellTagsIndexPosition[   1234668,      20900]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -19110,7 +19110,7 @@ Cell[BoxData[
   3.85600152953799*^9}},ExpressionUUID->"056ead69-9d03-42de-9ebf-\
 8434493181b4"]
 }, Closed]]
-}, Open  ]],
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -19152,8 +19152,8 @@ Cell[BoxData[
      RowBox[{
      "nephRatio", ",", "Erange", ",", "DqrangeR", ",", "shell", ",", "atom", 
       ",", "charge", ",", "vLine", ",", "DqLine", ",", "positiveOnly", ",", 
-      "p"}], "]"}], "\[IndentingNewLine]", ")"}], ",", "\[IndentingNewLine]", 
-   
+      "\[Chi]Ratio", ",", "p"}], "]"}], "\[IndentingNewLine]", ")"}], ",", 
+   "\[IndentingNewLine]", 
    RowBox[{"Row", "[", 
     RowBox[{"{", 
      RowBox[{
@@ -19182,7 +19182,14 @@ Cell[BoxData[
            RowBox[{
             RowBox[{"{", 
              RowBox[{"DqrangeR", ",", "1", ",", "\"\<Dqrange\>\""}], "}"}], 
-            ",", "0.1", ",", "2", ",", "0.1"}], "}"}], "]"}]}], " ", 
+            ",", "0.1", ",", "2", ",", "0.1"}], "}"}], "]"}], " ", ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"Control", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"\[Chi]Ratio", ",", "1", ",", "\"\<\[Chi]\>\""}], "}"}], 
+            ",", "0", ",", "1", ",", "0.01"}], "}"}], "]"}]}], 
         "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
       RowBox[{"Column", "[", 
        RowBox[{"{", "\[IndentingNewLine]", 
@@ -19251,24 +19258,27 @@ Cell[BoxData[
   "\[IndentingNewLine]", "]"}]], "Input",
  CellChangeTimes->{{3.8745903130171747`*^9, 3.874590346574464*^9}, {
   3.8745903793244743`*^9, 3.874590394736608*^9}, {3.874590463188488*^9, 
-  3.8745904694503107`*^9}},
- CellLabel->"In[4]:=",ExpressionUUID->"11f84168-c3e9-4822-b173-6605ec27cebf"],
+  3.8745904694503107`*^9}, {3.874609227631762*^9, 3.8746092621853247`*^9}, {
+  3.8746093145722847`*^9, 3.874609315390293*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"11f84168-c3e9-4822-b173-6605ec27cebf"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{tsDIAG`atom$$ = "Cu", tsDIAG`charge$$ = 4, 
-    tsDIAG`DqLine$$ = 0.1, tsDIAG`DqrangeR$$ = 1, tsDIAG`Erange$$ = 4, 
-    tsDIAG`nephRatio$$ = 1, tsDIAG`p$$ = {0.5, 0.5}, tsDIAG`positiveOnly$$ = 
-    False, tsDIAG`shell$$ = "3d", tsDIAG`vLine$$ = 1, Typeset`show$$ = True, 
-    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
-    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
-    "\"untitled\"", Typeset`specs$$ = {{{
+   DynamicModuleBox[{tsDIAG`atom$$ = "Cr", tsDIAG`charge$$ = 2, 
+    tsDIAG`DqLine$$ = 0.1, tsDIAG`DqrangeR$$ = 0.2, tsDIAG`Erange$$ = 
+    1.3000000000000003`, tsDIAG`nephRatio$$ = 0.6, tsDIAG`p$$ = {
+    0.18280000000000002`, 1.2449999999999999`}, tsDIAG`positiveOnly$$ = False,
+     tsDIAG`shell$$ = "3d", tsDIAG`vLine$$ = 1, $CellContext`\[Chi]Ratio$$ = 
+    1, Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
        Hold[tsDIAG`nephRatio$$], 1, 
        "\[Beta]=\!\(\*SubscriptBox[\(B\), \
 \(real\)]\)/\!\(\*SubscriptBox[\(B\), \(HF\)]\)"}, 0.1, 1, 0.01}, {{
        Hold[tsDIAG`Erange$$], 4, "Erange"}, 0.1, 5, 0.1}, {{
        Hold[tsDIAG`DqrangeR$$], 1, "Dqrange"}, 0.1, 2, 0.1}, {{
+       Hold[$CellContext`\[Chi]Ratio$$], 1, "\[Chi]"}, 0, 1, 0.01}, {{
        Hold[tsDIAG`shell$$], "3d"}, {"3d", "4d", "5d"}}, {{
        Hold[tsDIAG`atom$$], "Cu"}, 
       Dynamic[
@@ -19284,17 +19294,18 @@ Cell[BoxData[
          Column[{
            Manipulate`Place[1], 
            Manipulate`Place[2], 
-           Manipulate`Place[3]}], 
+           Manipulate`Place[3], 
+           Manipulate`Place[4]}], 
          Column[{
-           Manipulate`Place[4], 
            Manipulate`Place[5], 
-           Manipulate`Place[6]}], 
+           Manipulate`Place[6], 
+           Manipulate`Place[7]}], 
          Column[{
-           Manipulate`Place[7], 
            Manipulate`Place[8], 
            Manipulate`Place[9], 
-           Manipulate`Place[10]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
-    Typeset`size$$ = {1246., {407., 411.}}, Typeset`update$$ = 0, 
+           Manipulate`Place[10], 
+           Manipulate`Place[11]}]}]], Manipulate`Dump`ThisIsNotAControl}}, 
+    Typeset`size$$ = {1283., {407., 411.}}, Typeset`update$$ = 0, 
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
@@ -19302,8 +19313,8 @@ Cell[BoxData[
        tsDIAG`atom$$ = "Cu", tsDIAG`charge$$ = 4, tsDIAG`DqLine$$ = 0.1, 
         tsDIAG`DqrangeR$$ = 1, tsDIAG`Erange$$ = 4, tsDIAG`nephRatio$$ = 1, 
         tsDIAG`p$$ = {0.5, 0.5}, tsDIAG`positiveOnly$$ = False, 
-        tsDIAG`shell$$ = "3d", tsDIAG`vLine$$ = 1}, 
-      "ControllerVariables" :> {}, 
+        tsDIAG`shell$$ = "3d", tsDIAG`vLine$$ = 1, $CellContext`\[Chi]Ratio$$ = 
+        1}, "ControllerVariables" :> {}, 
       "OtherVariables" :> {
        Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
@@ -19312,41 +19323,44 @@ Cell[BoxData[
       tsDIAG`TSKDiagram[
        tsDIAG`nephRatio$$, tsDIAG`Erange$$, tsDIAG`DqrangeR$$, tsDIAG`shell$$,
          tsDIAG`atom$$, tsDIAG`charge$$, tsDIAG`vLine$$, tsDIAG`DqLine$$, 
-        tsDIAG`positiveOnly$$, tsDIAG`p$$], 
+        tsDIAG`positiveOnly$$, $CellContext`\[Chi]Ratio$$, tsDIAG`p$$], 
       "Specifications" :> {{{
          tsDIAG`nephRatio$$, 1, 
           "\[Beta]=\!\(\*SubscriptBox[\(B\), \
 \(real\)]\)/\!\(\*SubscriptBox[\(B\), \(HF\)]\)"}, 0.1, 1, 0.01, 
          ControlPlacement -> 1}, {{tsDIAG`Erange$$, 4, "Erange"}, 0.1, 5, 0.1,
           ControlPlacement -> 2}, {{tsDIAG`DqrangeR$$, 1, "Dqrange"}, 0.1, 2, 
-         0.1, ControlPlacement -> 3}, {{tsDIAG`shell$$, "3d"}, {
-         "3d", "4d", "5d"}, ControlPlacement -> 4}, {{tsDIAG`atom$$, "Cu"}, 
+         0.1, ControlPlacement -> 
+         3}, {{$CellContext`\[Chi]Ratio$$, 1, "\[Chi]"}, 0, 1, 0.01, 
+         ControlPlacement -> 4}, {{tsDIAG`shell$$, "3d"}, {"3d", "4d", "5d"}, 
+         ControlPlacement -> 5}, {{tsDIAG`atom$$, "Cu"}, 
          Dynamic[
           tsDIAG`shellToatoms[tsDIAG`shell$$]], ControlType -> SetterBar, 
-         ControlPlacement -> 5}, {{tsDIAG`charge$$, 4}, {2, 3, 4, 5, 6, 7}, 
-         ControlType -> RadioButton, ControlPlacement -> 6}, {{
-         tsDIAG`vLine$$, 1}, 0, 6, ControlPlacement -> 7}, {{
-         tsDIAG`DqLine$$, 0.1}, -2, 2, ControlPlacement -> 8}, {{
+         ControlPlacement -> 6}, {{tsDIAG`charge$$, 4}, {2, 3, 4, 5, 6, 7}, 
+         ControlType -> RadioButton, ControlPlacement -> 7}, {{
+         tsDIAG`vLine$$, 1}, 0, 6, ControlPlacement -> 8}, {{
+         tsDIAG`DqLine$$, 0.1}, -2, 2, ControlPlacement -> 9}, {{
          tsDIAG`positiveOnly$$, False}, {True, False}, ControlPlacement -> 
-         9}, {{tsDIAG`p$$, {0.5, 0.5}}, ControlType -> Locator, 
-         ControlPlacement -> 10}, 
+         10}, {{tsDIAG`p$$, {0.5, 0.5}}, ControlType -> Locator, 
+         ControlPlacement -> 11}, 
         Row[{
           Spacer[200], 
           Column[{
             Manipulate`Place[1], 
             Manipulate`Place[2], 
-            Manipulate`Place[3]}], 
+            Manipulate`Place[3], 
+            Manipulate`Place[4]}], 
           Column[{
-            Manipulate`Place[4], 
             Manipulate`Place[5], 
-            Manipulate`Place[6]}], 
+            Manipulate`Place[6], 
+            Manipulate`Place[7]}], 
           Column[{
-            Manipulate`Place[7], 
             Manipulate`Place[8], 
             Manipulate`Place[9], 
-            Manipulate`Place[10]}]}]}, "Options" :> {TrackedSymbols :> True}, 
+            Manipulate`Place[10], 
+            Manipulate`Place[11]}]}]}, "Options" :> {TrackedSymbols :> True}, 
       "DefaultOptions" :> {}],
-     ImageSizeCache->{1296., {489., 494.}},
+     ImageSizeCache->{1333., {497., 503.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -19358,8 +19372,39 @@ Cell[BoxData[
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
  CellChangeTimes->{{3.874590474398185*^9, 3.874590492005151*^9}, 
-   3.8745912562522373`*^9, 3.8745917453078537`*^9, 3.874591873449808*^9},
- CellLabel->"Out[4]=",ExpressionUUID->"0e39610d-144d-4d26-895c-6ccc4256b2ba"]
+   3.8745912562522373`*^9, 3.8745917453078537`*^9, 3.874591873449808*^9, {
+   3.874607746843919*^9, 3.874607759696025*^9}, 3.874609263014761*^9, 
+   3.874609315941813*^9, 3.874609490111414*^9, 3.874761143447442*^9},
+ CellLabel->"Out[3]=",ExpressionUUID->"32f5a6f9-b672-4191-bdf3-fd608e400e0d"]
+}, Open  ]],
+
+Cell[BoxData["\[Chi]0"], "Input",
+ CellChangeTimes->{{3.8746091601083403`*^9, 
+  3.874609162117345*^9}},ExpressionUUID->"09432149-1ce5-4bde-9059-\
+e9234cf307d5"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"624", "/", "evtocm"}]], "Input",
+ CellChangeTimes->{{3.874608921022732*^9, 3.874608924805531*^9}},
+ CellLabel->"In[28]:=",ExpressionUUID->"be3ab14e-e1e7-48a4-aebb-70cd1123bcf9"],
+
+Cell[BoxData["0.07736613643962768`"], "Output",
+ CellChangeTimes->{3.874608925108472*^9, 3.874609483386342*^9},
+ CellLabel->"Out[28]=",ExpressionUUID->"eb80ee99-4bbd-40f1-bc20-926f6a3b1bcb"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"6.074", "/", "evtocm"}]], "Input",
+ CellChangeTimes->{{3.8746078074847937`*^9, 3.874607815229789*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"7e55cc59-a984-41bc-a427-24a90976e110"],
+
+Cell[BoxData["0.0007530799883562477`"], "Output",
+ CellChangeTimes->{3.874607815539542*^9},
+ CellLabel->"Out[17]=",ExpressionUUID->"78b9be23-3024-404b-9e99-b816ec619cdb"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -19371,7 +19416,8 @@ Cell[BoxData[
     RowBox[{
     "0.8", ",", "0.5", ",", "0.1", ",", "\"\<3d\>\"", ",", "\"\<Cu\>\"", ",", 
      "2", ",", "0", ",", 
-     RowBox[{"-", "0.0079"}], ",", "False"}], "]"}], ",", 
+     RowBox[{"-", "0.00079"}], ",", "False"}], "]"}], ",", 
+   "\[IndentingNewLine]", 
    RowBox[{"PlotRange", "->", 
     RowBox[{"{", 
      RowBox[{
@@ -19381,9 +19427,12 @@ Cell[BoxData[
       RowBox[{"{", 
        RowBox[{
         RowBox[{"-", ".01"}], ",", "0.5"}], "}"}]}], "}"}]}], ",", 
+   "\[IndentingNewLine]", 
    RowBox[{"Background", "->", "White"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.874590529593463*^9, 3.874590722373732*^9}},
- CellLabel->"In[5]:=",ExpressionUUID->"bef8398f-9973-4acd-99a2-83184db738b9"],
+ CellChangeTimes->{{3.874590529593463*^9, 3.874590722373732*^9}, 
+   3.87460792939956*^9, {3.874608084880947*^9, 
+   3.874608126461697*^9}},ExpressionUUID->"bef8398f-9973-4acd-99a2-\
+83184db738b9"],
 
 Cell[BoxData[
  TemplateBox[{
@@ -20079,7 +20128,7 @@ mQbtT/C7/YzG4UAN2q/Avu+20LkqDdq/QMf87CUZxYl+BmoKmeolRhP9DeQ/
         RGBColor[0, 0, 1], 
         Dashing[{Small, Small}], 
         TagBox[
-         ConicHullRegionBox[{-0.0079, 0}, {{0, 1}}], "InfiniteLine"]}, {
+         ConicHullRegionBox[{-0.00079, 0}, {{0, 1}}], "InfiniteLine"]}, {
         RGBColor[0, 0, 1], 
         Dashing[{Small, Small}], 
         TagBox[
@@ -20406,8 +20455,9 @@ mQbtT/C7/YzG4UAN2q/Avu+20LkqDdq/QMf87CUZxYl+BmoKmeolRhP9DeQ/
        RowBox[{"Placed", "[", 
          RowBox[{#2, ",", "After"}], "]"}]}], "]"}]& )]], "Output",
  CellChangeTimes->{{3.874590582003579*^9, 3.874590722722026*^9}, 
-   3.874591749728999*^9, 3.874591878559349*^9},
- CellLabel->"Out[5]=",ExpressionUUID->"25e3f9b3-fec0-4155-9096-27c2ab6a6802"]
+   3.874591749728999*^9, 3.874591878559349*^9, 3.874607930434227*^9, {
+   3.874608100592926*^9, 3.8746081101147747`*^9}},
+ CellLabel->"Out[22]=",ExpressionUUID->"0b5c36f4-e2f8-4b74-8010-8be4a51d4074"]
 }, Open  ]]
 }, Open  ]],
 
@@ -20833,7 +20883,7 @@ Cell[BoxData[{
 }, Open  ]]
 },
 WindowSize->{1445, 1027},
-WindowMargins->{{80, Automatic}, {Automatic, 0}},
+WindowMargins->{{45, Automatic}, {Automatic, -1130}},
 PrintingCopies->1,
 PrintingPageRange->{1, Automatic},
 FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
@@ -20876,24 +20926,33 @@ Cell[1133149, 18764, 6983, 146, 1003, "Output",ExpressionUUID->"fc06c309-cbf8-41
 Cell[1140147, 18913, 7926, 191, 819, "Input",ExpressionUUID->"f90ba5fa-c623-4427-85d6-72f4a9d575b7"],
 Cell[1148076, 19106, 187, 4, 41, "Input",ExpressionUUID->"056ead69-9d03-42de-9ebf-8434493181b4"]
 }, Closed]]
-}, Open  ]],
+}, Closed]],
 Cell[CellGroupData[{
-Cell[1148312, 19116, 436, 7, 69, "Section",ExpressionUUID->"9238814d-e848-44d1-bdb6-22ab45d8e7d9"],
+Cell[1148312, 19116, 436, 7, 55, "Section",ExpressionUUID->"9238814d-e848-44d1-bdb6-22ab45d8e7d9"],
 Cell[1148751, 19125, 587, 10, 34, "Text",ExpressionUUID->"c9c4bfad-9ccf-464c-91ca-37db1ebf3058"],
 Cell[CellGroupData[{
 Cell[1149363, 19139, 167, 3, 34, "Subsection",ExpressionUUID->"a6a71177-3b77-4852-b3e7-8dbb881fe52a"],
 Cell[CellGroupData[{
-Cell[1149555, 19146, 4418, 108, 483, "Input",ExpressionUUID->"11f84168-c3e9-4822-b173-6605ec27cebf"],
-Cell[1153976, 19256, 4874, 105, 1009, "Output",ExpressionUUID->"0e39610d-144d-4d26-895c-6ccc4256b2ba"]
+Cell[1149555, 19146, 4820, 116, 504, "Input",ExpressionUUID->"11f84168-c3e9-4822-b173-6605ec27cebf"],
+Cell[1154378, 19264, 5411, 113, 1026, "Output",ExpressionUUID->"32f5a6f9-b672-4191-bdf3-fd608e400e0d"]
+}, Open  ]],
+Cell[1159804, 19380, 161, 3, 41, "Input",ExpressionUUID->"09432149-1ce5-4bde-9059-e9234cf307d5"],
+Cell[CellGroupData[{
+Cell[1159990, 19387, 201, 3, 41, "Input",ExpressionUUID->"be3ab14e-e1e7-48a4-aebb-70cd1123bcf9"],
+Cell[1160194, 19392, 190, 2, 41, "Output",ExpressionUUID->"eb80ee99-4bbd-40f1-bc20-926f6a3b1bcb"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1158887, 19366, 720, 19, 41, "Input",ExpressionUUID->"bef8398f-9973-4acd-99a2-83184db738b9"],
-Cell[1159610, 19387, 53528, 1022, 851, "Output",ExpressionUUID->"25e3f9b3-fec0-4155-9096-27c2ab6a6802"]
+Cell[1160421, 19399, 205, 3, 41, "Input",ExpressionUUID->"7e55cc59-a984-41bc-a427-24a90976e110"],
+Cell[1160629, 19404, 170, 2, 41, "Output",ExpressionUUID->"78b9be23-3024-404b-9e99-b816ec619cdb"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1160836, 19411, 829, 23, 84, "Input",ExpressionUUID->"bef8398f-9973-4acd-99a2-83184db738b9"],
+Cell[1161668, 19436, 53604, 1023, 851, "Output",ExpressionUUID->"0b5c36f4-e2f8-4b74-8010-8be4a51d4074"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1213187, 20415, 168, 3, 34, "Subsection",ExpressionUUID->"ed22c587-56dc-40d9-bc09-2e5a3620d06a"],
-Cell[1213358, 20420, 18656, 409, 1775, "Input",ExpressionUUID->"74478d9b-b5ee-4f76-bd82-4ccd2d4669ff"]
+Cell[1215321, 20465, 168, 3, 34, "Subsection",ExpressionUUID->"ed22c587-56dc-40d9-bc09-2e5a3620d06a"],
+Cell[1215492, 20470, 18656, 409, 1775, "Input",ExpressionUUID->"74478d9b-b5ee-4f76-bd82-4ccd2d4669ff"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
