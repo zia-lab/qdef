@@ -476,6 +476,7 @@ def labeled_matrix(a_matrix, basis_labels=[], elbow='', show=True):
     if show:
         display(Math(a_matrix))
     return a_matrix
+
 class UnitCon():
     '''
     Primary  conversion  factors  in  ConversionFactors.xlsx. To
@@ -510,8 +511,8 @@ class UnitCon():
 
 class Con():
     '''
-    Fundamental and derived constants, all given in SI units.
-    c, π, ℏ, h, ε0, μ0
+    Fundamental and some derived constants, all given in SI units.
+    c, π, ℏ, h, ε0, μ0, e, me, μB, gs
     '''
     c = 299792458 # m/s
     π = 3.14159265358
