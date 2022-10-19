@@ -5,13 +5,18 @@ import numpy as np
 import os
 import pickle
 import pandas as pd
-from itertools import product, combinations
+from itertools import product
+from functools import reduce
 from collections import OrderedDict, Counter
 from sympy.physics.quantum import Bra, Ket, KetBase, TensorProduct
 from matplotlib import pyplot as plt
 from qdef.constants import *
 from qdef.misc import *
+from IPython.display import Math
+from joblib import Parallel, delayed
+import multiprocessing
 
+num_cores = multiprocessing.cpu_count()
 module_dir = os.path.dirname(__file__)
 
 # =============================================================== #
@@ -60,6 +65,9 @@ element_groups = {
 
 # ====================== Load element data ====================== #
 # =============================================================== #
+
+class odict(OrderedDict):
+    pass
 
 # =============================================================== #
 # ===================== Load group theory data ================== #
@@ -159,10 +167,10 @@ class Qet():
                 continue
             try:
                 target_idx = basis.index(qnums)
-                coeffs[target_idx] = coeff
+                coeffs[target_idx] += coeff
             except:
                 target_idx, multiplier = inspector_gadget(qnums, basis)
-                coeffs[target_idx] = coeff*multiplier
+                coeffs[target_idx] += coeff*multiplier
         return coeffs
 
     def valsubs(self, subs_dict, simultaneous=True):
@@ -174,6 +182,14 @@ class Qet():
         for key, val in self.dict.items():
             new_dict[key] = sp.S(val).subs(subs_dict, simultaneous=simultaneous)
         return Qet(new_dict)
+
+    def tensor_basis_change(self, basis_changer):
+        new_qet = Qet({})
+        for qnums, coeff in self.dict.items():
+            extra = [(Qet({(γ,):1}) if γ not in basis_changer else basis_changer[γ]) for γ in qnums]
+            extra = reduce(lambda x,y: x*y, extra)
+            new_qet = new_qet + ( coeff * extra)
+        return new_qet
 
     def keysubs(self, subs_dict, simultaneous=True):
         '''
@@ -196,11 +212,10 @@ class Qet():
 
     def __mul__(self, multiplier):
         '''
-        Give a representation of the qet  as  a  Ket  from
-        sympy.physics.quantum, fold_keys  =  True  removes
-        unnecessary parentheses and nice_negatives =  True
-        assumes all numeric  keys  and  presents  negative
-        values with a bar on top.
+        A  qet can be multiplied by a scalar or by another
+        qet.  When  two  qets  are  multiplied the implied
+        multiplication   is  taken  as  a  tensor  product
+        between the two qets.
         '''
         if isinstance(multiplier, Qet):
             new_dict = dict()
@@ -233,6 +248,13 @@ class Qet():
         for key, coeff in new_dict.items():
             new_dict[key] = sp.simplify(coeff)
         return Qet(new_dict)
+
+    def parasimplify(self):
+        '''simplify coefficients using several cores'''
+        new_dict = dict(self.dict)
+        tuple_simplify = lambda key,coeff: (key, sp.simplify(coeff))
+        simp_dict = Parallel(n_jobs = num_cores)(delayed(tuple_simplify)(key, coeff) for key, coeff in new_dict.items())
+        return Qet(dict(simp_dict))
     
     def basis(self):
         '''return a list with all the keys in the qet'''
@@ -451,37 +473,6 @@ class Qet():
     def __repr__(self):
         return 'Qet(%s)' % str(self.dict)
 
-def as_det_ket_fancy(qet):
-    '''
-    Parameters
-    ----------
-    qet (qdef.Qet)
-
-    Returns
-    -------
-    detQet : a sympy expression that presents the quantum symbols in qet
-             as determinantal states
-    '''
-    detket = sp.S(0)
-    for k,v in qet.dict.items():
-        kbits = []
-        if isinstance(k, tuple):
-            for kpart in k:
-                if isinstance(k, SpinOrbital):
-                    korb = kpart.orbital
-                    kspin = kpart.spin
-                    if kspin == S_DOWN:
-                        kbits.append(sp.Symbol('\\bar{%s}' % str(korb)))
-                    else:
-                        kbits.append(sp.Symbol('%s' % str(korb)))
-        else:
-            kbits = k
-        strk = (r'|%s|' % str(kbits)).replace('(','').replace(')','').replace(',','')
-        strk = strk.replace('')
-        symb = sp.Symbol(strk)
-        detket += symb * v
-    return detket
-
 def opSingleMulti(Opdict, pos):
     '''
     Returns a function that can be used to evaluate the result of applying
@@ -520,7 +511,7 @@ class HartreeFockData():
     '''
     Repo of data from the land of Hartree-Fock.
     '''
-    HFradavg = pickle.load(open(os.path.join(module_dir,'data','HFravgs.pkl'),'rb'))
+    HFradavg = pickle.load(open(os.path.join(module_dir,'data','HF_radial_avgs.pkl'),'rb'))
     HFsizes = pickle.load(open(os.path.join(module_dir,'data','HFsizes.pkl'),'rb'))
     ArabicToRoman = dict(zip(range(1,36),[
                     'I','II','III','IV','V','VI','VII','VIII','IX','X',
@@ -531,9 +522,10 @@ class HartreeFockData():
                     )
                     )
     num_to_symb  = num_to_symb
+    symb_to_num = symb_to_num
 
     @classmethod
-    def radial_average(cls, element, charge_state, n):
+    def radial_average(cls, element, charge_state, n, nephelauxetic=False):
         '''
         Returns  the radial average <r^n> for a valence electron for
         the  given element and charge state (n=0 neutral, n=1 singly
@@ -549,25 +541,83 @@ class HartreeFockData():
         Provided data has 5 significant figures.
         '''
         charge_state = int(charge_state)
+        num_charge_state = charge_state
         assert charge_state >= 0, "What odd ion state you speak of?"
         charge_state = cls.ArabicToRoman[charge_state+1]
         if isinstance(element, int):
             element = cls.num_to_symb[element]
         try:
-            return float(cls.HFradavg['<r^%d>' % n].loc[[element]][charge_state])
+            rad_avg = float(cls.HFradavg['<r^%d>' % n].loc[[element]][charge_state])
+            tau = 1
+            if nephelauxetic:
+                tau = cls.nephelauxetic_factor_tau(element, num_charge_state)
+            rad_avg = rad_avg / tau**n
+            return rad_avg
         except:
             raise ValueError('This radial average is not here.')
     
     @classmethod
-    def atom_size(cls, element, charge_state):
+    def atom_size(cls, element, charge_state, nephelauxetic=False):
         '''
-        Size of given element with given charge.
-        Given in Angstrom.
+        Parameters
+        ----------
+        element (str or int): atomic number of symbol for an element
+        charge_state (int)  : charge state of atom
+        nephelauxetic (bool): if True then the returned size is the estimated
+        one for the ion inside of a crystal. This is a rough approximation.
+
+        Returns
+        -------
+        radius (float): estimated radius in Angstrom
+        
+        References
+        ----------
+        + Fraga, Karwowski, and Saxena, “Handbook of Atomic Data.”
+        + Morrison, Angular Momentum Theory Applied to Interactions in Solids.
         '''
         if isinstance(element, int):
             element = cls.num_to_symb[element]
         charge_state = cls.ArabicToRoman[charge_state+1]
-        return float(cls.HFsizes.loc[[element]][charge_state])
+        τ = 1.
+        if nephelauxetic:
+            τ = cls.nephelauxetic_factor_tau(element, charge_state)
+        radius = float(cls.HFsizes.loc[[element]][charge_state]) / τ
+        return radius
+    
+    @classmethod
+    def nephelauxetic_factor_tau(cls, element, charge_state):
+        '''
+        One approximation to atomic wavefunctions for electrons placed
+        inside of crystals is simply to scale the hydrogenic wavefunctions
+        by a scaling factor tau.
+        This function returns that factor as presented in Table 13.4 of Morrison (1988).
+
+        Parameters
+        ----------
+        element (int)    : Atomic number.
+        charge_state(int):
+
+        Returns
+        -------
+        tau (float)
+
+        References
+        ----------
+        + Morrison, Angular Momentum Theory Applied to Interactions in Solids.
+        '''
+        if not isinstance(element, int):
+            element = cls.symb_to_num[element]
+        if charge_state == 2:
+            N = element - 20
+            tau =  0.76878  + 0.011128 * N
+        elif charge_state == 3:
+            N = element  - 21
+            tau = 0.8118355958 + 0.007398583637 * N
+        else:
+            N = element  - 22
+            tau = 0.833540 + 0.0056609 * N
+        assert N in range(1,10), "Invalid configuration."
+        return tau
 
 class Atom():
     '''
@@ -1009,10 +1059,95 @@ class ProductTable():
             row.extend(arow)
             rows.append(row)
         return fmt_table(rows).replace('+',r'{\oplus}')
+    def __repr__(self):
+        return self.odict.__repr__()
 
 class CrystalGroup():
     '''
-    Class for a point symmetry group.
+    Class  for  a  point  symmetry  group  which can be initialized with a
+    string-label or corresponding standard index.
+
+    The class has the following attributes:
+
+        - index (int): index for the group in the standard order.
+
+        - label (str): string-label for the group
+
+        -  classes  (dict):  keys being equal to the different classes tha
+        the  group  has  and  values  being  equal  to lists that have the
+        symbols  representing  the  symmetry  elements  that belong to the
+        classes.
+
+        -  class_labels  (list):  containing  symbols  for  the  different
+        classes of the group.
+
+        -  group_operations  (list):  containing  symbols  for  the  group
+        operations.
+
+        -  irrep_labels  (list):  containing  symbols  for the irreducible
+        representations of the group.
+
+        - character_table (sp.Matrix): character table for the group where
+        the  columns  of the given matrix correspond to the classes of the
+        group  (in  the  order given by the .classes_labels attribute) and
+        the  rows  correspond  to  the  irreducible representations of the
+        group (in the order given by the .irrep_labels attribute).
+
+        -  character_table_inverse  (sp.Matrix):  matrix  inverse  of  the
+        character  table  of  the  group. Useful for decomposing reducible
+        representations into its irreducible components.
+
+        -  irrep_matrices  (dict): keys equal to symbols for the different
+        irreducible representations of the group and values being equal to
+        dictionaries  whose  keys are symbols for the different operations
+        of  the  group  and  values  being  equal  to matrices that form a
+        corresponding irreducbible matrix representation of the group.
+
+        -  generators  (list):  containing the symbols of group operations
+        that can be used as generators for the group.
+
+        -  multiplication_table  (sp.Matrix):  each element represents the
+        result  of  multiplying  two of the elements a⋅b of the group, the
+        different   rows   representing   a   and  the  different  columns
+        representing b.
+
+        -   euler_angles   (dict):   with  keys  being  equal  to  symbols
+        representing  group operations and values equal to lists with four
+        elements  [α,  β,  γ, det] with α the angle for the first rotation
+        about  the  z-axis,  β the angle for the second rotation about the
+        y-axis,  γ  the  angle of the final rotation about the z-axis, and
+        det  being  equal  to  ±1 the determinant of the orthogonal matrix
+        representing   the   group   operation.  Angles  correspond  to  a
+        convention of an Euler angle rotation with fixed z-y-z axes.
+
+        -  order  (int):  order  of  the group, which is how many symmetry
+        operations the group has.
+
+        -  product_table  (qd.ProductTable):  contains  the  reductions to
+        which    every   binary   product   of   the   group   irreducible
+        representations resolve to.
+
+        -  operation_matrices  (dict):  with keys equal to symbols for the
+        group operations and values being equal to the orthogonal matrices
+        that   represent  the  operation  as  geometrical  transformations
+        carried out in three dimensions.
+
+        -  irrep_dims  (dict): keys being equal to symbols for irreducible
+        representations  and values being integers equal to the dimensions
+        of the corresponding irrep.
+
+        -  CG_coefficients  (dict):  keys  are equal to triples (c_0, c_1,
+        c_2)   with  symbols  for  three  components  of  the  irreducible
+        components   of  the  group  and  values  equal  to  the  coupling
+        coefficient for c_2 from having coupled c_0 and c_1. If the key is
+        absent, that means that the coefficient is zero.
+
+        -  CG_coefficients_partitioned (dict): a dictionary whose keys are
+        tuples of the form (ir0, ir1) with ir0 and ir1 two symbols for two
+        irreducible  representation  of  the  group and the values being a
+        dictionary   that  has  all  the  coupling  coefficients  for  the
+        components  of  ir0 and ir1 into the components of the irreps into
+        which ir0Xir1 decomposes to.
     '''
     def __init__(self, group_data_dict, double_group_data_dict: None):
         self.index = group_data_dict['index']
@@ -1029,7 +1164,7 @@ class CrystalGroup():
         self.group_operations = group_data_dict['group operations']
         self.gen_multiplication_table_dict()
         self.order = len(self.group_operations)
-        self.operations_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
+        self.operation_matrices = {k: orthogonal_matrix(v) for k, v in self.euler_angles.items()}
         self.irrep_dims = {k: list(v.values())[0].shape[0] for k, v in self.irrep_matrices.items()}
         self.product_table = self.direct_product_table(self.irrep_labels, self.character_table, self.character_table_inverse, self.label )
         self.component_labels = self.get_component_labels()
@@ -1051,7 +1186,7 @@ class CrystalGroup():
             self.double_euler_angles = double_group_data_dict['euler angles']
             self.double_group_operations = double_group_data_dict['group operations']
             self.double_order = len(self.double_group_operations)
-            self.double_operations_matrices = {k: orthogonal_matrix(v) for k, v in self.double_euler_angles.items()}
+            self.double_operation_matrices = {k: orthogonal_matrix(v) for k, v in self.double_euler_angles.items()}
             self.double_irrep_dims = {k : self.double_character_table[self.double_irrep_labels.index(k),0] for k in self.double_irrep_labels}
             self.double_product_table = self.direct_product_table(self.double_irrep_labels, self.double_character_table, self.double_character_table_inverse, self.label )
             # self.double_component_labels = self.get_component_labels()
@@ -1149,18 +1284,25 @@ class CrystalGroup():
 
 class CPGroups():
     '''
-    Class to hold all crystallographic point groups.
+    Class  that  aggregates all  the  crystallographic point groups into a
+    single object having the following attributes:
+
+    all_group_labels (list): a list having all the string labels  for  the 
+    32 crystallographic point groups.
+    groups   (dict):   with   keys   equal   to   string  labels  for  the
+    crystallographic    point   groups   and   values   being   equal   to
+    qd.CrystalGroup.
     '''
     def __init__(self, groups, doublegroups):
         self.all_group_labels = [
-            'C_{1}', 'C_{i}', 'C_{2}', 'C_{s}',
-            'C_{2h}', 'D_{2}', 'C_{2v}', 'D_{2h}',
-            'C_{4}', 'S_{4}', 'C_{4h}', 'D_{4}',
+            'C_{1}',  'C_{i}',  'C_{2}',  'C_{s}',
+            'C_{2h}', 'D_{2}',  'C_{2v}', 'D_{2h}',
+            'C_{4}',  'S_{4}',  'C_{4h}', 'D_{4}',
             'C_{4v}', 'D_{2d}', 'D_{4h}', 'C_{3}',
-            'S_{6}', 'D_{3}', 'C_{3v}', 'D_{3d}',
-            'C_{6}', 'C_{3h}', 'C_{6h}', 'D_{6}',
+            'S_{6}',  'D_{3}',  'C_{3v}', 'D_{3d}',
+            'C_{6}',  'C_{3h}', 'C_{6h}', 'D_{6}',
             'C_{6v}', 'D_{3h}', 'D_{6h}', 'T',
-            'T_{h}', 'O', 'T_{d}', 'O_{h}']
+            'T_{h}',  'O',      'T_{d}',  'O_{h}']
         self.groups = {}
         for k in groups:
             print('Parsing %s ...' % self.all_group_labels[k-1])
