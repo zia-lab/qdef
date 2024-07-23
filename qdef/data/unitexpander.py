@@ -78,7 +78,7 @@ def generate_unit_matrix():
         v = sp.S(v)
         unitgraph.add_weighted_edges_from([(k[0],k[1],v)])
         unitgraph.add_weighted_edges_from([(k[1],k[0],1/v)])
-    cfacts_jsonized = ['%s, %s, %f' % (k[0],k[1],v) for k,v in cfacts.items()]
+    cfacts_jsonized = ['%s, %s, %e' % (k[0],k[1],v) for k,v in cfacts.items()]
     if save_to_pickle:
         print("Saving to pickle...")
         pickle.dump(cfacts,open('./conversion_facts.pkl','wb'))

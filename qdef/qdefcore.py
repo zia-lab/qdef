@@ -509,7 +509,14 @@ def opSingleMulti(Opdict, pos):
 
 class HartreeFockData():
     '''
-    Repo of data from the land of Hartree-Fock.
+    Free-ion   data   from   Fraga's   "Handbook   of  Atomic  Data"
+    complemented  with  approximations  for dealing with ions placed
+    inside of crystals as obtained from Morrison's "Angular Momentum
+    Theory Applied to Interactions in Solids".
+
+    The  data  computed  by  Fraga  are the results of calculcations
+    using  non-relativistic functions using a numerical Hartree-Fock
+    program (Froese-Fisher (1969)).
     '''
     HFradavg = pickle.load(open(os.path.join(module_dir,'data','HF_radial_avgs.pkl'),'rb'))
     HFsizes = pickle.load(open(os.path.join(module_dir,'data','HFsizes.pkl'),'rb'))
@@ -539,6 +546,23 @@ class HartreeFockData():
         The unit for the provided radial average is Angstrom^n.
 
         Provided data has 5 significant figures.
+
+        Parameters
+        ----------
+        element (int or str): atomic number of element symbol.
+        charge_state   (int): how many electrons the ion is missing.
+        n              (int): as in <r^n>.
+
+        nephelauxetic  (bool):  whether  the nephelauxetic effect is
+        considered.
+
+        Returns
+        -------
+        rad_avg  (float): if nephelauxetic is True value returned is
+        <r^n>_HF  /  τ^n,  else  what  is  returned  is  <r^n>_HF as
+        obtained  from  Fraga's  "Handbook  of  Atomic  Data"  using
+        Hartree-Fock methods.
+
         '''
         charge_state = int(charge_state)
         num_charge_state = charge_state
@@ -563,8 +587,9 @@ class HartreeFockData():
         ----------
         element (str or int): atomic number of symbol for an element
         charge_state (int)  : charge state of atom
-        nephelauxetic (bool): if True then the returned size is the estimated
-        one for the ion inside of a crystal. This is a rough approximation.
+        nephelauxetic  (bool): if True then the returned size is the
+        estimated  one  for  the  ion inside of a crystal. This is a
+        rough approximation.
 
         Returns
         -------
@@ -573,7 +598,8 @@ class HartreeFockData():
         References
         ----------
         + Fraga, Karwowski, and Saxena, “Handbook of Atomic Data.”
-        + Morrison, Angular Momentum Theory Applied to Interactions in Solids.
+        + Morrison, "Angular Momentum Theory Applied to Interactions
+        in Solids".
         '''
         if isinstance(element, int):
             element = cls.num_to_symb[element]
@@ -587,10 +613,13 @@ class HartreeFockData():
     @classmethod
     def nephelauxetic_factor_tau(cls, element, charge_state):
         '''
-        One approximation to atomic wavefunctions for electrons placed
-        inside of crystals is simply to scale the hydrogenic wavefunctions
-        by a scaling factor tau.
-        This function returns that factor as presented in Table 13.4 of Morrison (1988).
+        One  approximation  to  atomic  wavefunctions  for electrons
+        placed  inside of crystals is simply to scale the hydrogenic
+        wavefunctions by a scaling factor tau. This function returns
+        that factor as presented in Table 13.4 of Morrison (1988).
+
+        Note  that  there  is  one  typo  in  Morrison that has been
+        corrected here. (0.11128 in there should be 0.011128)
 
         Parameters
         ----------
@@ -603,7 +632,8 @@ class HartreeFockData():
 
         References
         ----------
-        + Morrison, Angular Momentum Theory Applied to Interactions in Solids.
+        + Morrison,  Angular Momentum Theory Applied to Interactions
+        in Solids.
         '''
         if not isinstance(element, int):
             element = cls.symb_to_num[element]
